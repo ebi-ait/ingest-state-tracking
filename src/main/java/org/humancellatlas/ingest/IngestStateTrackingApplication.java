@@ -12,6 +12,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class IngestStateTrackingApplication {
     public static void main(String[] args) {
-        SpringApplication.run(IngestStateTrackingApplication.class);
+        SpringApplication.run(IngestStateTrackingApplication.class, args);
     }
 }

@@ -24,7 +24,6 @@ repositories {
 dependencies {
     compile("org.springframework.boot:spring-boot-starter")
     compile("org.springframework.statemachine:spring-statemachine-core:1.2.7.RELEASE")
-    testCompile("org.springframework.statemachine:spring-statemachine-test")
     compile('org.springframework.boot:spring-boot-starter-amqp')
 
     compile('joda-time:joda-time')
@@ -33,4 +32,5 @@ dependencies {
     compile('com.fasterxml.jackson.module:jackson-module-parameter-names')
     compileOnly('org.projectlombok:lombok')
     testCompile('org.springframework.boot:spring-boot-starter-test')
+    testCompile("org.springframework.statemachine:spring-statemachine-test:1.2.7.RELEASE")
 }
