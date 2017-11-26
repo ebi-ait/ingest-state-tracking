@@ -32,6 +32,8 @@ public class SubmissionStateMonitor {
     public void monitorSubmissionEnvelope(SubmissionEnvelopeReference submissionEnvelopeReference) {
         StateMachine<SubmissionStates, SubmissionEvents> stateMachine =
                 stateMachineFactory.getStateMachine(submissionEnvelopeReference.getUuid());
+        stateMachine.addStateListener(new SubmissionStateListener(submissionEnvelopeReference, this));
+
         stateMachine.start();
         stateMachineMap.put(submissionEnvelopeReference.getUuid(), stateMachine);
     }

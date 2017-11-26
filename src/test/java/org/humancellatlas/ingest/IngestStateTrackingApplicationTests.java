@@ -59,4 +59,41 @@ public class IngestStateTrackingApplicationTests {
         StateMachine<SubmissionStates, SubmissionEvents> stateMachine = optional.get();
         assertEquals(stateMachine.getState().getId(), SubmissionStates.DRAFT);
     }
+
+    @Test
+    public void testSuccessfulEventRunthrough() {
+        UUID uuid = envelopeRef.getUuid();
+        Optional<StateMachine<SubmissionStates, SubmissionEvents>> optional = submissionStateMonitor.findStateMachine(envelopeRef.getUuid());
+        assertTrue(optional.isPresent());
+        StateMachine<SubmissionStates, SubmissionEvents> stateMachine = optional.get();
+
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.CONTENT_ADDED);
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.VALIDATION_STARTED);
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.ALL_DOCUMENTS_ARE_VALID);
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.SUBMISSION_REQUESTED);
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.PROCESSING_STARTED);
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.CLEANUP_STARTED);
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.ALL_TASKS_COMPLETE);
+
+        assertEquals(stateMachine.getState().getId(), SubmissionStates.COMPLETE);
+    }
+
+    @Test
+    public void testIncorrectLifecycle() {
+        UUID uuid = envelopeRef.getUuid();
+        Optional<StateMachine<SubmissionStates, SubmissionEvents>> optional = submissionStateMonitor.findStateMachine(envelopeRef.getUuid());
+        assertTrue(optional.isPresent());
+        StateMachine<SubmissionStates, SubmissionEvents> stateMachine = optional.get();
+
+        // try to submit an invalid submission
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.CONTENT_ADDED);
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.VALIDATION_STARTED);
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.DOCUMENTS_ARE_INVALID);
+
+        // now send an event that is wrong
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.SUBMISSION_REQUESTED);
+
+        // check the state is invalid (i.e. last event wasn't accepted)
+        assertEquals(stateMachine.getState().getId(), SubmissionStates.INVALID);
+    }
 }
