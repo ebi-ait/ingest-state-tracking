@@ -6,6 +6,7 @@ import org.humancellatlas.ingest.state.SubmissionStates;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -16,7 +17,7 @@ import java.util.*;
  * @author tburdett
  * @date 26/11/2017
  */
-@Service
+@Component
 public class SubmissionStateMonitor {
     private final StateMachineFactory<SubmissionStates, SubmissionEvents> stateMachineFactory;
 
