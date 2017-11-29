@@ -1,6 +1,7 @@
 package org.humancellatlas.ingest.state;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
@@ -107,9 +108,10 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
     }
 
     private Guard<SubmissionStates, SubmissionEvents> allValidGuard() {
-        // check if all documents attached to the current state engine extended context are valid
-
-        return null;
+        return context -> {
+            // check if all documents attached to the current state engine extended context are valid
+            return true;
+        };
     }
 
     private Action<SubmissionStates, SubmissionEvents> addContent() {
