@@ -1,7 +1,6 @@
 package org.humancellatlas.ingest.state;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
@@ -9,23 +8,24 @@ import org.springframework.statemachine.config.builders.StateMachineStateConfigu
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 import org.springframework.statemachine.guard.Guard;
 
+import static org.humancellatlas.ingest.state.MessageHeaders.DOCUMENT_ID;
 import static org.humancellatlas.ingest.state.MessageHeaders.DOCUMENT_STATE;
-import static org.humancellatlas.ingest.state.SubmissionEvents.ALL_DOCUMENTS_ARE_VALID;
 import static org.humancellatlas.ingest.state.SubmissionEvents.ALL_TASKS_COMPLETE;
 import static org.humancellatlas.ingest.state.SubmissionEvents.CLEANUP_STARTED;
 import static org.humancellatlas.ingest.state.SubmissionEvents.CONTENT_ADDED;
-import static org.humancellatlas.ingest.state.SubmissionEvents.DOCUMENTS_ARE_INVALID;
 import static org.humancellatlas.ingest.state.SubmissionEvents.PROCESSING_FAILED;
 import static org.humancellatlas.ingest.state.SubmissionEvents.PROCESSING_STARTED;
 import static org.humancellatlas.ingest.state.SubmissionEvents.SUBMISSION_REQUESTED;
+import static org.humancellatlas.ingest.state.SubmissionEvents.TEST_VALIDITY;
 import static org.humancellatlas.ingest.state.SubmissionEvents.VALIDATION_STARTED;
 import static org.humancellatlas.ingest.state.SubmissionStates.CLEANUP;
 import static org.humancellatlas.ingest.state.SubmissionStates.COMPLETE;
-import static org.humancellatlas.ingest.state.SubmissionStates.DOCUMENTS_WAITING;
 import static org.humancellatlas.ingest.state.SubmissionStates.DOCUMENTS_INVALID;
 import static org.humancellatlas.ingest.state.SubmissionStates.DOCUMENTS_VALID;
 import static org.humancellatlas.ingest.state.SubmissionStates.DOCUMENTS_VALIDATING;
+import static org.humancellatlas.ingest.state.SubmissionStates.DOCUMENTS_WAITING;
 import static org.humancellatlas.ingest.state.SubmissionStates.DOCUMENT_VALIDATION;
+import static org.humancellatlas.ingest.state.SubmissionStates.DOCUMENT_VALIDATION_STARTING;
 import static org.humancellatlas.ingest.state.SubmissionStates.DRAFT;
 import static org.humancellatlas.ingest.state.SubmissionStates.INVALID;
 import static org.humancellatlas.ingest.state.SubmissionStates.PENDING;
@@ -33,7 +33,6 @@ import static org.humancellatlas.ingest.state.SubmissionStates.PROCESSING;
 import static org.humancellatlas.ingest.state.SubmissionStates.SUBMITTED;
 import static org.humancellatlas.ingest.state.SubmissionStates.VALID;
 import static org.humancellatlas.ingest.state.SubmissionStates.VALIDATING;
-import static org.humancellatlas.ingest.state.MessageHeaders.DOCUMENT_ID;
 
 /**
  * Javadocs go here!
@@ -54,11 +53,13 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .state(INVALID)
                 .state(SUBMITTED)
                 .state(PROCESSING)
+                .state(CLEANUP)
                 .end(COMPLETE)
                 .and().withStates()
                     .parent(VALIDATING)
                     .initial(DOCUMENTS_WAITING)
-                    .entry(DOCUMENTS_VALIDATING)
+                    .entry(DOCUMENT_VALIDATION_STARTING)
+                    .state(DOCUMENTS_VALIDATING)
                     .choice(DOCUMENT_VALIDATION)
                     .exit(DOCUMENTS_VALID)
                     .exit(DOCUMENTS_INVALID);
@@ -73,10 +74,14 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .withExternal().source(DRAFT).target(VALIDATING)
                 .event(VALIDATION_STARTED)
                 .and()
-                .withExternal().source(DOCUMENTS_WAITING).target(DOCUMENTS_VALIDATING)
-                .event(VALIDATION_STARTED)
+                .withExternal().source(DOCUMENTS_WAITING).target(DOCUMENT_VALIDATION_STARTING)
                 .and()
-                .withEntry().source(DOCUMENTS_VALIDATING).target(DOCUMENT_VALIDATION)
+                .withEntry().source(DOCUMENT_VALIDATION_STARTING).target(DOCUMENTS_VALIDATING)
+                .and()
+                .withInternal().source(DOCUMENTS_VALIDATING).action(timerAction()).timer(1000)
+                .and()
+                .withExternal().source(DOCUMENTS_VALIDATING).target(DOCUMENT_VALIDATION)
+                .event(TEST_VALIDITY)
                 .and()
                 .withChoice().source(DOCUMENT_VALIDATION)
                 .first(DOCUMENTS_VALID, allValidGuard()).last(DOCUMENTS_INVALID)
@@ -106,6 +111,12 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .withExternal().source(CLEANUP).target(COMPLETE)
                 .event(ALL_TASKS_COMPLETE);
     }
+
+    private Action<SubmissionStates, SubmissionEvents> timerAction() {
+        return context -> System.out.println("Validating...");
+    }
+
+
 
     private Guard<SubmissionStates, SubmissionEvents> allValidGuard() {
         return context -> {

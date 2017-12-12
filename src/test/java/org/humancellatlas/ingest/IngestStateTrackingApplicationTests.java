@@ -7,6 +7,8 @@ import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.statemachine.StateMachine;
@@ -15,6 +17,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.net.URI;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,6 +35,8 @@ public class IngestStateTrackingApplicationTests {
     @Autowired private SubmissionStateMonitor submissionStateMonitor;
 
     private SubmissionEnvelopeReference envelopeRef;
+
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Before
     public void setup() {
@@ -53,10 +58,17 @@ public class IngestStateTrackingApplicationTests {
     @Test
     public void testEventDispatch() {
         UUID uuid = envelopeRef.getUuid();
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.CONTENT_ADDED);
         Optional<StateMachine<SubmissionStates, SubmissionEvents>> optional = submissionStateMonitor.findStateMachine(envelopeRef.getUuid());
         assertTrue(optional.isPresent());
         StateMachine<SubmissionStates, SubmissionEvents> stateMachine = optional.get();
+        assertEquals(SubmissionStates.PENDING, stateMachine.getState().getId());
+
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.CONTENT_ADDED);
+
+        optional = submissionStateMonitor.findStateMachine(envelopeRef.getUuid());
+        assertTrue(optional.isPresent());
+        stateMachine = optional.get();
+
         assertEquals(SubmissionStates.DRAFT, stateMachine.getState().getId());
     }
 
@@ -67,14 +79,42 @@ public class IngestStateTrackingApplicationTests {
         assertTrue(optional.isPresent());
         StateMachine<SubmissionStates, SubmissionEvents> stateMachine = optional.get();
 
+        log.debug("Sending CONTENT_ADDED event");
         submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.CONTENT_ADDED);
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.VALIDATION_STARTED);
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.VALIDATION_STARTED);
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.SUBMISSION_REQUESTED);
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.PROCESSING_STARTED);
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.CLEANUP_STARTED);
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.ALL_TASKS_COMPLETE);
+        assertEquals(SubmissionStates.DRAFT, stateMachine.getState().getId());
 
+        log.debug("Sending VALIDATION_STARTED event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.VALIDATION_STARTED);
+        assertEquals(SubmissionStates.VALIDATING, stateMachine.getState().getId());
+
+        // wait for a bit
+        try {
+            TimeUnit.SECONDS.sleep(5);
+        }
+        catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // now test validity
+        log.debug("Sending TEST_VALIDITY event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.TEST_VALIDITY);
+        assertEquals(SubmissionStates.VALID, stateMachine.getState().getId());
+
+
+        log.debug("Sending SUBMISSION_REQUESTED event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.SUBMISSION_REQUESTED);
+        assertEquals(SubmissionStates.SUBMITTED, stateMachine.getState().getId());
+
+        log.debug("Sending PROCESSING_STARTED event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.PROCESSING_STARTED);
+        assertEquals(SubmissionStates.PROCESSING, stateMachine.getState().getId());
+
+        log.debug("Sending CLEANUP_STARTED event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.CLEANUP_STARTED);
+        assertEquals(SubmissionStates.CLEANUP, stateMachine.getState().getId());
+
+        log.debug("Sending ALL_TASKS_COMPLETE event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.ALL_TASKS_COMPLETE);
         assertEquals(SubmissionStates.COMPLETE, stateMachine.getState().getId());
     }
 
@@ -87,7 +127,6 @@ public class IngestStateTrackingApplicationTests {
 
         // try to submit an invalid submission
         submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.CONTENT_ADDED);
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.VALIDATION_STARTED);
         submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.VALIDATION_STARTED);
 
         // now send an event that is wrong

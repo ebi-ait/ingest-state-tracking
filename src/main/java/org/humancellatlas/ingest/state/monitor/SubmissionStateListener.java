@@ -25,12 +25,12 @@ public class SubmissionStateListener extends StateMachineListenerAdapter<Submiss
     public SubmissionStateListener(SubmissionEnvelopeReference submissionEnvelopeReference, SubmissionStateMonitor submissionStateMonitor) {
         this.submissionEnvelopeReference = submissionEnvelopeReference;
         this.submissionStateMonitor = submissionStateMonitor;
+        log.info(String.format("\tCreated Envelope '%s'", submissionEnvelopeReference.getUuid()));
     }
 
     @Override
     public void stateEntered(State<SubmissionStates, SubmissionEvents> state) {
-        System.out.println("For realz, I would be sending a callback event to ingest-core here...");
-        System.out.println(String.format("\tEnvelope '%s' -> State %s", submissionEnvelopeReference.getUuid(), state.getId().toString()));
+        log.info(String.format("\tEnvelope '%s' -> State %s", submissionEnvelopeReference.getUuid(), state.getId().toString()));
 
     }
 
@@ -42,7 +42,7 @@ public class SubmissionStateListener extends StateMachineListenerAdapter<Submiss
     @Override
     public void stateMachineStopped(StateMachine<SubmissionStates, SubmissionEvents> stateMachine) {
         // TODO - check this event is triggered when the state machine enters it's exit state (ALL_EVENTS_COMPLETE)
-        System.out.println("State machine stopped!");
+        log.info(String.format("State machine '%s' stopped!", submissionEnvelopeReference.getUuid()));
         submissionStateMonitor.stopMonitoring(stateMachine);
     }
 }
