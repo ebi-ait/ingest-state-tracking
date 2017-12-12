@@ -120,7 +120,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
             String documentId = context.getMessageHeaders().get(DOCUMENT_ID, String.class);
 
             // retrieve the state of the document
-            DocumentStates documentState = context.getMessageHeaders().get(DOCUMENT_STATE, DocumentStates.class);
+            String documentState = context.getMessageHeaders().get(DOCUMENT_STATE, String.class);
 
             // add the document and it's state to the extended context
 

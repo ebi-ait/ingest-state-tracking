@@ -23,23 +23,23 @@ public class MessageReceiver {
     private final @NonNull SubmissionStateMonitor submissionStateMonitor;
 
 
-    @RabbitListener(queues = Constants.Queues.ENVELOPE_CREATED)
+//    @RabbitListener(queues = Constants.Queues.ENVELOPE_CREATED)
     public void receiveSubmissionEnvelopeCreatedMessage(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
         SubmissionEnvelopeReference seRef = ingestApiClient.retrieveSubmissionEnvelopeReference(submissionEnvelopeMessage.getDocumentId());
         getSubmissionStateMonitor().monitorSubmissionEnvelope(seRef);
     }
 
-    @RabbitListener(queues = Constants.Queues.ENVELOPE_UPDATE)
+//    @RabbitListener(queues = Constants.Queues.ENVELOPE_UPDATE)
     public void receiveSubmissionEnvelopeUpdatedMessage(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
 
     }
 
-    @RabbitListener(queues = Constants.Queues.DOCUMENT_CREATED)
+//    @RabbitListener(queues = Constants.Queues.DOCUMENT_CREATED)
     public void receiveMetadataDocumentCreatedMessage(MetadataDocumentMessage metadataDocumentMessage) {
 
     }
 
-    @RabbitListener(queues = Constants.Queues.DOCUMENT_UPDATE)
+//    @RabbitListener(queues = Constants.Queues.DOCUMENT_UPDATE)
     public void receiveMetadataDocumentupdatedMessage(MetadataDocumentMessage metadataDocumentMessage) {
 
     }
