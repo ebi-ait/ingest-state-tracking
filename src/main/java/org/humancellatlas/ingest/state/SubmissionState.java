@@ -6,7 +6,7 @@ package org.humancellatlas.ingest.state;
  * @author tburdett
  * @date 26/11/2017
  */
-public enum SubmissionStates {
+public enum SubmissionState {
     PENDING,
     DRAFT,
     VALIDATING,

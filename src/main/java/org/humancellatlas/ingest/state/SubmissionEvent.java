@@ -6,12 +6,13 @@ package org.humancellatlas.ingest.state;
  * @author tburdett
  * @date 26/11/2017
  */
-public enum DocumentEvents {
+public enum SubmissionEvent {
     CONTENT_ADDED,
     VALIDATION_STARTED,
-    DOCUMENT_IS_VALID,
-    DOCUMENT_IS_INVALID,
+    TEST_VALIDITY,
+    SUBMISSION_REQUESTED,
     PROCESSING_STARTED,
     PROCESSING_FAILED,
+    CLEANUP_STARTED,
     ALL_TASKS_COMPLETE
 }

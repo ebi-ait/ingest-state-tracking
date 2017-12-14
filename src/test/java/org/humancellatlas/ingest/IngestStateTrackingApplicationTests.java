@@ -1,9 +1,10 @@
 package org.humancellatlas.ingest;
 
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
-import org.humancellatlas.ingest.state.SubmissionEvents;
-import org.humancellatlas.ingest.state.SubmissionStates;
+import org.humancellatlas.ingest.state.SubmissionEvent;
+import org.humancellatlas.ingest.state.SubmissionState;
 import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Javadocs go here!
@@ -44,6 +46,11 @@ public class IngestStateTrackingApplicationTests {
         submissionStateMonitor.monitorSubmissionEnvelope(envelopeRef);
     }
 
+    @After
+    public void cleanup() {
+        submissionStateMonitor.stopMonitoring(envelopeRef);
+    }
+
     @Test
     public void contextLoads() {
 
@@ -51,41 +58,40 @@ public class IngestStateTrackingApplicationTests {
 
     @Test
     public void testMonitoringOfNewEnvelope() {
-        Optional<StateMachine<SubmissionStates, SubmissionEvents>> stateMachine = submissionStateMonitor.findStateMachine(envelopeRef.getUuid());
-        assertTrue(stateMachine.isPresent());
+        assertTrue(submissionStateMonitor.isMonitoring(envelopeRef));
     }
 
     @Test
     public void testEventDispatch() {
-        UUID uuid = envelopeRef.getUuid();
-        Optional<StateMachine<SubmissionStates, SubmissionEvents>> optional = submissionStateMonitor.findStateMachine(envelopeRef.getUuid());
-        assertTrue(optional.isPresent());
-        StateMachine<SubmissionStates, SubmissionEvents> stateMachine = optional.get();
-        assertEquals(SubmissionStates.PENDING, stateMachine.getState().getId());
+        assertTrue(submissionStateMonitor.isMonitoring(envelopeRef));
+        Optional<SubmissionState> stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertTrue(stateOpt.isPresent());
+        assertEquals(SubmissionState.PENDING, stateOpt.get());
 
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.CONTENT_ADDED);
-
-        optional = submissionStateMonitor.findStateMachine(envelopeRef.getUuid());
-        assertTrue(optional.isPresent());
-        stateMachine = optional.get();
-
-        assertEquals(SubmissionStates.DRAFT, stateMachine.getState().getId());
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CONTENT_ADDED);
+        stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertTrue(stateOpt.isPresent());
+        assertEquals(SubmissionState.DRAFT, stateOpt.get());
     }
 
     @Test
     public void testSuccessfulEventRunthrough() {
-        UUID uuid = envelopeRef.getUuid();
-        Optional<StateMachine<SubmissionStates, SubmissionEvents>> optional = submissionStateMonitor.findStateMachine(envelopeRef.getUuid());
-        assertTrue(optional.isPresent());
-        StateMachine<SubmissionStates, SubmissionEvents> stateMachine = optional.get();
+        assertTrue(submissionStateMonitor.isMonitoring(envelopeRef));
+        Optional<SubmissionState> stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertTrue(stateOpt.isPresent());
+        assertEquals(SubmissionState.PENDING, stateOpt.get());
 
         log.debug("Sending CONTENT_ADDED event");
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.CONTENT_ADDED);
-        assertEquals(SubmissionStates.DRAFT, stateMachine.getState().getId());
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CONTENT_ADDED);
+        stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertTrue(stateOpt.isPresent());
+        assertEquals(SubmissionState.DRAFT, stateOpt.get());
 
         log.debug("Sending VALIDATION_STARTED event");
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.VALIDATION_STARTED);
-        assertEquals(SubmissionStates.VALIDATING, stateMachine.getState().getId());
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.VALIDATION_STARTED);
+        stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertTrue(stateOpt.isPresent());
+        assertEquals(SubmissionState.VALIDATING, stateOpt.get());
 
         // wait for a bit
         try {
@@ -97,42 +103,48 @@ public class IngestStateTrackingApplicationTests {
 
         // now test validity
         log.debug("Sending TEST_VALIDITY event");
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.TEST_VALIDITY);
-        assertEquals(SubmissionStates.VALID, stateMachine.getState().getId());
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.TEST_VALIDITY);
+        stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertTrue(stateOpt.isPresent());
+        assertEquals(SubmissionState.VALID, stateOpt.get());
 
 
         log.debug("Sending SUBMISSION_REQUESTED event");
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.SUBMISSION_REQUESTED);
-        assertEquals(SubmissionStates.SUBMITTED, stateMachine.getState().getId());
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
+        stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertTrue(stateOpt.isPresent());
+        assertEquals(SubmissionState.SUBMITTED, stateOpt.get());
 
         log.debug("Sending PROCESSING_STARTED event");
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.PROCESSING_STARTED);
-        assertEquals(SubmissionStates.PROCESSING, stateMachine.getState().getId());
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.PROCESSING_STARTED);
+        stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertTrue(stateOpt.isPresent());
+        assertEquals(SubmissionState.PROCESSING, stateOpt.get());
 
         log.debug("Sending CLEANUP_STARTED event");
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.CLEANUP_STARTED);
-        assertEquals(SubmissionStates.CLEANUP, stateMachine.getState().getId());
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CLEANUP_STARTED);
+        stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertTrue(stateOpt.isPresent());
+        assertEquals(SubmissionState.CLEANUP, stateOpt.get());
 
         log.debug("Sending ALL_TASKS_COMPLETE event");
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.ALL_TASKS_COMPLETE);
-        assertEquals(SubmissionStates.COMPLETE, stateMachine.getState().getId());
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ALL_TASKS_COMPLETE);
+        stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertTrue(stateOpt.isPresent());
+        assertEquals(SubmissionState.COMPLETE, stateOpt.get());
     }
 
     @Test
     public void testIncorrectLifecycle() {
-        UUID uuid = envelopeRef.getUuid();
-        Optional<StateMachine<SubmissionStates, SubmissionEvents>> optional = submissionStateMonitor.findStateMachine(envelopeRef.getUuid());
-        assertTrue(optional.isPresent());
-        StateMachine<SubmissionStates, SubmissionEvents> stateMachine = optional.get();
+        assertTrue(submissionStateMonitor.isMonitoring(envelopeRef));
 
         // try to submit an invalid submission
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.CONTENT_ADDED);
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.VALIDATION_STARTED);
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CONTENT_ADDED);
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.VALIDATION_STARTED);
 
         // now send an event that is wrong
-        submissionStateMonitor.sendEventForSubmissionEnvelope(uuid, SubmissionEvents.SUBMISSION_REQUESTED);
-
-        // check the state is invalid (i.e. last event wasn't accepted)
-        assertEquals(SubmissionStates.INVALID, stateMachine.getState().getId());
+        Optional<Boolean> eventOpt = submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
+        assertTrue(eventOpt.isPresent());
+        assertFalse(eventOpt.get());
     }
 }
