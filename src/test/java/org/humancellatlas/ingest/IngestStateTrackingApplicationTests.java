@@ -43,7 +43,7 @@ public class IngestStateTrackingApplicationTests {
     @Before
     public void setup() {
         envelopeRef = new SubmissionEnvelopeReference("1234", UUID.randomUUID(), URI.create("http://localhost:8080/api/submissionEnvelopes/1234"));
-        submissionStateMonitor.monitorSubmissionEnvelope(envelopeRef);
+        submissionStateMonitor.monitorSubmissionEnvelope(envelopeRef, false);
     }
 
     @After

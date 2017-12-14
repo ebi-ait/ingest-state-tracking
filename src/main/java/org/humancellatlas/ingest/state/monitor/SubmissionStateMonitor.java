@@ -33,7 +33,7 @@ public class SubmissionStateMonitor {
     }
 
     public void monitorSubmissionEnvelope(SubmissionEnvelopeReference submissionEnvelopeReference) {
-        monitorSubmissionEnvelope(submissionEnvelopeReference, false);
+        monitorSubmissionEnvelope(submissionEnvelopeReference, true);
     }
 
     public void monitorSubmissionEnvelope(SubmissionEnvelopeReference submissionEnvelopeReference, boolean autoremove) {
