@@ -64,22 +64,31 @@ public class SubmissionStateMonitor {
         return stateMachineMap.containsKey(submissionEnvelopeReference.getUuid());
     }
 
-    public Optional<SubmissionState> findCurrentState(SubmissionEnvelopeReference submissionEnvelopeReference) {
+    public SubmissionState findCurrentState(SubmissionEnvelopeReference submissionEnvelopeReference) {
         Optional<StateMachine<SubmissionState, SubmissionEvent>> stateMachine =
                 findStateMachine(submissionEnvelopeReference.getUuid());
-        return stateMachine.map(sm -> sm.getState().getId());
+        if (stateMachine.isPresent()) {
+            return stateMachine.get().getState().getId();
+        }
+        else {
+            throw new IllegalArgumentException(String.format(
+                    "Submission envelope reference '%s' is not currently being monitored",
+                    submissionEnvelopeReference.getUuid()));
+        }
     }
 
-    public Optional<Boolean> sendEventForSubmissionEnvelope(SubmissionEnvelopeReference submissionEnvelopeReference,
-                                                            SubmissionEvent event) {
+    public boolean sendEventForSubmissionEnvelope(SubmissionEnvelopeReference submissionEnvelopeReference,
+                                                  SubmissionEvent event) {
         Optional<StateMachine<SubmissionState, SubmissionEvent>> stateMachine =
                 findStateMachine(submissionEnvelopeReference.getUuid());
         if (stateMachine.isPresent()) {
             StateMachine<SubmissionState, SubmissionEvent> machine = stateMachine.get();
-            return Optional.of(machine.sendEvent(event));
+            return machine.sendEvent(event);
         }
         else {
-            return Optional.empty();
+            throw new IllegalArgumentException(String.format(
+                    "Submission envelope reference '%s' is not currently being monitored",
+                    submissionEnvelopeReference.getUuid()));
         }
     }
 

@@ -64,34 +64,29 @@ public class IngestStateTrackingApplicationTests {
     @Test
     public void testEventDispatch() {
         assertTrue(submissionStateMonitor.isMonitoring(envelopeRef));
-        Optional<SubmissionState> stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertTrue(stateOpt.isPresent());
-        assertEquals(SubmissionState.PENDING, stateOpt.get());
+        SubmissionState state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.PENDING, state);
 
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CONTENT_ADDED);
-        stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertTrue(stateOpt.isPresent());
-        assertEquals(SubmissionState.DRAFT, stateOpt.get());
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.DRAFT, state);
     }
 
     @Test
     public void testSuccessfulEventRunthrough() {
         assertTrue(submissionStateMonitor.isMonitoring(envelopeRef));
-        Optional<SubmissionState> stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertTrue(stateOpt.isPresent());
-        assertEquals(SubmissionState.PENDING, stateOpt.get());
+        SubmissionState state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.PENDING, state);
 
         log.debug("Sending CONTENT_ADDED event");
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CONTENT_ADDED);
-        stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertTrue(stateOpt.isPresent());
-        assertEquals(SubmissionState.DRAFT, stateOpt.get());
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.DRAFT, state);
 
         log.debug("Sending VALIDATION_STARTED event");
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.VALIDATION_STARTED);
-        stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertTrue(stateOpt.isPresent());
-        assertEquals(SubmissionState.VALIDATING, stateOpt.get());
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.VALIDATING, state);
 
         // wait for a bit
         try {
@@ -104,34 +99,38 @@ public class IngestStateTrackingApplicationTests {
         // now test validity
         log.debug("Sending TEST_VALIDITY event");
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.TEST_VALIDITY);
-        stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertTrue(stateOpt.isPresent());
-        assertEquals(SubmissionState.VALID, stateOpt.get());
+
+        // wait for a bit (this is a slightly complex cascade)
+        try {
+            TimeUnit.MICROSECONDS.sleep(5);
+        }
+        catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.VALID, state);
 
 
         log.debug("Sending SUBMISSION_REQUESTED event");
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
-        stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertTrue(stateOpt.isPresent());
-        assertEquals(SubmissionState.SUBMITTED, stateOpt.get());
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.SUBMITTED, state);
 
         log.debug("Sending PROCESSING_STARTED event");
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.PROCESSING_STARTED);
-        stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertTrue(stateOpt.isPresent());
-        assertEquals(SubmissionState.PROCESSING, stateOpt.get());
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.PROCESSING, state);
 
         log.debug("Sending CLEANUP_STARTED event");
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CLEANUP_STARTED);
-        stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertTrue(stateOpt.isPresent());
-        assertEquals(SubmissionState.CLEANUP, stateOpt.get());
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.CLEANUP, state);
 
         log.debug("Sending ALL_TASKS_COMPLETE event");
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ALL_TASKS_COMPLETE);
-        stateOpt = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertTrue(stateOpt.isPresent());
-        assertEquals(SubmissionState.COMPLETE, stateOpt.get());
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.COMPLETE, state);
     }
 
     @Test
@@ -143,8 +142,7 @@ public class IngestStateTrackingApplicationTests {
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.VALIDATION_STARTED);
 
         // now send an event that is wrong
-        Optional<Boolean> eventOpt = submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
-        assertTrue(eventOpt.isPresent());
-        assertFalse(eventOpt.get());
+        boolean eventResponse = submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
+        assertFalse(eventResponse);
     }
 }
