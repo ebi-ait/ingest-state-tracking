@@ -1,5 +1,7 @@
 package org.humancellatlas.ingest.state;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
@@ -7,6 +9,9 @@ import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 import org.springframework.statemachine.guard.Guard;
+
+import java.util.Collections;
+import java.util.Map;
 
 import static org.humancellatlas.ingest.state.MetadataDocumentInfo.DOCUMENT_ID;
 import static org.humancellatlas.ingest.state.MetadataDocumentInfo.DOCUMENT_STATE;
@@ -43,6 +48,8 @@ import static org.humancellatlas.ingest.state.SubmissionState.VALIDATING;
 @Configuration
 @EnableStateMachineFactory
 public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter<SubmissionState, SubmissionEvent> {
+    private final Logger log = LoggerFactory.getLogger(getClass());
+
     @Override
     public void configure(StateMachineStateConfigurer<SubmissionState, SubmissionEvent> states) throws Exception {
         states.withStates()
@@ -56,13 +63,13 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .state(CLEANUP)
                 .end(COMPLETE)
                 .and().withStates()
-                    .parent(VALIDATING)
-                    .initial(DOCUMENTS_WAITING)
-                    .entry(DOCUMENT_VALIDATION_STARTING)
-                    .state(DOCUMENTS_VALIDATING)
-                    .choice(DOCUMENT_VALIDATION)
-                    .exit(DOCUMENTS_VALID)
-                    .exit(DOCUMENTS_INVALID);
+                .parent(VALIDATING)
+                .initial(DOCUMENTS_WAITING)
+                .entry(DOCUMENT_VALIDATION_STARTING)
+                .state(DOCUMENTS_VALIDATING)
+                .choice(DOCUMENT_VALIDATION)
+                .exit(DOCUMENTS_VALID)
+                .exit(DOCUMENTS_INVALID);
     }
 
     public void configure(StateMachineTransitionConfigurer<SubmissionState, SubmissionEvent> transitions)
@@ -70,6 +77,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
         transitions
                 .withExternal().source(PENDING).target(DRAFT)
                 .event(CONTENT_ADDED)
+                .action(addContent())
                 .and()
                 .withExternal().source(DRAFT).target(VALIDATING)
                 .event(VALIDATION_STARTED)
@@ -80,8 +88,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .and()
                 .withInternal().source(DOCUMENTS_VALIDATING).action(timerAction()).timer(1000)
                 .and()
-                .withExternal().source(DOCUMENTS_VALIDATING).target(DOCUMENT_VALIDATION)
-                .event(TEST_VALIDITY)
+                .withExternal().source(DOCUMENTS_VALIDATING).target(DOCUMENT_VALIDATION).guard(allValidatedGuard())
                 .and()
                 .withChoice().source(DOCUMENT_VALIDATION)
                 .first(DOCUMENTS_VALID, allValidGuard()).last(DOCUMENTS_INVALID)
@@ -116,10 +123,70 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
         return context -> System.out.println("Validating...");
     }
 
+    private Guard<SubmissionState, SubmissionEvent> allValidatedGuard() {
+        return context -> {
+            Map<Object, Object> docMap = Collections.synchronizedMap(context.getExtendedState().getVariables());
+
+            for (Object key : docMap.keySet()) {
+                if (key.getClass() != String.class) {
+                    // extra content somehow?
+                    log.error("An extended state key was fubared");
+                    return false;
+                }
+                else {
+                    String documentId = (String) key;
+                    Object value = docMap.get(documentId);
+                    if (value.getClass() != MetadataDocumentState.class) {
+                        // extra content somehow?
+                        log.error("An extended state value was fubared");
+                        return false;
+                    }
+                    else {
+                        MetadataDocumentState documentState = (MetadataDocumentState) value;
+                        log.debug(String.format("Testing content from extended state. Document tracker: { %s : %s }",
+                                                documentId,
+                                                documentState));
+                        if (documentState.equals(MetadataDocumentState.DRAFT)) {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            // check if all documents attached to the current state engine extended context are valid
+            return true;
+        };
+    }
 
 
     private Guard<SubmissionState, SubmissionEvent> allValidGuard() {
         return context -> {
+            Map<Object, Object> docMap = Collections.synchronizedMap(context.getExtendedState().getVariables());
+
+            for (Object key : docMap.keySet()) {
+                if (key.getClass() != String.class) {
+                    // extra content somehow?
+                    log.error("An extended state key was fubared");
+                }
+                else {
+                    String documentId = (String) key;
+                    Object value = docMap.get(documentId);
+                    if (value.getClass() != MetadataDocumentState.class) {
+                        // extra content somehow?
+                        log.error("An extended state value was fubared");
+                    }
+                    else {
+                        MetadataDocumentState documentState = (MetadataDocumentState) value;
+                        log.debug(String.format("Testing content from extended state. Document tracker: { %s : %s }",
+                                                documentId,
+                                                documentState));
+                        if (documentState.equals(MetadataDocumentState.INVALID)) {
+                            return false;
+                        }
+                    }
+                }
+            }
+
             // check if all documents attached to the current state engine extended context are valid
             return true;
         };
@@ -131,10 +198,14 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
             String documentId = context.getMessageHeaders().get(DOCUMENT_ID, String.class);
 
             // retrieve the state of the document
-            String documentState = context.getMessageHeaders().get(DOCUMENT_STATE, String.class);
+            MetadataDocumentState documentState =
+                    context.getMessageHeaders().get(DOCUMENT_STATE, MetadataDocumentState.class);
 
             // add the document and it's state to the extended context
-
+            log.debug(String.format("Adding content to extended state. Document tracker: { %s : %s }",
+                                    documentId,
+                                    documentState));
+            context.getExtendedState().getVariables().put(documentId, documentState);
         };
     }
 }

@@ -13,11 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.statemachine.StateMachine;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.net.URI;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -87,26 +85,22 @@ public class IngestStateTrackingApplicationTests {
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.DRAFT, state);
 
-        log.debug("Sending VALIDATION_STARTED event");
-        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.VALIDATION_STARTED);
+        submissionStateMonitor.notifyOfValidatingMetadataDocument(documentRef, envelopeRef);
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.VALIDATING, state);
 
-        // wait for a bit
+        // wait for a bit to simulate validation happening
         try {
-            TimeUnit.SECONDS.sleep(5);
+            TimeUnit.SECONDS.sleep(10);
         }
         catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        // now test validity
-        log.debug("Sending TEST_VALIDITY event");
-        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.TEST_VALIDITY);
-
-        // wait for a bit (this is a slightly complex cascade)
+        submissionStateMonitor.notifyOfValidatedMetadataDocument(documentRef, envelopeRef, true);
+        // wait for a bit to allow propagation of cascade events
         try {
-            TimeUnit.SECONDS.sleep(2);
+            TimeUnit.SECONDS.sleep(1);
         }
         catch (InterruptedException e) {
             e.printStackTrace();
@@ -143,7 +137,6 @@ public class IngestStateTrackingApplicationTests {
 
         // try to submit an invalid submission
         submissionStateMonitor.notifyOfNewMetadataDocument(documentRef, envelopeRef);
-        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.VALIDATION_STARTED);
 
         // now send an event that is wrong
         boolean eventResponse = submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);

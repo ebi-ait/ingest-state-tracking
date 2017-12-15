@@ -88,10 +88,15 @@ public class SubmissionStateMonitor {
 
     public boolean sendEventForSubmissionEnvelope(SubmissionEnvelopeReference submissionEnvelopeReference,
                                                   SubmissionEvent event) {
-        if (event == SubmissionEvent.CONTENT_ADDED) {
+        if (event.equals(SubmissionEvent.CONTENT_ADDED)) {
             throw new UnsupportedOperationException(
                     "CONTENT_ADDED events should be accompanied with an indication of the content that was added. " +
                             "Use 'notifyOfNewMetadataDocument()' instead.");
+        }
+        if (event.equals(SubmissionEvent.VALIDATION_STARTED)) {
+            throw new UnsupportedOperationException(
+                    "VALIDATION_STARTED events should be internally triggered only. " +
+                            "Use 'notifyOfValidatedMetadataDocument()' instead.");
         }
 
         Optional<StateMachine<SubmissionState, SubmissionEvent>> stateMachine =
@@ -115,7 +120,7 @@ public class SubmissionStateMonitor {
             StateMachine<SubmissionState, SubmissionEvent> machine = stateMachine.get();
 
             Message<SubmissionEvent> message = MessageBuilder.withPayload(SubmissionEvent.CONTENT_ADDED)
-                    .setHeader(MetadataDocumentInfo.DOCUMENT_ID, metadataDocumentReference.getUuid())
+                    .setHeader(MetadataDocumentInfo.DOCUMENT_ID, metadataDocumentReference.getUuid().toString())
                     .setHeader(MetadataDocumentInfo.DOCUMENT_STATE, MetadataDocumentState.DRAFT)
                     .build();
 
@@ -128,26 +133,49 @@ public class SubmissionStateMonitor {
         }
     }
 
-    public boolean notifyofValidatedMetadataDocument(MetadataDocumentReference metadataDocumentReference,
+    public boolean notifyOfValidatingMetadataDocument(MetadataDocumentReference metadataDocumentReference,
+                                                      SubmissionEnvelopeReference submissionEnvelopeReference) {
+        Optional<StateMachine<SubmissionState, SubmissionEvent>> stateMachine =
+                findStateMachine(submissionEnvelopeReference.getUuid());
+        if (stateMachine.isPresent()) {
+            StateMachine<SubmissionState, SubmissionEvent> machine = stateMachine.get();
+
+            if (machine.getExtendedState().getVariables().containsKey(metadataDocumentReference.getUuid().toString())) {
+                // notify that validation has started
+                return machine.sendEvent(SubmissionEvent.VALIDATION_STARTED);
+            }
+            else {
+                throw new IllegalArgumentException(String.format(
+                        "Submission envelope reference '%s' is not currently being monitored",
+                        submissionEnvelopeReference.getUuid()));
+            }
+        }
+        else {
+            throw new IllegalArgumentException(String.format(
+                    "Submission envelope reference '%s' is not currently being monitored",
+                    submissionEnvelopeReference.getUuid()));
+        }
+    }
+
+    public boolean notifyOfValidatedMetadataDocument(MetadataDocumentReference metadataDocumentReference,
                                                      SubmissionEnvelopeReference submissionEnvelopeReference,
                                                      boolean isValid) {
         Optional<StateMachine<SubmissionState, SubmissionEvent>> stateMachine =
                 findStateMachine(submissionEnvelopeReference.getUuid());
         if (stateMachine.isPresent()) {
             StateMachine<SubmissionState, SubmissionEvent> machine = stateMachine.get();
+            MessageBuilder<SubmissionEvent> messageBuilder =
+                    MessageBuilder.withPayload(SubmissionEvent.DOCUMENT_PROCESSED)
+                            .setHeader(MetadataDocumentInfo.DOCUMENT_ID,
+                                       metadataDocumentReference.getUuid().toString());
 
-            // first, notify that validation has started
-            if (!machine.sendEvent(SubmissionEvent.VALIDATION_STARTED)) {
-                log.error("Sending 'VALIDATION_STARTED event failed");
-                return false;
+            if (isValid) {
+                messageBuilder.setHeader(MetadataDocumentInfo.DOCUMENT_STATE, MetadataDocumentState.VALID);
             }
-
-            Message<SubmissionEvent> message = MessageBuilder.withPayload(SubmissionEvent.DOCUMENT_PROCESSED)
-                    .setHeader(MetadataDocumentInfo.DOCUMENT_ID, metadataDocumentReference.getUuid())
-                    .setHeader(MetadataDocumentInfo.DOCUMENT_STATE, MetadataDocumentState.DRAFT)
-                    .build();
-
-            return machine.sendEvent(message);
+            else {
+                messageBuilder.setHeader(MetadataDocumentInfo.DOCUMENT_STATE, MetadataDocumentState.INVALID);
+            }
+            return machine.sendEvent(messageBuilder.build());
         }
         else {
             throw new IllegalArgumentException(String.format(
