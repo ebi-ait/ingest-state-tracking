@@ -18,10 +18,10 @@ import static org.humancellatlas.ingest.state.MetadataDocumentInfo.DOCUMENT_STAT
 import static org.humancellatlas.ingest.state.SubmissionEvent.ALL_TASKS_COMPLETE;
 import static org.humancellatlas.ingest.state.SubmissionEvent.CLEANUP_STARTED;
 import static org.humancellatlas.ingest.state.SubmissionEvent.CONTENT_ADDED;
+import static org.humancellatlas.ingest.state.SubmissionEvent.DOCUMENT_PROCESSED;
 import static org.humancellatlas.ingest.state.SubmissionEvent.PROCESSING_FAILED;
 import static org.humancellatlas.ingest.state.SubmissionEvent.PROCESSING_STARTED;
 import static org.humancellatlas.ingest.state.SubmissionEvent.SUBMISSION_REQUESTED;
-import static org.humancellatlas.ingest.state.SubmissionEvent.TEST_VALIDITY;
 import static org.humancellatlas.ingest.state.SubmissionEvent.VALIDATION_STARTED;
 import static org.humancellatlas.ingest.state.SubmissionState.CLEANUP;
 import static org.humancellatlas.ingest.state.SubmissionState.COMPLETE;
@@ -54,10 +54,10 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
     public void configure(StateMachineStateConfigurer<SubmissionState, SubmissionEvent> states) throws Exception {
         states.withStates()
                 .initial(PENDING)
-                .state(DRAFT)
-                .state(VALIDATING)
-                .state(VALID)
-                .state(INVALID)
+                .state(DRAFT, DOCUMENT_PROCESSED)
+                .state(VALIDATING, CONTENT_ADDED)
+                .state(VALID, DOCUMENT_PROCESSED)
+                .state(INVALID, DOCUMENT_PROCESSED)
                 .state(SUBMITTED)
                 .state(PROCESSING)
                 .state(CLEANUP)
@@ -77,7 +77,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
         transitions
                 .withExternal().source(PENDING).target(DRAFT)
                 .event(CONTENT_ADDED)
-                .action(addContent())
+                .action(addOrUpdateContent())
                 .and()
                 .withExternal().source(DRAFT).target(VALIDATING)
                 .event(VALIDATION_STARTED)
@@ -87,6 +87,10 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .withEntry().source(DOCUMENT_VALIDATION_STARTING).target(DOCUMENTS_VALIDATING)
                 .and()
                 .withInternal().source(DOCUMENTS_VALIDATING).action(timerAction()).timer(1000)
+                .and()
+                .withExternal().source(DOCUMENTS_VALIDATING).target(DOCUMENTS_VALIDATING)
+                .event(DOCUMENT_PROCESSED)
+                .action(addOrUpdateContent())
                 .and()
                 .withExternal().source(DOCUMENTS_VALIDATING).target(DOCUMENT_VALIDATION).guard(allValidatedGuard())
                 .and()
@@ -158,7 +162,6 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
         };
     }
 
-
     private Guard<SubmissionState, SubmissionEvent> allValidGuard() {
         return context -> {
             Map<Object, Object> docMap = Collections.synchronizedMap(context.getExtendedState().getVariables());
@@ -192,7 +195,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
         };
     }
 
-    private Action<SubmissionState, SubmissionEvent> addContent() {
+    private Action<SubmissionState, SubmissionEvent> addOrUpdateContent() {
         return context -> {
             // retrieve the id of the document
             String documentId = context.getMessageHeaders().get(DOCUMENT_ID, String.class);
