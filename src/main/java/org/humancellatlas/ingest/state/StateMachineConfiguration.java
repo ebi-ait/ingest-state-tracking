@@ -8,8 +8,8 @@ import org.springframework.statemachine.config.builders.StateMachineStateConfigu
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 import org.springframework.statemachine.guard.Guard;
 
-import static org.humancellatlas.ingest.state.MessageHeaders.DOCUMENT_ID;
-import static org.humancellatlas.ingest.state.MessageHeaders.DOCUMENT_STATE;
+import static org.humancellatlas.ingest.state.MetadataDocumentInfo.DOCUMENT_ID;
+import static org.humancellatlas.ingest.state.MetadataDocumentInfo.DOCUMENT_STATE;
 import static org.humancellatlas.ingest.state.SubmissionEvent.ALL_TASKS_COMPLETE;
 import static org.humancellatlas.ingest.state.SubmissionEvent.CLEANUP_STARTED;
 import static org.humancellatlas.ingest.state.SubmissionEvent.CONTENT_ADDED;

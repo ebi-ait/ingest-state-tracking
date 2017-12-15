@@ -9,6 +9,7 @@ package org.humancellatlas.ingest.state;
 public enum SubmissionEvent {
     CONTENT_ADDED,
     VALIDATION_STARTED,
+    DOCUMENT_PROCESSED,
     TEST_VALIDITY,
     SUBMISSION_REQUESTED,
     PROCESSING_STARTED,

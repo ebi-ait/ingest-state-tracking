@@ -1,5 +1,6 @@
 package org.humancellatlas.ingest;
 
+import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
@@ -38,11 +39,14 @@ public class IngestStateTrackingApplicationTests {
 
     private SubmissionEnvelopeReference envelopeRef;
 
+    private MetadataDocumentReference documentRef;
+
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Before
     public void setup() {
         envelopeRef = new SubmissionEnvelopeReference("1234", UUID.randomUUID(), URI.create("http://localhost:8080/api/submissionEnvelopes/1234"));
+        documentRef = new MetadataDocumentReference("5678", UUID.randomUUID(), URI.create("http://localhost:8080/api/metadataDocuments/5678"));
         submissionStateMonitor.monitorSubmissionEnvelope(envelopeRef, false);
     }
 
@@ -67,7 +71,7 @@ public class IngestStateTrackingApplicationTests {
         SubmissionState state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.PENDING, state);
 
-        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CONTENT_ADDED);
+        assertTrue(submissionStateMonitor.notifyOfNewMetadataDocument(documentRef, envelopeRef));
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.DRAFT, state);
     }
@@ -78,8 +82,8 @@ public class IngestStateTrackingApplicationTests {
         SubmissionState state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.PENDING, state);
 
-        log.debug("Sending CONTENT_ADDED event");
-        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CONTENT_ADDED);
+        log.debug("Adding content");
+        assertTrue(submissionStateMonitor.notifyOfNewMetadataDocument(documentRef, envelopeRef));
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.DRAFT, state);
 
@@ -102,7 +106,7 @@ public class IngestStateTrackingApplicationTests {
 
         // wait for a bit (this is a slightly complex cascade)
         try {
-            TimeUnit.MICROSECONDS.sleep(5);
+            TimeUnit.SECONDS.sleep(2);
         }
         catch (InterruptedException e) {
             e.printStackTrace();
@@ -138,7 +142,7 @@ public class IngestStateTrackingApplicationTests {
         assertTrue(submissionStateMonitor.isMonitoring(envelopeRef));
 
         // try to submit an invalid submission
-        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CONTENT_ADDED);
+        submissionStateMonitor.notifyOfNewMetadataDocument(documentRef, envelopeRef);
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.VALIDATION_STARTED);
 
         // now send an event that is wrong
