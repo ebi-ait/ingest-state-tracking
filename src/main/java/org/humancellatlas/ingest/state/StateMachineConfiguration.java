@@ -38,6 +38,7 @@ import static org.humancellatlas.ingest.state.SubmissionState.PROCESSING;
 import static org.humancellatlas.ingest.state.SubmissionState.SUBMITTED;
 import static org.humancellatlas.ingest.state.SubmissionState.VALID;
 import static org.humancellatlas.ingest.state.SubmissionState.VALIDATING;
+import static org.humancellatlas.ingest.state.SubmissionState.VALIDATION_STATE_EVAL_JUNCTION;
 
 /**
  * Javadocs go here!
@@ -54,80 +55,79 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
     public void configure(StateMachineStateConfigurer<SubmissionState, SubmissionEvent> states) throws Exception {
         states.withStates()
                 .initial(PENDING)
-                .state(DRAFT, DOCUMENT_PROCESSED)
-                .state(VALIDATING, CONTENT_ADDED)
-                .state(VALID, DOCUMENT_PROCESSED)
-                .state(INVALID, DOCUMENT_PROCESSED)
+                .state(DRAFT)
+                .state(VALIDATING)
+                .state(VALID)
+                .state(INVALID)
+                .junction(VALIDATION_STATE_EVAL_JUNCTION)
                 .state(SUBMITTED)
                 .state(PROCESSING)
                 .state(CLEANUP)
-                .end(COMPLETE)
-                .and().withStates()
-                .parent(VALIDATING)
-                .initial(DOCUMENTS_WAITING)
-                .entry(DOCUMENT_VALIDATION_STARTING)
-                .state(DOCUMENTS_VALIDATING)
-                .choice(DOCUMENT_VALIDATION)
-                .exit(DOCUMENTS_VALID)
-                .exit(DOCUMENTS_INVALID);
+                .end(COMPLETE);
     }
 
-    public void configure(StateMachineTransitionConfigurer<SubmissionState, SubmissionEvent> transitions)
-            throws Exception {
+    public void configure(StateMachineTransitionConfigurer<SubmissionState, SubmissionEvent> transitions) throws Exception{
         transitions
-                .withExternal().source(PENDING).target(DRAFT)
-                .event(CONTENT_ADDED)
-                .action(addOrUpdateContent())
-                .and()
-                .withExternal().source(DRAFT).target(VALIDATING)
-                .event(VALIDATION_STARTED)
-                .and()
-                .withExternal().source(DOCUMENTS_WAITING).target(DOCUMENT_VALIDATION_STARTING)
-                .and()
-                .withEntry().source(DOCUMENT_VALIDATION_STARTING).target(DOCUMENTS_VALIDATING)
-                .and()
-                .withInternal().source(DOCUMENTS_VALIDATING).action(timerAction()).timer(1000)
-                .and()
-                .withExternal().source(DOCUMENTS_VALIDATING).target(DOCUMENTS_VALIDATING)
+            .withExternal()
+                .source(PENDING).target(DRAFT)
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
-                .withExternal().source(DOCUMENTS_VALIDATING).target(DOCUMENT_VALIDATION).guard(allValidatedGuard())
+            .withExternal()
+                .source(DRAFT).target(VALIDATION_STATE_EVAL_JUNCTION)
+                .action(addOrUpdateContent())
+                .event(DOCUMENT_PROCESSED)
                 .and()
-                .withChoice().source(DOCUMENT_VALIDATION)
-                .first(DOCUMENTS_VALID, allValidGuard()).last(DOCUMENTS_INVALID)
+            .withExternal()
+                .source(VALIDATING).target(VALIDATION_STATE_EVAL_JUNCTION)
+                .event(DOCUMENT_PROCESSED)
+                .action(addOrUpdateContent())
                 .and()
-                .withExit().source(DOCUMENTS_VALID).target(VALID)
+            .withExternal()
+                .source(VALID).target(VALIDATION_STATE_EVAL_JUNCTION)
+                .event(DOCUMENT_PROCESSED)
+                .action(addOrUpdateContent())
                 .and()
-                .withExit().source(DOCUMENTS_INVALID).target(INVALID)
+            .withExternal()
+                .source(INVALID).target(VALIDATION_STATE_EVAL_JUNCTION)
+                .event(DOCUMENT_PROCESSED)
+                .action(addOrUpdateContent())
                 .and()
-                .withExternal().source(VALID).target(DRAFT)
-                .event(CONTENT_ADDED)
+            .withJunction()
+                .source(VALIDATION_STATE_EVAL_JUNCTION)
+                .first(INVALID, documentsInvalidGuard())
+                .then(VALIDATING, documentsValidatingGuard())
+                .then(VALID, allValidGuard())
+                .last(DRAFT)
                 .and()
-                .withExternal().source(INVALID).target(DRAFT)
-                .event(CONTENT_ADDED)
-                .and()
-                .withExternal().source(VALID).target(SUBMITTED)
+            .withExternal()
+                .source(VALID).target(SUBMITTED)
                 .event(SUBMISSION_REQUESTED)
                 .and()
-                .withExternal().source(SUBMITTED).target(PROCESSING)
+            .withExternal()
+                .source(SUBMITTED).target(PROCESSING)
                 .event(PROCESSING_STARTED)
                 .and()
-                .withExternal().source(PROCESSING).target(CLEANUP)
+            .withExternal()
+                .source(PROCESSING).target(CLEANUP)
                 .event(CLEANUP_STARTED)
                 .and()
-                .withExternal().source(PROCESSING).target(SUBMITTED)
+            .withExternal()
+                .source(PROCESSING).target(SUBMITTED)
                 .event(PROCESSING_FAILED)
                 .and()
-                .withExternal().source(CLEANUP).target(COMPLETE)
+            .withExternal()
+                .source(CLEANUP).target(COMPLETE)
                 .event(ALL_TASKS_COMPLETE);
+
     }
+
 
     private Action<SubmissionState, SubmissionEvent> timerAction() {
         return context -> System.out.println("Validating...");
     }
 
-    private Guard<SubmissionState, SubmissionEvent> allValidatedGuard() {
+    private Guard<SubmissionState, SubmissionEvent> documentsInvalidGuard() {
         return context -> {
             Map<Object, Object> docMap = Collections.synchronizedMap(context.getExtendedState().getVariables());
 
@@ -148,19 +148,55 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                     else {
                         MetadataDocumentState documentState = (MetadataDocumentState) value;
                         log.debug(String.format("Testing content from extended state. Document tracker: { %s : %s }",
-                                                documentId,
-                                                documentState));
-                        if (documentState.equals(MetadataDocumentState.DRAFT)) {
-                            return false;
+                            documentId,
+                            documentState));
+                        if (documentState.equals(MetadataDocumentState.INVALID)) {
+                            return true;
                         }
                     }
                 }
             }
 
             // check if all documents attached to the current state engine extended context are valid
-            return true;
+            return false;
         };
     }
+
+    private Guard<SubmissionState, SubmissionEvent> documentsValidatingGuard() {
+        return context -> {
+            Map<Object, Object> docMap = Collections.synchronizedMap(context.getExtendedState().getVariables());
+
+            for (Object key : docMap.keySet()) {
+                if (key.getClass() != String.class) {
+                    // extra content somehow?
+                    log.error("An extended state key was fubared");
+                    return false;
+                }
+                else {
+                    String documentId = (String) key;
+                    Object value = docMap.get(documentId);
+                    if (value.getClass() != MetadataDocumentState.class) {
+                        // extra content somehow?
+                        log.error("An extended state value was fubared");
+                        return false;
+                    }
+                    else {
+                        MetadataDocumentState documentState = (MetadataDocumentState) value;
+                        log.debug(String.format("Testing content from extended state. Document tracker: { %s : %s }",
+                            documentId,
+                            documentState));
+                        if (documentState.equals(MetadataDocumentState.VALIDATING)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            // check if all documents attached to the current state engine extended context are valid
+            return false;
+        };
+    }
+
 
     private Guard<SubmissionState, SubmissionEvent> allValidGuard() {
         return context -> {
@@ -183,7 +219,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                         log.debug(String.format("Testing content from extended state. Document tracker: { %s : %s }",
                                                 documentId,
                                                 documentState));
-                        if (documentState.equals(MetadataDocumentState.INVALID)) {
+                        if (! documentState.equals(MetadataDocumentState.VALID)) {
                             return false;
                         }
                     }

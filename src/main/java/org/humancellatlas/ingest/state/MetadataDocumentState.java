@@ -8,6 +8,7 @@ package org.humancellatlas.ingest.state;
  */
 public enum MetadataDocumentState {
     DRAFT,
+    VALIDATING,
     VALID,
     INVALID
 }
