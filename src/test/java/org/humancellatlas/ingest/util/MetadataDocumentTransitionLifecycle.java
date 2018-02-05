@@ -54,7 +54,7 @@ public class MetadataDocumentTransitionLifecycle {
     public Collection<MetadataDocumentTransition> generateMetadataDocumentTransitionLifecycle(MetadataDocumentReference documentReference, SubmissionEnvelopeReference envelopeReference, List<MetadataDocumentState> states, long lifeCycleDuration) {
         List<Long> transitionTimes = new ArrayList<>();
         for (int i = 0; i < states.size(); i++) {
-            transitionTimes.add((long) new Random().nextDouble() * lifeCycleDuration);
+            transitionTimes.add((long) (new Random().nextDouble() * lifeCycleDuration));
         }
         Collections.sort(transitionTimes);
 

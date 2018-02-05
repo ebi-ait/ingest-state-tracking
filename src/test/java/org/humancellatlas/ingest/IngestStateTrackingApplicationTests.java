@@ -74,7 +74,7 @@ public class IngestStateTrackingApplicationTests {
     SubmissionState state = submissionStateMonitor.findCurrentState(envelopeRef);
     assertEquals(SubmissionState.PENDING, state);
 
-    assertTrue(submissionStateMonitor.notifyOfNewMetadataDocument(documentRef, envelopeRef));
+    assertTrue(submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.DRAFT));
     state = submissionStateMonitor.findCurrentState(envelopeRef);
     assertEquals(SubmissionState.DRAFT, state);
   }
@@ -86,11 +86,11 @@ public class IngestStateTrackingApplicationTests {
     assertEquals(SubmissionState.PENDING, state);
 
     log.debug("Adding content");
-    assertTrue(submissionStateMonitor.notifyOfNewMetadataDocument(documentRef, envelopeRef));
+    assertTrue(submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.DRAFT));
     state = submissionStateMonitor.findCurrentState(envelopeRef);
     assertEquals(SubmissionState.DRAFT, state);
 
-    submissionStateMonitor.notifyOfValidatingMetadataDocument(documentRef, envelopeRef);
+    submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALIDATING);
     state = submissionStateMonitor.findCurrentState(envelopeRef);
     assertEquals(SubmissionState.VALIDATING, state);
 
@@ -101,7 +101,7 @@ public class IngestStateTrackingApplicationTests {
       e.printStackTrace();
     }
 
-    submissionStateMonitor.notifyOfValidatedMetadataDocument(documentRef, envelopeRef, true);
+    submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALID);
     // wait for a bit to allow propagation of cascade events
     try {
       TimeUnit.SECONDS.sleep(1);
@@ -140,14 +140,12 @@ public class IngestStateTrackingApplicationTests {
   @Test
   public void testSuccessfulEventRunthroughWithBarrage() {
     MetadataDocumentEventBarrage barrage = new MetadataDocumentEventBarrage();
-    SubmissionEnvelopeReference envelopeReference = generateSubmissionEnvelopeReference();
-    submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
 
     // generate transition lifecycles for 10 samples...
     for(int i = 0; i < 10 ; i ++) {
       MetadataDocumentReference documentReference = generateMetadataDocumentReference();
       MetadataDocumentTransitionLifecycle sampleTransitionLifecycle = new MetadataDocumentTransitionLifecycle
-          .Builder(documentReference, envelopeReference)
+          .Builder(documentReference, envelopeRef)
           .addStateTransition(MetadataDocumentState.DRAFT)
           .addStateTransition(MetadataDocumentState.VALIDATING)
           .addStateTransition(MetadataDocumentState.VALID)
@@ -160,7 +158,7 @@ public class IngestStateTrackingApplicationTests {
     for(int i = 0; i < 10; i ++) {
       MetadataDocumentReference documentReference = generateMetadataDocumentReference();
       MetadataDocumentTransitionLifecycle assayTransitionLifecycle = new MetadataDocumentTransitionLifecycle
-          .Builder(documentReference, envelopeReference)
+          .Builder(documentReference, envelopeRef)
           .addStateTransition(MetadataDocumentState.DRAFT)
           .addStateTransition(MetadataDocumentState.VALIDATING)
           .addStateTransition(MetadataDocumentState.INVALID)
@@ -172,6 +170,29 @@ public class IngestStateTrackingApplicationTests {
     }
 
     barrage.commence(submissionStateMonitor);
+
+    SubmissionState state;
+
+    log.debug("Sending SUBMISSION_REQUESTED event");
+    submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
+
+    state = submissionStateMonitor.findCurrentState(envelopeRef);
+    assertEquals(SubmissionState.SUBMITTED, state);
+
+    log.debug("Sending PROCESSING_STARTED event");
+    submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.PROCESSING_STARTED);
+    state = submissionStateMonitor.findCurrentState(envelopeRef);
+    assertEquals(SubmissionState.PROCESSING, state);
+
+    log.debug("Sending CLEANUP_STARTED event");
+    submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CLEANUP_STARTED);
+    state = submissionStateMonitor.findCurrentState(envelopeRef);
+    assertEquals(SubmissionState.CLEANUP, state);
+
+    log.debug("Sending ALL_TASKS_COMPLETE event");
+    submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ALL_TASKS_COMPLETE);
+    state = submissionStateMonitor.findCurrentState(envelopeRef);
+    assertEquals(SubmissionState.COMPLETE, state);
   }
 
   @Test
@@ -179,7 +200,7 @@ public class IngestStateTrackingApplicationTests {
     assertTrue(submissionStateMonitor.isMonitoring(envelopeRef));
 
     // try to submit an invalid submission
-    submissionStateMonitor.notifyOfNewMetadataDocument(documentRef, envelopeRef);
+    submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.DRAFT);
 
     // now send an event that is wrong
     boolean eventResponse = submissionStateMonitor

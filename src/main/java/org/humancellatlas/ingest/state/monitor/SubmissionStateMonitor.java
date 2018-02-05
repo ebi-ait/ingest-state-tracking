@@ -112,77 +112,27 @@ public class SubmissionStateMonitor {
         }
     }
 
-    public boolean notifyOfNewMetadataDocument(MetadataDocumentReference metadataDocumentReference,
-                                               SubmissionEnvelopeReference submissionEnvelopeReference) {
+    public boolean notifyOfMetadataDocumentState(MetadataDocumentReference metadataDocumentReference, SubmissionEnvelopeReference submissionEnvelopeReference, MetadataDocumentState state){
         Optional<StateMachine<SubmissionState, SubmissionEvent>> stateMachine =
-                findStateMachine(submissionEnvelopeReference.getUuid());
+            findStateMachine(submissionEnvelopeReference.getUuid());
+
         if (stateMachine.isPresent()) {
             StateMachine<SubmissionState, SubmissionEvent> machine = stateMachine.get();
 
-            Message<SubmissionEvent> message = MessageBuilder.withPayload(SubmissionEvent.CONTENT_ADDED)
-                    .setHeader(MetadataDocumentInfo.DOCUMENT_ID, metadataDocumentReference.getUuid().toString())
-                    .setHeader(MetadataDocumentInfo.DOCUMENT_STATE, MetadataDocumentState.DRAFT)
-                    .build();
+            Message<SubmissionEvent> message = MessageBuilder.withPayload(SubmissionEvent.DOCUMENT_PROCESSED)
+                .setHeader(MetadataDocumentInfo.DOCUMENT_ID, metadataDocumentReference.getUuid().toString())
+                .setHeader(MetadataDocumentInfo.DOCUMENT_STATE, state)
+                .build();
 
             return machine.sendEvent(message);
         }
         else {
             throw new IllegalArgumentException(String.format(
-                    "Submission envelope reference '%s' is not currently being monitored",
-                    submissionEnvelopeReference.getUuid()));
+                "Submission envelope reference '%s' is not currently being monitored",
+                submissionEnvelopeReference.getUuid()));
         }
     }
 
-    public boolean notifyOfValidatingMetadataDocument(MetadataDocumentReference metadataDocumentReference,
-                                                      SubmissionEnvelopeReference submissionEnvelopeReference) {
-        Optional<StateMachine<SubmissionState, SubmissionEvent>> stateMachine =
-                findStateMachine(submissionEnvelopeReference.getUuid());
-        if (stateMachine.isPresent()) {
-            StateMachine<SubmissionState, SubmissionEvent> machine = stateMachine.get();
-
-            if (machine.getExtendedState().getVariables().containsKey(metadataDocumentReference.getUuid().toString())) {
-                // notify that validation has started
-                return machine.sendEvent(SubmissionEvent.VALIDATION_STARTED);
-            }
-            else {
-                throw new IllegalArgumentException(String.format(
-                        "Submission envelope reference '%s' is not currently being monitored",
-                        submissionEnvelopeReference.getUuid()));
-            }
-        }
-        else {
-            throw new IllegalArgumentException(String.format(
-                    "Submission envelope reference '%s' is not currently being monitored",
-                    submissionEnvelopeReference.getUuid()));
-        }
-    }
-
-    public boolean notifyOfValidatedMetadataDocument(MetadataDocumentReference metadataDocumentReference,
-                                                     SubmissionEnvelopeReference submissionEnvelopeReference,
-                                                     boolean isValid) {
-        Optional<StateMachine<SubmissionState, SubmissionEvent>> stateMachine =
-                findStateMachine(submissionEnvelopeReference.getUuid());
-        if (stateMachine.isPresent()) {
-            StateMachine<SubmissionState, SubmissionEvent> machine = stateMachine.get();
-            MessageBuilder<SubmissionEvent> messageBuilder =
-                    MessageBuilder.withPayload(SubmissionEvent.DOCUMENT_PROCESSED)
-                            .setHeader(MetadataDocumentInfo.DOCUMENT_ID,
-                                       metadataDocumentReference.getUuid().toString());
-
-            if (isValid) {
-                messageBuilder.setHeader(MetadataDocumentInfo.DOCUMENT_STATE, MetadataDocumentState.VALID);
-            }
-            else {
-                messageBuilder.setHeader(MetadataDocumentInfo.DOCUMENT_STATE, MetadataDocumentState.INVALID);
-            }
-            return machine.sendEvent(messageBuilder.build());
-        }
-        else {
-            throw new IllegalArgumentException(String.format(
-                    "Submission envelope reference '%s' is not currently being monitored",
-                    submissionEnvelopeReference.getUuid()));
-        }
-    }
 
     private void removeStateMachine(UUID submissionEnvelopeUuid) {
         stateMachineMap.remove(submissionEnvelopeUuid);
