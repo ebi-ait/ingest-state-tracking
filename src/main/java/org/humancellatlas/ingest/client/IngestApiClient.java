@@ -1,18 +1,15 @@
 package org.humancellatlas.ingest.client;
 
 import lombok.Getter;
-import org.apache.http.client.utils.URIBuilder;
 import org.humancellatlas.ingest.client.model.MetadataDocument;
 import org.humancellatlas.ingest.client.model.SubmissionEnvelope;
 import org.humancellatlas.ingest.messaging.MetadataDocumentMessage;
 import org.humancellatlas.ingest.messaging.SubmissionEnvelopeMessage;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
-import org.humancellatlas.ingest.state.MetadataDocumentState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.hateoas.MediaTypes;
@@ -21,8 +18,7 @@ import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.client.Traverson;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponents;
-import org.springframework.web.util.UriComponentsBuilder;
+
 
 import java.net.URI;
 import java.net.URISyntaxException;

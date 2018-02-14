@@ -11,7 +11,6 @@ import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.junit.After;
 import org.junit.Before;
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -19,12 +18,11 @@ import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-
 import java.net.URI;
 import java.util.*;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
 /**
  * Created by rolando on 08/02/2018.
