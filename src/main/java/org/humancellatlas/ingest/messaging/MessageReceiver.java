@@ -6,6 +6,7 @@ import org.humancellatlas.ingest.client.model.MetadataDocument;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
+import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +36,8 @@ public class MessageReceiver {
 
     @RabbitListener(queues = Constants.Queues.ENVELOPE_UPDATE)
     public void receiveSubmissionEnvelopeUpdatedMessage(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
-
+        SubmissionEvent submissionEvent = SubmissionEvent.valueOf(submissionEnvelopeMessage.getRequestedState());
+        submissionStateMonitor.sendEventForSubmissionEnvelope(getIngestApiClient().referenceForSubmissionEnvelope(submissionEnvelopeMessage), submissionEvent);
     }
 
     @RabbitListener(queues = Constants.Queues.DOCUMENT_CREATED)
@@ -49,13 +51,10 @@ public class MessageReceiver {
         MetadataDocument metadataDocument = getIngestApiClient().retrieveMetadataDocument(documentReference);
 
         MetadataDocumentState documentState = MetadataDocumentState.valueOf(metadataDocument.getValidationState().toUpperCase());
-        Collection<SubmissionEnvelopeReference> relatedEnvelopeReferences =
-                metadataDocument
-                        .getSubmissionIds()
-                        .stream()
-                        .map(envelopeId -> getIngestApiClient().referenceForSubmissionEnvelope(envelopeId))
-                        .collect(Collectors.toList());
-
-        relatedEnvelopeReferences.forEach(envelopeReference -> submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState));
+        metadataDocument
+                .getSubmissionIds()
+                .stream()
+                .map(envelopeId -> getIngestApiClient().referenceForSubmissionEnvelope(envelopeId))
+                .forEach(envelopeReference -> submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState));
     }
 }

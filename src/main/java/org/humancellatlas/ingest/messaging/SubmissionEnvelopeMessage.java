@@ -16,5 +16,5 @@ public class SubmissionEnvelopeMessage {
     private final String documentId;
     private final String documentUuid;
     private final String callbackLink;
-    private final String submissionState;
+    private final String requestedState;
 }
