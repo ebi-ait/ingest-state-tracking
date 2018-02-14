@@ -6,8 +6,8 @@ import org.humancellatlas.ingest.state.MetadataDocumentState;
 import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
 import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
-import org.humancellatlas.ingest.util.MetadataDocumentEventBarrage;
-import org.humancellatlas.ingest.util.MetadataDocumentTransitionLifecycle;
+import org.humancellatlas.ingest.testutil.MetadataDocumentEventBarrage;
+import org.humancellatlas.ingest.testutil.MetadataDocumentTransitionLifecycle;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -206,6 +206,7 @@ public class IngestStateTrackingApplicationTests {
                 .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
         assertFalse(eventResponse);
     }
+
 
     private MetadataDocumentReference generateMetadataDocumentReference() {
         int id = new Random().nextInt();

@@ -1,4 +1,4 @@
-package org.humancellatlas.ingest.util;
+package org.humancellatlas.ingest.testutil;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

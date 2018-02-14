@@ -1,4 +1,4 @@
-package org.humancellatlas.ingest.util;
+package org.humancellatlas.ingest.testutil;
 
 import lombok.Data;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
