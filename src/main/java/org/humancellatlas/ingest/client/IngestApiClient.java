@@ -62,14 +62,22 @@ public class IngestApiClient  implements InitializingBean {
 
     public void init() {
         this.submissionEnvelopesPath = "/submissionEnvelopes";
-
         this.metadataTypesLinkMap.put("samples", ingestApiRootString + "/samples");
     }
 
     public SubmissionEnvelope retrieveSubmissionEnvelope(SubmissionEnvelopeReference envelopeReference) {
-        return this.restTemplate
-                .getForEntity(ingestApiRoot.toString() + envelopeReference.getCallbackLocation(), SubmissionEnvelope.class)
-                .getBody();
+        String envelopeURIString = this.ingestApiRoot.toString() + envelopeReference.getCallbackLocation();
+
+        try {
+            URI envelopeURI = new URI(envelopeURIString);
+            Traverson halTraverser = halTraverserOn(envelopeURI);
+
+            String submissionState = halTraverser.follow("self").toObject("$.submissionState");
+            return new SubmissionEnvelope(submissionState);
+        } catch (URISyntaxException e) {
+            log.trace(String.format("Error trying to create URI from string %s", envelopeURIString));
+            throw new RuntimeException(e);
+        }
     }
 
     public MetadataDocument retrieveMetadataDocument(MetadataDocumentReference documentReference) {
