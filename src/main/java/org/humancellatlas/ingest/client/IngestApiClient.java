@@ -66,12 +66,12 @@ public class IngestApiClient  implements InitializingBean {
         this.metadataTypesLinkMap.put("samples", ingestApiRootString + "/samples");
     }
 
-    public void updateEnvelopeState(SubmissionEnvelopeReference envelopeReference, SubmissionState submissionState) {
+    public SubmissionEnvelope updateEnvelopeState(SubmissionEnvelopeReference envelopeReference, SubmissionState submissionState) {
         String envelopeURIString = this.ingestApiRoot.toString() + envelopeReference.getCallbackLocation();
         URI envelopeURI = uriFor(envelopeURIString);
 
         try {
-            SubmissionEnvelope patchResponse = this.restTemplate.patchForObject(
+            return this.restTemplate.patchForObject(
                     envelopeURI,
                     halRequestEntityFor(new SubmissionEnvelope(submissionState.toString().toUpperCase())),
                     SubmissionEnvelope.class);

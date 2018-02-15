@@ -12,6 +12,7 @@ import org.humancellatlas.ingest.client.model.SubmissionEnvelope;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.SubmissionState;
+import org.humancellatlas.ingest.testutil.MockIngestApiClient;
 import org.junit.After;
 import org.junit.Before;
 
@@ -24,6 +25,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.net.URI;
 import java.util.*;
 
+import static org.humancellatlas.ingest.testutil.MockIngestApiClient.INGEST_API_ROOT_STRING;
 import static org.junit.Assert.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
@@ -33,17 +35,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class IngestApiClientTest {
-
-    private String INGEST_API_HOST;
-    private int INGEST_API_PORT;
-    private URI INGEST_API_ROOT;
-    private String INGEST_API_ROOT_STRING;
-
     private IngestApiClient ingestApiClient;
 
     @Before
-    public void before() throws Exception {
-        ingestApiClient = new IngestApiClient(this.INGEST_API_ROOT);
+    public void before() {
+        ingestApiClient = MockIngestApiClient.create();
     }
 
     @After
@@ -51,12 +47,7 @@ public class IngestApiClientTest {
 
     }
 
-    public IngestApiClientTest() throws Exception {
-        this.INGEST_API_HOST = "localhost";
-        this.INGEST_API_PORT = 8080;
-        this.INGEST_API_ROOT = new URIBuilder().setHost(INGEST_API_HOST).setPort(8080).setScheme("http").build();
-        this.INGEST_API_ROOT_STRING = this.INGEST_API_ROOT.toString();
-    }
+    public IngestApiClientTest(){ }
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(8080);
