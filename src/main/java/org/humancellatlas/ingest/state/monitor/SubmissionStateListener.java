@@ -19,15 +19,18 @@ import org.springframework.statemachine.state.State;
 public class SubmissionStateListener extends StateMachineListenerAdapter<SubmissionState, SubmissionEvent> {
     private final SubmissionEnvelopeReference submissionEnvelopeReference;
     private final SubmissionStateMonitor submissionStateMonitor;
+    private final SubmissionStateUpdater submissionStateUpdater;
     private final boolean autoremove;
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     public SubmissionStateListener(SubmissionEnvelopeReference submissionEnvelopeReference,
                                    SubmissionStateMonitor submissionStateMonitor,
+                                   SubmissionStateUpdater submissionStateUpdater,
                                    boolean autoremove) {
         this.submissionEnvelopeReference = submissionEnvelopeReference;
         this.submissionStateMonitor = submissionStateMonitor;
+        this.submissionStateUpdater = submissionStateUpdater;
         this.autoremove = autoremove;
         log.info(String.format("\tCreated Envelope '%s'", submissionEnvelopeReference.getUuid()));
     }

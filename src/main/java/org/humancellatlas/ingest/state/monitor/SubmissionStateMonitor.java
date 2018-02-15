@@ -29,6 +29,7 @@ import java.util.UUID;
 @Component
 public class SubmissionStateMonitor {
     private final StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory;
+    private final SubmissionStateListenerBuilder submissionStateListenerBuilder;
 
     // in memory map of currently running state machines
     private final Map<UUID, StateMachine<SubmissionState, SubmissionEvent>> stateMachineMap;
@@ -36,8 +37,9 @@ public class SubmissionStateMonitor {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
-    public SubmissionStateMonitor(StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory) {
+    public SubmissionStateMonitor(StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory, SubmissionStateListenerBuilder submissionStateListenerBuilder) {
         this.stateMachineFactory = stateMachineFactory;
+        this.submissionStateListenerBuilder = submissionStateListenerBuilder;
         this.stateMachineMap = new HashMap<>();
     }
 
@@ -48,7 +50,7 @@ public class SubmissionStateMonitor {
     public void monitorSubmissionEnvelope(SubmissionEnvelopeReference submissionEnvelopeReference, boolean autoremove) {
         StateMachine<SubmissionState, SubmissionEvent> stateMachine =
                 stateMachineFactory.getStateMachine(submissionEnvelopeReference.getUuid());
-        stateMachine.addStateListener(new SubmissionStateListener(submissionEnvelopeReference, this, autoremove));
+        stateMachine.addStateListener(submissionStateListenerBuilder.listenerFor(submissionEnvelopeReference, this, autoremove));
 
         stateMachine.start();
         stateMachineMap.put(submissionEnvelopeReference.getUuid(), stateMachine);

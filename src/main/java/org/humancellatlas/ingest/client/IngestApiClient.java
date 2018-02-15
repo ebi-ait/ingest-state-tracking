@@ -142,7 +142,7 @@ public class IngestApiClient  implements InitializingBean {
         try {
             return new URI(uriString);
         } catch (URISyntaxException e) {
-            log.trace(String.format("Error trying to create URI from string %s", uriString));
+            log.trace(String.format("Error trying to listenerFor URI from string %s", uriString));
             throw new RuntimeException(e);
         }
     }
