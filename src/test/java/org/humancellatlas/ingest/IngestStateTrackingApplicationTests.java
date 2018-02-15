@@ -140,7 +140,7 @@ public class IngestStateTrackingApplicationTests {
     public void testSuccessfulEventRunthroughWithBarrage() {
         MetadataDocumentEventBarrage barrage = new MetadataDocumentEventBarrage();
 
-        // generate transition lifecycles for 10 samples...
+        // generate transition lifecycles for, say, 10 samples...
         for (int i = 0; i < 10; i++) {
             MetadataDocumentReference documentReference = generateMetadataDocumentReference();
             MetadataDocumentTransitionLifecycle sampleTransitionLifecycle = new MetadataDocumentTransitionLifecycle
@@ -192,6 +192,42 @@ public class IngestStateTrackingApplicationTests {
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ALL_TASKS_COMPLETE);
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.COMPLETE, state);
+    }
+
+    @Test
+    public void testUnsuccessfulBarrage_OneDocumentNotValid() {
+        MetadataDocumentEventBarrage barrage = new MetadataDocumentEventBarrage();
+
+        // generate transition lifecycles for, say, 15 samples...
+        for (int i = 0; i < 15; i++) {
+            MetadataDocumentReference documentReference = generateMetadataDocumentReference();
+            MetadataDocumentTransitionLifecycle sampleTransitionLifecycle = new MetadataDocumentTransitionLifecycle
+                    .Builder(documentReference, envelopeRef)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
+                    .addStateTransition(MetadataDocumentState.VALIDATING)
+                    .addStateTransition(MetadataDocumentState.VALID)
+                    .build();
+
+            barrage.addToBarrage(sampleTransitionLifecycle);
+        }
+
+        //...and one piece of metadata that goes from valid to invalid
+        MetadataDocumentReference documentReference = generateMetadataDocumentReference();
+        MetadataDocumentTransitionLifecycle sampleTransitionLifecycle = new MetadataDocumentTransitionLifecycle
+                .Builder(documentReference, envelopeRef)
+                .addStateTransition(MetadataDocumentState.DRAFT)
+                .addStateTransition(MetadataDocumentState.VALIDATING)
+                .addStateTransition(MetadataDocumentState.VALID)
+                .addStateTransition(MetadataDocumentState.DRAFT)
+                .addStateTransition(MetadataDocumentState.VALIDATING)
+                .addStateTransition(MetadataDocumentState.INVALID)
+                .build();
+
+        barrage.addToBarrage(sampleTransitionLifecycle);
+
+        barrage.commence(submissionStateMonitor);
+
+        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.INVALID));
     }
 
     @Test
