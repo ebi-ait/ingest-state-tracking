@@ -55,4 +55,9 @@ public class SubmissionStateListener extends StateMachineListenerAdapter<Submiss
             submissionStateMonitor.stopMonitoring(stateMachine);
         }
     }
+
+    @Override
+    public void stateChanged(State<SubmissionState, SubmissionEvent> from, State<SubmissionState, SubmissionEvent> to) {
+
+    }
 }

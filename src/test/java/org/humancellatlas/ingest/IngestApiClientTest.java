@@ -2,13 +2,16 @@ package org.humancellatlas.ingest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.junit.Stubbing;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import org.apache.http.client.utils.URIBuilder;
 import org.humancellatlas.ingest.client.IngestApiClient;
 import org.humancellatlas.ingest.client.model.MetadataDocument;
 import org.humancellatlas.ingest.client.model.SubmissionEnvelope;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
+import org.humancellatlas.ingest.state.SubmissionState;
 import org.junit.After;
 import org.junit.Before;
 
@@ -108,19 +111,21 @@ public class IngestApiClientTest {
         Object metadataDocumentResponse = new MetadataDocumentJson();
         Object metadataDocumentEmbeddedEnvelopesResponse = new MetadataDocumentEmbeddedSubmissionEnvelopesJson();
 
-        stubFor(get(urlEqualTo(mockMetadataDocumentReference.getCallbackLocation().toString()))
-                .withHeader("Accept", equalTo("application/hal+json"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/hal+json")
-                        .withBody(new ObjectMapper().writeValueAsString(metadataDocumentResponse))));
+        stubFor(
+                get(urlEqualTo(mockMetadataDocumentReference.getCallbackLocation().toString()))
+                        .withHeader("Accept", equalTo("application/hal+json"))
+                        .willReturn(aResponse()
+                                .withStatus(200)
+                                .withHeader("Content-Type", "application/hal+json")
+                                .withBody(new ObjectMapper().writeValueAsString(metadataDocumentResponse))));
 
-        stubFor(get(urlEqualTo(mockMetadataDocumentReference.getCallbackLocation().toString() + "/submissionEnvelopes"))
-                .withHeader("Accept", equalTo("application/hal+json"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/hal+json")
-                        .withBody(new ObjectMapper().writeValueAsString(metadataDocumentEmbeddedEnvelopesResponse))));
+        stubFor(
+                get(urlEqualTo(mockMetadataDocumentReference.getCallbackLocation().toString() + "/submissionEnvelopes"))
+                        .withHeader("Accept", equalTo("application/hal+json"))
+                        .willReturn(aResponse()
+                                .withStatus(200)
+                                .withHeader("Content-Type", "application/hal+json")
+                                .withBody(new ObjectMapper().writeValueAsString(metadataDocumentEmbeddedEnvelopesResponse))));
 
         MetadataDocument mockMetadataDocument = ingestApiClient.retrieveMetadataDocument(mockMetadataDocumentReference);
 
@@ -156,17 +161,56 @@ public class IngestApiClientTest {
 
         SubmissionEnvelopeJson submissionEnvelopeJson = new SubmissionEnvelopeJson();
 
-        stubFor(get(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString()))
-                .withHeader("Accept", equalTo("application/hal+json"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/hal+json")
-                        .withBody(new ObjectMapper().writeValueAsString(submissionEnvelopeJson))));
+        stubFor(
+                get(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString()))
+                        .withHeader("Accept", equalTo("application/hal+json"))
+                        .willReturn(aResponse()
+                                .withStatus(200)
+                                .withHeader("Content-Type", "application/hal+json")
+                                .withBody(new ObjectMapper().writeValueAsString(submissionEnvelopeJson))));
 
         SubmissionEnvelope mockEnvelope = ingestApiClient.retrieveSubmissionEnvelope(submissionEnvelopeReference);
 
         assertNotNull(mockEnvelope.getSubmissionState());
         assertTrue(mockEnvelope.getSubmissionState().equals("Pending"));
+    }
+
+    @Test
+    public void testUpdateSubmissionEnvelopeState() throws Exception {
+        String mockEnvelopeId = "mock-envelope-id";
+        UUID mockEnvelopeUUID = UUID.randomUUID();
+        String mockEnvelopeCallbackLocation = "/submissionEnvelopes/" + mockEnvelopeId;
+
+        SubmissionEnvelopeReference submissionEnvelopeReference = new SubmissionEnvelopeReference(
+                mockEnvelopeId,
+                mockEnvelopeUUID,
+                new URI(mockEnvelopeCallbackLocation));
+
+        class EnvelopePatchRequestJson {
+            @JsonProperty("submissionState") String submissionState;
+
+            EnvelopePatchRequestJson() {
+                this.submissionState = SubmissionState.SUBMITTED.toString();
+            }
+        }
+
+        EnvelopePatchRequestJson envelopePatchRequestJson = new EnvelopePatchRequestJson();
+
+        stubFor(
+                patch(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString()))
+                        .withHeader("Accept", equalTo("application/hal+json"))
+                        .withRequestBody(equalToJson(new ObjectMapper().writeValueAsString(envelopePatchRequestJson)))
+                        .willReturn(aResponse()
+                                .withStatus(200)
+                                .withHeader("Content-Type", "application/hal+json")
+                                .withBody(new ObjectMapper().writeValueAsString(envelopePatchRequestJson))));
+
+        ingestApiClient.updateEnvelopeState(submissionEnvelopeReference, SubmissionState.SUBMITTED);
+
+        verify(
+                patchRequestedFor(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString()))
+                        .withRequestBody(equalToJson(new ObjectMapper().writeValueAsString(envelopePatchRequestJson))));
+
     }
 
 }
