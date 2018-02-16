@@ -1,7 +1,7 @@
 package org.humancellatlas.ingest.testutil;
 
 import org.apache.http.client.utils.URIBuilder;
-import org.humancellatlas.ingest.client.IngestApiClient;
+import org.humancellatlas.ingest.config.ConfigurationService;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -9,11 +9,12 @@ import java.net.URISyntaxException;
 /**
  * Created by rolando on 15/02/2018.
  */
-public class MockIngestApiClient {
+public class MockConfigurationService {
     public static final String INGEST_API_HOST = "localhost";
     public static final int INGEST_API_PORT = 8080;
     public static final URI INGEST_API_ROOT;
     public static final String INGEST_API_ROOT_STRING;
+    public static final int UPDATER_PERIOD_SECONDS = 5;
 
     static {
         try {
@@ -24,8 +25,11 @@ public class MockIngestApiClient {
         }
     }
 
-    public static IngestApiClient create() {
-        return new IngestApiClient(INGEST_API_ROOT);
+    public static ConfigurationService create() {
+        ConfigurationService configurationService = new ConfigurationService();
+        configurationService.setIngestApiUri(INGEST_API_ROOT);
+        configurationService.setUpdaterPeriodSeconds(UPDATER_PERIOD_SECONDS);
 
+        return configurationService;
     }
 }

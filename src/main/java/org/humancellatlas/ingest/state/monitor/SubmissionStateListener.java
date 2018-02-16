@@ -1,5 +1,6 @@
 package org.humancellatlas.ingest.state.monitor;
 
+import org.humancellatlas.ingest.exception.CoreStateUpdatedFailedException;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
@@ -24,10 +25,10 @@ public class SubmissionStateListener extends StateMachineListenerAdapter<Submiss
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    public SubmissionStateListener(SubmissionEnvelopeReference submissionEnvelopeReference,
-                                   SubmissionStateMonitor submissionStateMonitor,
-                                   SubmissionStateUpdater submissionStateUpdater,
-                                   boolean autoremove) {
+    protected SubmissionStateListener(SubmissionEnvelopeReference submissionEnvelopeReference,
+                            SubmissionStateMonitor submissionStateMonitor,
+                            SubmissionStateUpdater submissionStateUpdater,
+                            boolean autoremove) {
         this.submissionEnvelopeReference = submissionEnvelopeReference;
         this.submissionStateMonitor = submissionStateMonitor;
         this.submissionStateUpdater = submissionStateUpdater;
@@ -61,6 +62,6 @@ public class SubmissionStateListener extends StateMachineListenerAdapter<Submiss
 
     @Override
     public void stateChanged(State<SubmissionState, SubmissionEvent> from, State<SubmissionState, SubmissionEvent> to) {
-
+        this.submissionStateUpdater.requestStateUpdateForEnvelope(submissionEnvelopeReference, to.getId());
     }
 }

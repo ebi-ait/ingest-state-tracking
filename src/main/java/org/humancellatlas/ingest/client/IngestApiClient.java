@@ -3,6 +3,7 @@ package org.humancellatlas.ingest.client;
 import lombok.Getter;
 import org.humancellatlas.ingest.client.model.MetadataDocument;
 import org.humancellatlas.ingest.client.model.SubmissionEnvelope;
+import org.humancellatlas.ingest.config.ConfigurationService;
 import org.humancellatlas.ingest.messaging.MetadataDocumentMessage;
 import org.humancellatlas.ingest.messaging.SubmissionEnvelopeMessage;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
@@ -11,7 +12,8 @@ import org.humancellatlas.ingest.state.SubmissionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedResources;
@@ -37,37 +39,33 @@ import java.util.stream.Collectors;
  * @date 28/11/17
  */
 @Component
-public class IngestApiClient  implements InitializingBean {
-    @Value("${INGEST_API_ROOT:'http://api.ingest.dev.data.humancellatlas.org'}")
-    private String ingestApiRootString;
-    private URI ingestApiRoot;
-
+@DependsOn("configuration")
+public class IngestApiClient implements InitializingBean {
+    private ConfigurationService config;
+    
     @Getter
-    private final RestTemplate restTemplate;
+    private RestTemplate restTemplate;
 
     private String submissionEnvelopesPath;
     private Map<String, String> metadataTypesLinkMap = new HashMap<>();
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    public IngestApiClient() {
-        // default constructor, used normally and allowing for environmental variable injection of INGEST_API_ROOT
-        this.restTemplate = new RestTemplate();
-    }
-
-    public IngestApiClient(URI ingestApiRoot) {
-        // alt constructor to allow overwiring of ingest API root
-        this.ingestApiRoot = ingestApiRoot;
-        this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
+    public IngestApiClient() {}
+    
+    @Autowired
+    public IngestApiClient(@Autowired ConfigurationService config) {
+        this.config = config;
     }
 
     public void init() {
+        this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
         this.submissionEnvelopesPath = "/submissionEnvelopes";
-        this.metadataTypesLinkMap.put("samples", ingestApiRootString + "/samples");
+        this.metadataTypesLinkMap.put("samples",  config.getIngestApiUri() + "/samples");
     }
 
     public SubmissionEnvelope updateEnvelopeState(SubmissionEnvelopeReference envelopeReference, SubmissionState submissionState) {
-        String envelopeURIString = this.ingestApiRoot.toString() + envelopeReference.getCallbackLocation();
+        String envelopeURIString = config.getIngestApiUri().toString() + envelopeReference.getCallbackLocation();
         URI envelopeURI = uriFor(envelopeURIString);
 
         try {
@@ -79,11 +77,10 @@ public class IngestApiClient  implements InitializingBean {
             log.trace("Failed to patch the state of a submission envelope with ID %s and callback link %s. Status code %s", envelopeReference.getId(), envelopeReference.getCallbackLocation(), Integer.toString(e.getRawStatusCode()));
             throw e;
         }
-
     }
 
     public SubmissionEnvelope retrieveSubmissionEnvelope(SubmissionEnvelopeReference envelopeReference) {
-        String envelopeURIString = this.ingestApiRoot.toString() + envelopeReference.getCallbackLocation();
+        String envelopeURIString = config.getIngestApiUri().toString() + envelopeReference.getCallbackLocation();
 
         URI envelopeURI = uriFor(envelopeURIString);
         Traverson halTraverser = halTraverserOn(envelopeURI);
@@ -93,7 +90,7 @@ public class IngestApiClient  implements InitializingBean {
     }
 
     public MetadataDocument retrieveMetadataDocument(MetadataDocumentReference documentReference) {
-        String documentURIString = this.ingestApiRoot.toString() + documentReference.getCallbackLocation().toString();
+        String documentURIString = this. config.getIngestApiUri() + documentReference.getCallbackLocation().toString();
 
         URI documentURI = uriFor(documentURIString);
         Traverson halTraverser = halTraverserOn(documentURI);

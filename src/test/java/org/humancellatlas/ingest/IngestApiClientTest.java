@@ -2,17 +2,14 @@ package org.humancellatlas.ingest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.tomakehurst.wiremock.junit.Stubbing;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.github.tomakehurst.wiremock.stubbing.StubMapping;
-import org.apache.http.client.utils.URIBuilder;
 import org.humancellatlas.ingest.client.IngestApiClient;
 import org.humancellatlas.ingest.client.model.MetadataDocument;
 import org.humancellatlas.ingest.client.model.SubmissionEnvelope;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.SubmissionState;
-import org.humancellatlas.ingest.testutil.MockIngestApiClient;
+import org.humancellatlas.ingest.testutil.MockConfigurationService;
 import org.junit.After;
 import org.junit.Before;
 
@@ -25,7 +22,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.net.URI;
 import java.util.*;
 
-import static org.humancellatlas.ingest.testutil.MockIngestApiClient.INGEST_API_ROOT_STRING;
+import static org.humancellatlas.ingest.testutil.MockConfigurationService.INGEST_API_ROOT_STRING;
 import static org.junit.Assert.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
@@ -39,7 +36,8 @@ public class IngestApiClientTest {
 
     @Before
     public void before() {
-        ingestApiClient = MockIngestApiClient.create();
+        ingestApiClient = new IngestApiClient(MockConfigurationService.create());
+        ingestApiClient.init();
     }
 
     @After
