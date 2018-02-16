@@ -16,7 +16,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
@@ -62,6 +61,25 @@ public class SubmissionStateUpdaterTest {
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(8080);
 
+
+    @Test
+    public void testOnlyKeepsOneCopyOfAnUpdateRequest() throws Exception {
+        String mockEnvelopeId = "mock-envelope-id";
+        UUID mockEnvelopeUUID = UUID.randomUUID();
+        String mockEnvelopeCallbackLocation = "/submissionEnvelopes/" + mockEnvelopeId;
+
+        SubmissionEnvelopeReference submissionEnvelopeReference = new SubmissionEnvelopeReference(
+                mockEnvelopeId,
+                mockEnvelopeUUID,
+                new URI(mockEnvelopeCallbackLocation));
+
+        submissionStateUpdater.requestStateUpdateForEnvelope(submissionEnvelopeReference, SubmissionState.SUBMITTED);
+        submissionStateUpdater.requestStateUpdateForEnvelope(submissionEnvelopeReference, SubmissionState.VALID);
+
+        assertTrue(submissionStateUpdater.getPendingUpdates().size() == 1);
+        assertTrue(submissionStateUpdater.getPendingUpdates().iterator().next().getToState().equals(SubmissionState.VALID));
+
+    }
 
     @Test
     public void testUpdateSubmissionState() throws Exception {
