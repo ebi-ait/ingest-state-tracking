@@ -1,6 +1,6 @@
 buildscript {
     ext {
-        springBootVersion = '1.5.6.RELEASE'
+        springBootVersion = '1.5.10.RELEASE'
     }
     repositories {
         mavenCentral()
@@ -22,15 +22,18 @@ repositories {
 }
 
 dependencies {
+    compile("org.springframework.hateoas:spring-hateoas")
     compile("org.springframework.boot:spring-boot-starter")
-    compile("org.springframework.statemachine:spring-statemachine-core:1.2.7.RELEASE")
+    compile 'org.springframework.statemachine:spring-statemachine-core:1.2.8.RELEASE'
     compile('org.springframework.boot:spring-boot-starter-amqp')
+    compile 'org.springframework.plugin:spring-plugin-core'
 
     compile('joda-time:joda-time')
     compile('com.fasterxml.jackson.datatype:jackson-datatype-joda')
     compile('com.fasterxml.jackson.datatype:jackson-datatype-jsr310')
     compile('com.fasterxml.jackson.module:jackson-module-parameter-names')
-    compileOnly('org.projectlombok:lombok')
+    compile('org.projectlombok:lombok')
+
     testCompile('org.springframework.boot:spring-boot-starter-test')
-    testCompile("org.springframework.statemachine:spring-statemachine-test:1.2.7.RELEASE")
+    testCompile('com.github.tomakehurst:wiremock-standalone:2.14.0')
 }

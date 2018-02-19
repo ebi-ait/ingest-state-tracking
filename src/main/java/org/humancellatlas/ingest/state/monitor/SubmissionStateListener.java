@@ -1,5 +1,6 @@
 package org.humancellatlas.ingest.state.monitor;
 
+import org.humancellatlas.ingest.exception.CoreStateUpdatedFailedException;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
@@ -19,15 +20,18 @@ import org.springframework.statemachine.state.State;
 public class SubmissionStateListener extends StateMachineListenerAdapter<SubmissionState, SubmissionEvent> {
     private final SubmissionEnvelopeReference submissionEnvelopeReference;
     private final SubmissionStateMonitor submissionStateMonitor;
+    private final SubmissionStateUpdater submissionStateUpdater;
     private final boolean autoremove;
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    public SubmissionStateListener(SubmissionEnvelopeReference submissionEnvelopeReference,
-                                   SubmissionStateMonitor submissionStateMonitor,
-                                   boolean autoremove) {
+    protected SubmissionStateListener(SubmissionEnvelopeReference submissionEnvelopeReference,
+                            SubmissionStateMonitor submissionStateMonitor,
+                            SubmissionStateUpdater submissionStateUpdater,
+                            boolean autoremove) {
         this.submissionEnvelopeReference = submissionEnvelopeReference;
         this.submissionStateMonitor = submissionStateMonitor;
+        this.submissionStateUpdater = submissionStateUpdater;
         this.autoremove = autoremove;
         log.info(String.format("\tCreated Envelope '%s'", submissionEnvelopeReference.getUuid()));
     }
@@ -54,5 +58,10 @@ public class SubmissionStateListener extends StateMachineListenerAdapter<Submiss
         if (autoremove) {
             submissionStateMonitor.stopMonitoring(stateMachine);
         }
+    }
+
+    @Override
+    public void stateChanged(State<SubmissionState, SubmissionEvent> from, State<SubmissionState, SubmissionEvent> to) {
+        this.submissionStateUpdater.requestStateUpdateForEnvelope(submissionEnvelopeReference, to.getId());
     }
 }
