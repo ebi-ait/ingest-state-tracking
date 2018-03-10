@@ -243,6 +243,30 @@ public class IngestStateTrackingApplicationTests {
         assertFalse(eventResponse);
     }
 
+    @Test
+    public void testHandlingOfRedundantStateInfoMessages() {
+        MetadataDocumentEventBarrage barrage = new MetadataDocumentEventBarrage();
+
+        // test how it handles messages e.g draft -> draft -> draft -> draft -> validating -> valid
+        for (int i = 0; i < 8; i++) {
+            MetadataDocumentReference documentReference = generateMetadataDocumentReference();
+            MetadataDocumentTransitionLifecycle sampleTransitionLifecycle = new MetadataDocumentTransitionLifecycle
+                    .Builder(documentReference, envelopeRef)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
+                    .addStateTransition(MetadataDocumentState.VALIDATING)
+                    .addStateTransition(MetadataDocumentState.VALID)
+                    .build();
+
+            barrage.addToBarrage(sampleTransitionLifecycle);
+        }
+
+        barrage.commence(submissionStateMonitor);
+
+        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.VALID));
+    }
 
     private MetadataDocumentReference generateMetadataDocumentReference() {
         int id = new Random().nextInt();
