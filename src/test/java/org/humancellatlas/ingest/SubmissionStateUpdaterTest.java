@@ -65,7 +65,7 @@ public class SubmissionStateUpdaterTest {
     @Test
     public void testOnlyKeepsOneCopyOfAnUpdateRequest() throws Exception {
         String mockEnvelopeId = "mock-envelope-id";
-        UUID mockEnvelopeUUID = UUID.randomUUID();
+        String mockEnvelopeUUID = UUID.randomUUID().toString();
         String mockEnvelopeCallbackLocation = "/submissionEnvelopes/" + mockEnvelopeId;
 
         SubmissionEnvelopeReference submissionEnvelopeReference = new SubmissionEnvelopeReference(
@@ -84,7 +84,7 @@ public class SubmissionStateUpdaterTest {
     @Test
     public void testUpdateSubmissionState() throws Exception {
         String mockEnvelopeId = "mock-envelope-id";
-        UUID mockEnvelopeUUID = UUID.randomUUID();
+        String mockEnvelopeUUID = UUID.randomUUID().toString();
         String mockEnvelopeCallbackLocation = "/submissionEnvelopes/" + mockEnvelopeId;
 
         SubmissionEnvelopeReference submissionEnvelopeReference = new SubmissionEnvelopeReference(

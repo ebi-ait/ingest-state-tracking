@@ -1,5 +1,8 @@
 package org.humancellatlas.ingest.client;
 
+import com.fasterxml.jackson.core.JsonPointer;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.jayway.jsonpath.JsonPath;
 import lombok.Getter;
 import org.humancellatlas.ingest.client.model.MetadataDocument;
 import org.humancellatlas.ingest.client.model.SubmissionEnvelope;
@@ -96,26 +99,22 @@ public class IngestApiClient implements InitializingBean {
         Traverson halTraverser = halTraverserOn(documentURI);
 
         String validationState = halTraverser.follow("self").toObject("$.validationState");
-        List<String> relatedSubmissionIds = halTraverser.follow("submissionEnvelopes")
+        List<SubmissionEnvelopeReference> relatedSubmissionIds = halTraverser
+                .follow("submissionEnvelopes")
                 .toObject(new ParameterizedTypeReference<PagedResources<Resource<LinkedHashMap>>>() {} )
                 .getContent()
-                .stream().map(resource -> extractIdFromSubmissionEnvelopeURI(resource.getLink("self").getHref()))
+                .stream()
+                .map(resource -> envelopeReferenceFromEnvelopeUri(URI.create(resource.getLink("self").getHref())))
                 .collect(Collectors.toList());
 
         return new MetadataDocument(validationState, relatedSubmissionIds);
     }
 
-    public SubmissionEnvelopeReference referenceForSubmissionEnvelope(String submissionEnvelopeId) {
-        return new SubmissionEnvelopeReference(
-                submissionEnvelopeId,
-                UUID.randomUUID(),
-                URI.create(submissionEnvelopesPath.concat(submissionEnvelopeId)));
-    }
-
     public SubmissionEnvelopeReference referenceForSubmissionEnvelope(SubmissionEnvelopeMessage message) {
-        return referenceForSubmissionEnvelope(message.getDocumentId());
+        return new SubmissionEnvelopeReference(message.getDocumentId(),
+                                               message.getDocumentUuid(),
+                                               URI.create(message.getCallbackLink()));
     }
-
 
     public MetadataDocumentReference referenceForMetadataDocument(MetadataDocumentMessage message) {
         return new MetadataDocumentReference(message.getDocumentId(),
@@ -127,8 +126,14 @@ public class IngestApiClient implements InitializingBean {
         return new Traverson(baseUri, MediaTypes.HAL_JSON);
     }
 
-    private String extractIdFromSubmissionEnvelopeURI(String envelopeURI) {
-        return extractIdFromSubmissionEnvelopeURI(uriFor(envelopeURI));
+    private SubmissionEnvelopeReference envelopeReferenceFromEnvelopeUri(URI envelopeUri) {
+        JsonNode envelopeJson = halTraverserOn(envelopeUri).follow("self")
+                                                           .toObject(JsonNode.class);
+        String envelopeUuid = envelopeJson.at(JsonPointer.valueOf("/uuid/uuid")).asText();
+        String envelopeId = extractIdFromSubmissionEnvelopeURI(envelopeUri);
+        URI envelopeCallbackLocation = extractCallbackUriFromSubmissionEnvelopeUri(envelopeUri);
+
+        return new SubmissionEnvelopeReference(envelopeId, envelopeUuid, envelopeCallbackLocation);
     }
 
     private URI uriFor(String uriString) {
@@ -143,6 +148,10 @@ public class IngestApiClient implements InitializingBean {
     private String extractIdFromSubmissionEnvelopeURI(URI envelopeURI) {
         String envelopeURIPath = envelopeURI.getPath();
         return envelopeURIPath.substring(envelopeURIPath.lastIndexOf('/') + 1);
+    }
+
+    private URI extractCallbackUriFromSubmissionEnvelopeUri(URI envelopeUri) {
+        return URI.create(envelopeUri.getPath());
     }
 
     private <T> HttpEntity<T> halRequestEntityFor(T entity) {

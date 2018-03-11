@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 
 import java.util.List;
 
@@ -16,5 +17,5 @@ import java.util.List;
 @NoArgsConstructor
 public class MetadataDocument {
     private String validationState;
-    private List<String> submissionIds;
+    private List<SubmissionEnvelopeReference> referencedEnvelopes;
 }

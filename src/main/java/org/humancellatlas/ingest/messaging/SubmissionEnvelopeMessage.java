@@ -12,7 +12,6 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class SubmissionEnvelopeMessage {
-    private final String documentType;
     private final String documentId;
     private final String documentUuid;
     private final String callbackLink;

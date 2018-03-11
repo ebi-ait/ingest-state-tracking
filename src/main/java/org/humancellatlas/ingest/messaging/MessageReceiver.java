@@ -12,9 +12,6 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
-import java.util.stream.Collectors;
-
 /**
  * Javadocs go here!
  *
@@ -30,7 +27,7 @@ public class MessageReceiver {
 
     @RabbitListener(queues = Constants.Queues.ENVELOPE_CREATED)
     public void receiveSubmissionEnvelopeCreatedMessage(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
-        SubmissionEnvelopeReference seRef = ingestApiClient.referenceForSubmissionEnvelope(submissionEnvelopeMessage.getDocumentId());
+        SubmissionEnvelopeReference seRef = ingestApiClient.referenceForSubmissionEnvelope(submissionEnvelopeMessage);
         getSubmissionStateMonitor().monitorSubmissionEnvelope(seRef);
     }
 
@@ -47,9 +44,13 @@ public class MessageReceiver {
 
         MetadataDocumentState documentState = MetadataDocumentState.valueOf(metadataDocument.getValidationState().toUpperCase());
         metadataDocument
-                .getSubmissionIds()
+                .getReferencedEnvelopes()
                 .stream()
-                .map(envelopeId -> getIngestApiClient().referenceForSubmissionEnvelope(envelopeId))
-                .forEach(envelopeReference -> submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState));
+                .forEach(envelopeReference -> {
+                    if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
+                        submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
+                    }
+                    submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
+                });
     }
 }

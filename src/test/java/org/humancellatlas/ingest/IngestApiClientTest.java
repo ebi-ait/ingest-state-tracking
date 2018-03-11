@@ -16,6 +16,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.boot.autoconfigure.couchbase.CouchbaseProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -76,23 +77,30 @@ public class IngestApiClientTest {
             }
         }
 
+        class EnvelopeJson {
+            @JsonProperty("uuid") Map<String, Object> uuid;
+            @JsonProperty("_links")  Map<String, Object> _links;
+
+            EnvelopeJson() {
+                uuid = new HashMap<String, Object>() {{
+                    put("uuid", mockEnvelopeUUID);
+                }};
+                _links = new HashMap<String, Object>() {{
+                    put("self", new HashMap<String, Object>() {{
+                        put("href", INGEST_API_ROOT_STRING + "/submissionEnvelopes/mock-envelope-id");
+                    }});
+                }};
+            }
+        }
+
+        Object envelopeJson = new EnvelopeJson();
+
         class MetadataDocumentEmbeddedSubmissionEnvelopesJson {
             @JsonProperty("_embedded") Map<String, Object> _embedded;
 
             MetadataDocumentEmbeddedSubmissionEnvelopesJson() {
                 _embedded = new HashMap<String, Object>() {{
-                    put("submissionEnvelopes", Arrays.asList(
-                            new HashMap<String, Object>() {{
-                                put("uuid",  new HashMap<String, Object>() {{
-                                   put("uuid", mockEnvelopeUUID);
-                                }});
-                                put("_links", new HashMap<String, Object>() {{
-                                    put("self", new HashMap<String, Object>() {{
-                                        put("href", INGEST_API_ROOT_STRING + "/submissionEnvelopes/mock-envelope-id" );
-                                    }});
-                                }});
-                            }}
-                    ));
+                    put("submissionEnvelopes", Arrays.asList(envelopeJson));
                 }};
             }
         }
@@ -116,17 +124,26 @@ public class IngestApiClientTest {
                                 .withHeader("Content-Type", "application/hal+json")
                                 .withBody(new ObjectMapper().writeValueAsString(metadataDocumentEmbeddedEnvelopesResponse))));
 
+        stubFor(
+                get(urlEqualTo("/submissionEnvelopes/mock-envelope-id"))
+                        .withHeader("Accept", equalTo("application/hal+json"))
+                        .willReturn(aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/hal+json")
+                                            .withBody(new ObjectMapper().writeValueAsString(envelopeJson))));
+
         MetadataDocument mockMetadataDocument = ingestApiClient.retrieveMetadataDocument(mockMetadataDocumentReference);
 
         assertNotNull(mockMetadataDocument.getValidationState());
-        assertTrue(mockMetadataDocument.getSubmissionIds().size() == 1);
-        assertTrue(mockMetadataDocument.getSubmissionIds().get(0).equals("mock-envelope-id"));
+        assertTrue(mockMetadataDocument.getReferencedEnvelopes().size() == 1);
+        assertTrue(mockMetadataDocument.getReferencedEnvelopes().get(0).getId().equals("mock-envelope-id"));
+        assertTrue(mockMetadataDocument.getReferencedEnvelopes().get(0).getUuid().equals(mockEnvelopeUUID));
     }
 
     @Test
     public void testGetSubmissionEnvelopeInfo() throws Exception {
         String mockEnvelopeId = "mock-envelope-id";
-        UUID mockEnvelopeUUID = UUID.randomUUID();
+        String mockEnvelopeUUID = UUID.randomUUID().toString();
         String mockEnvelopeCallbackLocation = "/submissionEnvelopes/" + mockEnvelopeId;
 
         SubmissionEnvelopeReference submissionEnvelopeReference = new SubmissionEnvelopeReference(
@@ -167,7 +184,7 @@ public class IngestApiClientTest {
     @Test
     public void testUpdateSubmissionEnvelopeState() throws Exception {
         String mockEnvelopeId = "mock-envelope-id";
-        UUID mockEnvelopeUUID = UUID.randomUUID();
+        String mockEnvelopeUUID = UUID.randomUUID().toString();
         String mockEnvelopeCallbackLocation = "/submissionEnvelopes/" + mockEnvelopeId;
 
         SubmissionEnvelopeReference submissionEnvelopeReference = new SubmissionEnvelopeReference(

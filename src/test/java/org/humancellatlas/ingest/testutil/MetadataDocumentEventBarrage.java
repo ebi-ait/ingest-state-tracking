@@ -27,8 +27,8 @@ public class MetadataDocumentEventBarrage {
                 // call a method on the monitor depending on the target state for this event
                 stateMonitor
                     .notifyOfMetadataDocumentState(nextEvent.getMetadataDocumentReference(),
-                            nextEvent.getSubmissionEnvelopeReference(),
-                            nextEvent.getTargetState());
+                                                   nextEvent.getSubmissionEnvelopeReference(),
+                                                   nextEvent.getTargetState());
             } else {
                 try {
                     Thread.sleep(500);
