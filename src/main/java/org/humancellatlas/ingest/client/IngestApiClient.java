@@ -61,7 +61,7 @@ public class IngestApiClient implements InitializingBean {
     public void init() {
         this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
         this.submissionEnvelopesPath = "/submissionEnvelopes";
-        this.metadataTypesLinkMap.put("samples",  config.getIngestApiUri() + "/samples");
+        this.metadataTypesLinkMap.put("sample",  config.getIngestApiUri() + "/samples");
     }
 
     public SubmissionEnvelope updateEnvelopeState(SubmissionEnvelopeReference envelopeReference, SubmissionState submissionState) {
@@ -90,12 +90,12 @@ public class IngestApiClient implements InitializingBean {
     }
 
     public MetadataDocument retrieveMetadataDocument(MetadataDocumentReference documentReference) {
-        String documentURIString = this. config.getIngestApiUri() + documentReference.getCallbackLocation().toString();
+        String documentURIString = config.getIngestApiUri() + documentReference.getCallbackLocation().toString();
 
         URI documentURI = uriFor(documentURIString);
         Traverson halTraverser = halTraverserOn(documentURI);
 
-        String validationState = halTraverser.follow("self").toObject("$.documentState");
+        String validationState = halTraverser.follow("self").toObject("$.validationState");
         List<String> relatedSubmissionIds = halTraverser.follow("submissionEnvelopes")
                 .toObject(new ParameterizedTypeReference<PagedResources<Resource<LinkedHashMap>>>() {} )
                 .getContent()
@@ -116,15 +116,11 @@ public class IngestApiClient implements InitializingBean {
         return referenceForSubmissionEnvelope(message.getDocumentId());
     }
 
-    public MetadataDocumentReference referenceForMetadataDocument(String documentType, String metadataDocumentId) {
-        return new MetadataDocumentReference(
-                metadataDocumentId,
-                UUID.randomUUID(),
-                URI.create(metadataTypesLinkMap.get(documentType).toString().concat(metadataDocumentId)));
-    }
 
     public MetadataDocumentReference referenceForMetadataDocument(MetadataDocumentMessage message) {
-        return referenceForMetadataDocument(message.getDocumentType(), message.getDocumentId());
+        return new MetadataDocumentReference(message.getDocumentId(),
+                                             message.getDocumentUuid(),
+                                             URI.create(message.getCallbackLink()));
     }
 
     private Traverson halTraverserOn(URI baseUri) {

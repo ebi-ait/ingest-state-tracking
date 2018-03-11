@@ -29,6 +29,8 @@ dependencies {
     compile 'org.springframework.statemachine:spring-statemachine-core:1.2.8.RELEASE'
     compile('org.springframework.boot:spring-boot-starter-amqp')
     compile 'org.springframework.plugin:spring-plugin-core'
+    compile 'com.jayway.jsonpath:json-path:2.2.0'
+
 
     compile('joda-time:joda-time')
     compile('com.fasterxml.jackson.datatype:jackson-datatype-joda')

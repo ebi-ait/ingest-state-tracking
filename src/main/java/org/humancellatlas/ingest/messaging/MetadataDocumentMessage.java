@@ -2,6 +2,7 @@ package org.humancellatlas.ingest.messaging;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
 
 /**
@@ -11,11 +12,14 @@ import org.humancellatlas.ingest.state.MetadataDocumentState;
  * @date 28/11/17
  */
 @Getter
+@Setter
 @AllArgsConstructor
 public class MetadataDocumentMessage {
-    private final String documentType;
-    private final String documentId;
-    private final String documentUuid;
-    private final String callbackLink;
-    private final String validationState;
+    MetadataDocumentMessage(){}
+
+    private String documentType;
+    private String documentId;
+    private String documentUuid;
+    private String callbackLink;
+    private String validationState;
 }

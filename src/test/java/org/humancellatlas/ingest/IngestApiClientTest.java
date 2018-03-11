@@ -48,23 +48,23 @@ public class IngestApiClientTest {
     public IngestApiClientTest(){ }
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(8080);
+    public WireMockRule wireMockRule = new WireMockRule(8088);
 
     @Test
     public void testGetMetadataDocumentInfo() throws Exception {
         MetadataDocumentReference mockMetadataDocumentReference = new MetadataDocumentReference(
                 "mock-id",
-                UUID.randomUUID(),
+                UUID.randomUUID().toString(),
                 new URI("/mockmetadatatype/1234"));
 
         String mockEnvelopeUUID = UUID.randomUUID().toString();
 
         class MetadataDocumentJson {
-            @JsonProperty("documentState") String documentState;
+            @JsonProperty("validationState") String validationState;
             @JsonProperty("_links") Map<String, Object> _links;
 
             MetadataDocumentJson(){
-                documentState = "Valid";
+                validationState = "Valid";
                 _links = new HashMap<String, Object>() {{
                     put("self", new HashMap<String, Object>() {{
                         put("href",  INGEST_API_ROOT_STRING + mockMetadataDocumentReference.getCallbackLocation());

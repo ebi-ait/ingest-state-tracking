@@ -79,8 +79,8 @@ public class SubmissionStateUpdater {
             String envelopeId = entry.getKey();
             PendingSubmissionUpdate pendingSubmissionUpdate = entry.getValue();
             try {
-                update(pendingSubmissionUpdate);
                 updatedEnvelopeIds.add(envelopeId);
+                update(pendingSubmissionUpdate);
             } catch (CoreStateUpdatedFailedException e) {
                 log.trace("Failed to update state in the core", e);
             }

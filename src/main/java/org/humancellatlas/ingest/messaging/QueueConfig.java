@@ -6,7 +6,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
@@ -14,6 +16,7 @@ import org.springframework.messaging.handler.annotation.support.DefaultMessageHa
 /**
  * Created by rolando on 11/03/2018.
  */
+@Configuration
 public class QueueConfig {
 
     @Bean
@@ -76,6 +79,11 @@ public class QueueConfig {
         RabbitMessagingTemplate rmt = new RabbitMessagingTemplate(rabbitTemplate);
         rmt.setMessageConverter(this.jackson2Converter());
         return rmt;
+    }
+
+    @Bean
+    public Jackson2JsonMessageConverter converter() {
+        return new Jackson2JsonMessageConverter();
     }
 }
 

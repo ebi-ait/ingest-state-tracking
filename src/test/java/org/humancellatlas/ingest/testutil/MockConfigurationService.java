@@ -11,7 +11,7 @@ import java.net.URISyntaxException;
  */
 public class MockConfigurationService {
     public static final String INGEST_API_HOST = "localhost";
-    public static final int INGEST_API_PORT = 8080;
+    public static final int INGEST_API_PORT = 8088;
     public static final URI INGEST_API_ROOT;
     public static final String INGEST_API_ROOT_STRING;
     public static final int UPDATER_PERIOD_SECONDS = 5;
