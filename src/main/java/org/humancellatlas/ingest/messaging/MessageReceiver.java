@@ -35,7 +35,7 @@ public class MessageReceiver {
     }
 
     @RabbitListener(queues = Constants.Queues.ENVELOPE_UPDATE)
-    public void receiveSubmissionEnvelopeUpdatedMessage(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
+    public void receiveSubmissionEnvelopeStateUpdateRequest(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
         SubmissionEvent submissionEvent = SubmissionEvent.valueOf(submissionEnvelopeMessage.getRequestedState());
         submissionStateMonitor.sendEventForSubmissionEnvelope(getIngestApiClient().referenceForSubmissionEnvelope(submissionEnvelopeMessage), submissionEvent);
     }
