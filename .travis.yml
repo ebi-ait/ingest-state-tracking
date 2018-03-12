@@ -1,7 +1,4 @@
 language: java
-
-jdk:
-        - oraclejdk8
- 
- notifications:
-             slack: humancellatlas:VpHVbri4SQhHvnYQ5abP8t5f
+jdk: oraclejdk8
+notifications:
+          slack: humancellatlas:BpnE92Kj26Xr0qRpNxZOkJa2
