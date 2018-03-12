@@ -22,7 +22,7 @@ public class ConfigurationService implements InitializingBean {
 
     @Value("${INGEST_API_ROOT:http://api.ingest.dev.data.humancellatlas.org}")
     private String ingestApiRootString;
-    @Value("${UPDATER_PERIOD_SECONDS:5}")
+    @Value("${UPDATER_PERIOD_SECONDS:2}")
     private String updaterPeriodSecondsString;
 
     @Getter @Setter private URI ingestApiUri;
