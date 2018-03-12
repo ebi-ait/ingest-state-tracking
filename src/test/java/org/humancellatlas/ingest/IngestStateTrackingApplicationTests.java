@@ -140,8 +140,8 @@ public class IngestStateTrackingApplicationTests {
     public void testSuccessfulEventRunthroughWithBarrage() {
         MetadataDocumentEventBarrage barrage = new MetadataDocumentEventBarrage();
 
-        // generate transition lifecycles for, say, 10 samples...
-        for (int i = 0; i < 10; i++) {
+        // generate transition lifecycles for, say, 100 samples...
+        for (int i = 0; i < 100; i++) {
             MetadataDocumentReference documentReference = generateMetadataDocumentReference();
             MetadataDocumentTransitionLifecycle sampleTransitionLifecycle = new MetadataDocumentTransitionLifecycle
                     .Builder(documentReference, envelopeRef)
@@ -153,14 +153,32 @@ public class IngestStateTrackingApplicationTests {
             barrage.addToBarrage(sampleTransitionLifecycle);
         }
 
-        // maybe 10 assays as well that go invalid and then valid
-        for (int i = 0; i < 10; i++) {
+        // maybe 100 assays as well that go invalid and then valid
+        for (int i = 0; i < 100; i++) {
             MetadataDocumentReference documentReference = generateMetadataDocumentReference();
             MetadataDocumentTransitionLifecycle assayTransitionLifecycle = new MetadataDocumentTransitionLifecycle
                     .Builder(documentReference, envelopeRef)
                     .addStateTransition(MetadataDocumentState.DRAFT)
                     .addStateTransition(MetadataDocumentState.VALIDATING)
                     .addStateTransition(MetadataDocumentState.INVALID)
+                    .addStateTransition(MetadataDocumentState.VALIDATING)
+                    .addStateTransition(MetadataDocumentState.VALID)
+                    .build();
+
+            barrage.addToBarrage(assayTransitionLifecycle);
+        }
+
+        // 200 files
+        for (int i = 0; i < 100; i++) {
+            MetadataDocumentReference documentReference = generateMetadataDocumentReference();
+            MetadataDocumentTransitionLifecycle assayTransitionLifecycle = new MetadataDocumentTransitionLifecycle
+                    .Builder(documentReference, envelopeRef)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
+                    .addStateTransition(MetadataDocumentState.VALIDATING)
+                    .addStateTransition(MetadataDocumentState.INVALID)
+                    .addStateTransition(MetadataDocumentState.VALIDATING)
+                    .addStateTransition(MetadataDocumentState.VALID)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
                     .addStateTransition(MetadataDocumentState.VALIDATING)
                     .addStateTransition(MetadataDocumentState.VALID)
                     .build();
