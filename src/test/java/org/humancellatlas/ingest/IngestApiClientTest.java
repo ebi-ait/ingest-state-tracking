@@ -24,6 +24,7 @@ import java.net.URI;
 import java.util.*;
 
 import static org.humancellatlas.ingest.testutil.MockConfigurationService.INGEST_API_ROOT_STRING;
+import static org.humancellatlas.ingest.testutil.MockConfigurationService.mockStateUpdateRels;
 import static org.junit.Assert.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
@@ -192,30 +193,60 @@ public class IngestApiClientTest {
                 mockEnvelopeUUID,
                 new URI(mockEnvelopeCallbackLocation));
 
-        class EnvelopePatchRequestJson {
+        class EnvelopeJson {
             @JsonProperty("submissionState") String submissionState;
+            @JsonProperty("_links") Map<String, Object> _links;
 
-            EnvelopePatchRequestJson() {
+            EnvelopeJson() {
                 this.submissionState = SubmissionState.SUBMITTED.toString();
+                _links = new HashMap<String, Object>() {{
+                    put(mockStateUpdateRels().get(SubmissionState.SUBMITTED), new HashMap<String, Object>() {{
+                        put("href", INGEST_API_ROOT_STRING + mockEnvelopeCallbackLocation + "/mockCommitSubmit");
+                    }});
+                }};
             }
         }
 
-        EnvelopePatchRequestJson envelopePatchRequestJson = new EnvelopePatchRequestJson();
+        class EnvelopeTransitionedJson {
+            @JsonProperty("submissionState") String submissionState;
+
+            EnvelopeTransitionedJson() {
+                submissionState = SubmissionState.SUBMITTED.toString();
+            }
+        }
+
+        Object envelopeJson = new EnvelopeJson();
+        Object envelopeTransitioned = new EnvelopeTransitionedJson();
 
         stubFor(
-                patch(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString()))
+                get(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString()))
                         .withHeader("Accept", equalTo("application/hal+json"))
-                        .withRequestBody(equalToJson(new ObjectMapper().writeValueAsString(envelopePatchRequestJson)))
                         .willReturn(aResponse()
                                 .withStatus(200)
                                 .withHeader("Content-Type", "application/hal+json")
-                                .withBody(new ObjectMapper().writeValueAsString(envelopePatchRequestJson))));
+                                .withBody(new ObjectMapper().writeValueAsString(envelopeJson))));
+
+
+        stubFor(
+                put(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString() + "/mockCommitSubmit"))
+                        .withHeader("Accept", equalTo("application/hal+json"))
+                        .willReturn(aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/hal+json")
+                                            .withBody(new ObjectMapper().writeValueAsString(envelopeTransitioned))));
+
 
         ingestApiClient.updateEnvelopeState(submissionEnvelopeReference, SubmissionState.SUBMITTED);
 
+
         verify(
-                patchRequestedFor(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString()))
-                        .withRequestBody(equalToJson(new ObjectMapper().writeValueAsString(envelopePatchRequestJson))));
+                getRequestedFor(
+                        urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString())));
+
+
+        verify(
+                putRequestedFor(
+                        urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString() + "/mockCommitSubmit" )));
 
     }
 

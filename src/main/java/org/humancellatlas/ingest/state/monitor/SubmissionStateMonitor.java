@@ -122,7 +122,7 @@ public class SubmissionStateMonitor {
             StateMachine<SubmissionState, SubmissionEvent> machine = stateMachine.get();
 
             Message<SubmissionEvent> message = MessageBuilder.withPayload(SubmissionEvent.DOCUMENT_PROCESSED)
-                .setHeader(MetadataDocumentInfo.DOCUMENT_ID, metadataDocumentReference.getUuid())
+                .setHeader(MetadataDocumentInfo.DOCUMENT_ID, metadataDocumentReference.getId())
                 .setHeader(MetadataDocumentInfo.DOCUMENT_STATE, state)
                 .build();
 

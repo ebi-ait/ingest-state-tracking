@@ -2,6 +2,7 @@ package org.humancellatlas.ingest.client;
 
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import lombok.Getter;
 import org.humancellatlas.ingest.client.model.MetadataDocument;
@@ -24,12 +25,14 @@ import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.client.Traverson;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -72,10 +75,15 @@ public class IngestApiClient implements InitializingBean {
         URI envelopeURI = uriFor(envelopeURIString);
 
         try {
-            return this.restTemplate.patchForObject(
-                    envelopeURI,
-                    halRequestEntityFor(new SubmissionEnvelope(submissionState.toString().toUpperCase())),
-                    SubmissionEnvelope.class);
+            // get the link for the state update API
+            String stateUpdateUri = halTraverserOn(envelopeURI).follow(config.getStateUpdateRels().get(submissionState))
+                                                               .asLink()
+                                                               .getHref();
+            return this.restTemplate.exchange(stateUpdateUri,
+                                              HttpMethod.PUT,
+                                              halRequestEntityFor(Collections.emptyMap()),
+                                              SubmissionEnvelope.class)
+                                    .getBody();
         } catch (HttpClientErrorException e) {
             log.trace("Failed to patch the state of a submission envelope with ID %s and callback link %s. Status code %s", envelopeReference.getId(), envelopeReference.getCallbackLocation(), Integer.toString(e.getRawStatusCode()));
             throw e;
@@ -154,10 +162,15 @@ public class IngestApiClient implements InitializingBean {
         return URI.create(envelopeUri.getPath());
     }
 
-    private <T> HttpEntity<T> halRequestEntityFor(T entity) {
+    private <T> HttpEntity<String> halRequestEntityFor(T entity) {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Collections.singletonList(MediaTypes.HAL_JSON));
-        return new HttpEntity<>(entity, headers);
+        headers.setContentType(MediaTypes.HAL_JSON);
+        try {
+            return new HttpEntity<>(new ObjectMapper().writeValueAsString(entity), headers);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

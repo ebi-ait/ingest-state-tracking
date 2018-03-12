@@ -82,7 +82,7 @@ public class SubmissionStateUpdater {
                 updatedEnvelopeIds.add(envelopeId);
                 update(pendingSubmissionUpdate);
             } catch (CoreStateUpdatedFailedException e) {
-                log.trace("Failed to update state in the core", e);
+                log.error("Failed to update state in the core", e);
             }
         }
 

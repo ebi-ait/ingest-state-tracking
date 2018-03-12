@@ -2,9 +2,12 @@ package org.humancellatlas.ingest.testutil;
 
 import org.apache.http.client.utils.URIBuilder;
 import org.humancellatlas.ingest.config.ConfigurationService;
+import org.humancellatlas.ingest.state.SubmissionState;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by rolando on 15/02/2018.
@@ -29,7 +32,13 @@ public class MockConfigurationService {
         ConfigurationService configurationService = new ConfigurationService();
         configurationService.setIngestApiUri(INGEST_API_ROOT);
         configurationService.setUpdaterPeriodSeconds(UPDATER_PERIOD_SECONDS);
+        configurationService.setStateUpdateRels(mockStateUpdateRels());
 
         return configurationService;
     }
+
+    public static Map<SubmissionState,String> mockStateUpdateRels() {
+        Map<SubmissionState, String> stateUpdateRelMap = new HashMap<>();
+        stateUpdateRelMap.put(SubmissionState.SUBMITTED, "commitSubmit");
+        return stateUpdateRelMap;    }
 }

@@ -45,7 +45,6 @@ public class MessageReceiver {
         MetadataDocumentState documentState = MetadataDocumentState.valueOf(metadataDocument.getValidationState().toUpperCase());
         metadataDocument
                 .getReferencedEnvelopes()
-                .stream()
                 .forEach(envelopeReference -> {
                     if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
                         submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
