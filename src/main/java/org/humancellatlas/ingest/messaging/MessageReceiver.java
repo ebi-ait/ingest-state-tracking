@@ -34,8 +34,14 @@ public class MessageReceiver {
 
     @RabbitListener(queues = Constants.Queues.ENVELOPE_UPDATE)
     public void receiveSubmissionEnvelopeStateUpdateRequest(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
+        SubmissionEnvelopeReference envelopeReference = getIngestApiClient().referenceForSubmissionEnvelope(submissionEnvelopeMessage);
+
+        if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
+            submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
+        }
+
         SubmissionEvent submissionEvent = SubmissionEvent.fromRequestedSubmissionState(SubmissionState.valueOf(submissionEnvelopeMessage.getRequestedState().toUpperCase()));
-        submissionStateMonitor.sendEventForSubmissionEnvelope(getIngestApiClient().referenceForSubmissionEnvelope(submissionEnvelopeMessage), submissionEvent);
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeReference, submissionEvent);
     }
 
     @RabbitListener(queues = Constants.Queues.DOCUMENT_UPDATE)
