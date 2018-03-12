@@ -2,6 +2,7 @@ package org.humancellatlas.ingest.messaging;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.humancellatlas.ingest.state.SubmissionState;
 
 /**
  * Javadocs go here!
@@ -12,8 +13,10 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class SubmissionEnvelopeMessage {
-    private final String documentId;
-    private final String documentUuid;
-    private final String callbackLink;
-    private final String requestedState;
+    SubmissionEnvelopeMessage() {}
+
+    private String documentId;
+    private String documentUuid;
+    private String callbackLink;
+    private String requestedState;
 }
