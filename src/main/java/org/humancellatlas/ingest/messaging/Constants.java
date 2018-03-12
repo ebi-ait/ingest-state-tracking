@@ -8,10 +8,10 @@ package org.humancellatlas.ingest.messaging;
  */
 public class Constants {
     public class Queues {
-        public static final String DOCUMENT_CREATED = "ingest.metadata.created.queue";
-        public static final String DOCUMENT_UPDATE = "ingest.metadata.update.queue";
-        public static final String ENVELOPE_CREATED = "ingest.envelope.created.queue";
-        public static final String ENVELOPE_UPDATE = "ingest.envelope.updated.queue";
+        public static final String DOCUMENT_CREATED = "ingest.state-tracking.metadata.created.queue";
+        public static final String DOCUMENT_UPDATE = "ingest.state-tracking.metadata.update.queue";
+        public static final String ENVELOPE_CREATED = "ingest.state-tracking.envelope.created.queue";
+        public static final String ENVELOPE_UPDATE = "ingest.state-tracking.envelope.updated.queue";
     }
 
     public class Exchanges {
@@ -20,7 +20,7 @@ public class Constants {
 
     public class RoutingKeys {
         public static final String ENVELOPE_STATE_UPDATE = "ingest.state-tracking.envelope.state.update";
-        public static final String ENVELOPE_CREATE = "ngest.state-tracking.envelope.create";
+        public static final String ENVELOPE_CREATE = "ingest.state-tracking.envelope.create";
         public static final String METADATA_UPDATE = "ingest.state-tracking.document.update";
     }
 }
