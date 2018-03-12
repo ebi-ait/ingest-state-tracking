@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.humancellatlas.ingest.testutil.MockConfigurationService.INGEST_API_ROOT_STRING;
+import static org.humancellatlas.ingest.testutil.MockConfigurationService.mockStateUpdateRels;
 import static org.junit.Assert.*;
 
 
@@ -59,13 +60,13 @@ public class SubmissionStateUpdaterTest {
     }
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(8080);
+    public WireMockRule wireMockRule = new WireMockRule(8088);
 
 
     @Test
     public void testOnlyKeepsOneCopyOfAnUpdateRequest() throws Exception {
         String mockEnvelopeId = "mock-envelope-id";
-        UUID mockEnvelopeUUID = UUID.randomUUID();
+        String mockEnvelopeUUID = UUID.randomUUID().toString();
         String mockEnvelopeCallbackLocation = "/submissionEnvelopes/" + mockEnvelopeId;
 
         SubmissionEnvelopeReference submissionEnvelopeReference = new SubmissionEnvelopeReference(
@@ -84,7 +85,7 @@ public class SubmissionStateUpdaterTest {
     @Test
     public void testUpdateSubmissionState() throws Exception {
         String mockEnvelopeId = "mock-envelope-id";
-        UUID mockEnvelopeUUID = UUID.randomUUID();
+        String mockEnvelopeUUID = UUID.randomUUID().toString();
         String mockEnvelopeCallbackLocation = "/submissionEnvelopes/" + mockEnvelopeId;
 
         SubmissionEnvelopeReference submissionEnvelopeReference = new SubmissionEnvelopeReference(
@@ -101,6 +102,9 @@ public class SubmissionStateUpdaterTest {
                 _links = new HashMap<String, Object>() {{
                     put("self", new HashMap<String, Object>() {{
                         put("href", INGEST_API_ROOT_STRING + mockEnvelopeCallbackLocation);
+                    }});
+                    put(mockStateUpdateRels().get(SubmissionState.SUBMITTED), new HashMap<String, Object>() {{
+                        put("href", INGEST_API_ROOT_STRING + mockEnvelopeCallbackLocation + "/mockCommitSubmit");
                     }});
                 }};
             }
@@ -129,7 +133,6 @@ public class SubmissionStateUpdaterTest {
         }
 
         EnvelopeInitialJson envelopeInitialJson = new EnvelopeInitialJson();
-        EnvelopePatchRequestJson envelopePatchRequestJson = new EnvelopePatchRequestJson();
         EnvelopePatchedJson envelopePatchedJson = new EnvelopePatchedJson();
 
         // scenario: envelope state is initially in state "valid", the updater should patch it and it should then be in state "submitted"
@@ -142,19 +145,17 @@ public class SubmissionStateUpdaterTest {
                                 .withBody(new ObjectMapper().writeValueAsString(envelopeInitialJson))));
 
         stubFor(
-                patch(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString())).inScenario("update submission state")
+                put(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString() + "/mockCommitSubmit")).inScenario("update submission state")
                         .whenScenarioStateIs(Scenario.STARTED)
-                        .withHeader("Accept", equalTo("application/hal+json"))
-                        .withRequestBody(equalToJson(new ObjectMapper().writeValueAsString(envelopePatchRequestJson)))
                         .willReturn(aResponse()
                                 .withStatus(200)
                                 .withHeader("Content-Type", "application/hal+json")
-                                .withBody(new ObjectMapper().writeValueAsString(envelopePatchRequestJson)))
-                        .willSetStateTo("submission state patched"));
+                                .withBody(new ObjectMapper().writeValueAsString(envelopePatchedJson)))
+                        .willSetStateTo("submission state transitioned"));
 
         stubFor(
                 get(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString())).inScenario("update submission state")
-                        .whenScenarioStateIs("submission state patched")
+                        .whenScenarioStateIs("submission state transitioned")
                         .withHeader("Accept", equalTo("application/hal+json"))
                         .willReturn(aResponse()
                                 .withStatus(200)
@@ -170,7 +171,7 @@ public class SubmissionStateUpdaterTest {
         assertTrue(submissionStateUpdater.getPendingUpdates().size() == 1);
 
 
-        Thread.sleep((config.getUpdaterPeriodSeconds() * 1000) * 2); // wait for an update to happen, x 2 to be sure
+        Thread.sleep((config.getUpdaterPeriodSeconds() * 1000) * 3); // wait for an update to happen, x 2 to be sure
 
         assertEquals(
                 ingestApiClient.retrieveSubmissionEnvelope(submissionEnvelopeReference).getSubmissionState().toUpperCase(),

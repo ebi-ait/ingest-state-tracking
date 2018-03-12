@@ -45,9 +45,9 @@ public class IngestStateTrackingApplicationTests {
 
     @Before
     public void setup() {
-        envelopeRef = new SubmissionEnvelopeReference("1234", UUID.randomUUID(),
+        envelopeRef = new SubmissionEnvelopeReference("1234", UUID.randomUUID().toString(),
                 URI.create("http://localhost:8080/api/submissionEnvelopes/1234"));
-        documentRef = new MetadataDocumentReference("5678", UUID.randomUUID(),
+        documentRef = new MetadataDocumentReference("5678", UUID.randomUUID().toString(),
                 URI.create("http://localhost:8080/api/metadataDocuments/5678"));
         submissionStateMonitor.monitorSubmissionEnvelope(envelopeRef, false);
     }
@@ -140,8 +140,8 @@ public class IngestStateTrackingApplicationTests {
     public void testSuccessfulEventRunthroughWithBarrage() {
         MetadataDocumentEventBarrage barrage = new MetadataDocumentEventBarrage();
 
-        // generate transition lifecycles for, say, 10 samples...
-        for (int i = 0; i < 10; i++) {
+        // generate transition lifecycles for, say, 100 samples...
+        for (int i = 0; i < 100; i++) {
             MetadataDocumentReference documentReference = generateMetadataDocumentReference();
             MetadataDocumentTransitionLifecycle sampleTransitionLifecycle = new MetadataDocumentTransitionLifecycle
                     .Builder(documentReference, envelopeRef)
@@ -153,14 +153,32 @@ public class IngestStateTrackingApplicationTests {
             barrage.addToBarrage(sampleTransitionLifecycle);
         }
 
-        // maybe 10 assays as well that go invalid and then valid
-        for (int i = 0; i < 10; i++) {
+        // maybe 100 assays as well that go invalid and then valid
+        for (int i = 0; i < 100; i++) {
             MetadataDocumentReference documentReference = generateMetadataDocumentReference();
             MetadataDocumentTransitionLifecycle assayTransitionLifecycle = new MetadataDocumentTransitionLifecycle
                     .Builder(documentReference, envelopeRef)
                     .addStateTransition(MetadataDocumentState.DRAFT)
                     .addStateTransition(MetadataDocumentState.VALIDATING)
                     .addStateTransition(MetadataDocumentState.INVALID)
+                    .addStateTransition(MetadataDocumentState.VALIDATING)
+                    .addStateTransition(MetadataDocumentState.VALID)
+                    .build();
+
+            barrage.addToBarrage(assayTransitionLifecycle);
+        }
+
+        // 200 files
+        for (int i = 0; i < 100; i++) {
+            MetadataDocumentReference documentReference = generateMetadataDocumentReference();
+            MetadataDocumentTransitionLifecycle assayTransitionLifecycle = new MetadataDocumentTransitionLifecycle
+                    .Builder(documentReference, envelopeRef)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
+                    .addStateTransition(MetadataDocumentState.VALIDATING)
+                    .addStateTransition(MetadataDocumentState.INVALID)
+                    .addStateTransition(MetadataDocumentState.VALIDATING)
+                    .addStateTransition(MetadataDocumentState.VALID)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
                     .addStateTransition(MetadataDocumentState.VALIDATING)
                     .addStateTransition(MetadataDocumentState.VALID)
                     .build();
@@ -243,16 +261,40 @@ public class IngestStateTrackingApplicationTests {
         assertFalse(eventResponse);
     }
 
+    @Test
+    public void testHandlingOfRedundantStateInfoMessages() {
+        MetadataDocumentEventBarrage barrage = new MetadataDocumentEventBarrage();
+
+        // test how it handles messages e.g draft -> draft -> draft -> draft -> validating -> valid
+        for (int i = 0; i < 8; i++) {
+            MetadataDocumentReference documentReference = generateMetadataDocumentReference();
+            MetadataDocumentTransitionLifecycle sampleTransitionLifecycle = new MetadataDocumentTransitionLifecycle
+                    .Builder(documentReference, envelopeRef)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
+                    .addStateTransition(MetadataDocumentState.VALIDATING)
+                    .addStateTransition(MetadataDocumentState.VALID)
+                    .build();
+
+            barrage.addToBarrage(sampleTransitionLifecycle);
+        }
+
+        barrage.commence(submissionStateMonitor);
+
+        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.VALID));
+    }
 
     private MetadataDocumentReference generateMetadataDocumentReference() {
         int id = new Random().nextInt();
-        return new MetadataDocumentReference(Integer.toString(id), UUID.randomUUID(),
+        return new MetadataDocumentReference(Integer.toString(id), UUID.randomUUID().toString(),
                 URI.create("http://localhost:8080/api/metadataDocuments/" + id));
     }
 
     private SubmissionEnvelopeReference generateSubmissionEnvelopeReference() {
         int id = new Random().nextInt();
-        return new SubmissionEnvelopeReference(Integer.toString(id), UUID.randomUUID(),
+        return new SubmissionEnvelopeReference(Integer.toString(id), UUID.randomUUID().toString(),
                 URI.create("http://localhost:8080/api/submissionEnvelopes/" + id));
     }
 

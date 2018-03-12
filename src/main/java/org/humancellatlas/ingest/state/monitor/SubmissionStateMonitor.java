@@ -53,11 +53,11 @@ public class SubmissionStateMonitor {
         stateMachine.addStateListener(submissionStateListenerBuilder.listenerFor(submissionEnvelopeReference, this, autoremove));
 
         stateMachine.start();
-        stateMachineMap.put(submissionEnvelopeReference.getUuid(), stateMachine);
+        stateMachineMap.put(UUID.fromString(submissionEnvelopeReference.getUuid()), stateMachine);
     }
 
     public void stopMonitoring(SubmissionEnvelopeReference submissionEnvelopeReference) {
-        UUID submissionEnvelopeUuid = submissionEnvelopeReference.getUuid();
+        UUID submissionEnvelopeUuid = UUID.fromString(submissionEnvelopeReference.getUuid());
         if (stateMachineMap.containsKey(submissionEnvelopeUuid)) {
             removeStateMachine(submissionEnvelopeUuid);
         }
@@ -72,12 +72,12 @@ public class SubmissionStateMonitor {
     }
 
     public boolean isMonitoring(SubmissionEnvelopeReference submissionEnvelopeReference) {
-        return stateMachineMap.containsKey(submissionEnvelopeReference.getUuid());
+        return stateMachineMap.containsKey(UUID.fromString(submissionEnvelopeReference.getUuid()));
     }
 
     public SubmissionState findCurrentState(SubmissionEnvelopeReference submissionEnvelopeReference) {
         Optional<StateMachine<SubmissionState, SubmissionEvent>> stateMachine =
-                findStateMachine(submissionEnvelopeReference.getUuid());
+                findStateMachine(UUID.fromString(submissionEnvelopeReference.getUuid()));
         if (stateMachine.isPresent()) {
             return stateMachine.get().getState().getId();
         }
@@ -102,7 +102,7 @@ public class SubmissionStateMonitor {
         }
 
         Optional<StateMachine<SubmissionState, SubmissionEvent>> stateMachine =
-                findStateMachine(submissionEnvelopeReference.getUuid());
+                findStateMachine(UUID.fromString(submissionEnvelopeReference.getUuid()));
         if (stateMachine.isPresent()) {
             StateMachine<SubmissionState, SubmissionEvent> machine = stateMachine.get();
             return machine.sendEvent(event);
@@ -116,13 +116,13 @@ public class SubmissionStateMonitor {
 
     public boolean notifyOfMetadataDocumentState(MetadataDocumentReference metadataDocumentReference, SubmissionEnvelopeReference submissionEnvelopeReference, MetadataDocumentState state){
         Optional<StateMachine<SubmissionState, SubmissionEvent>> stateMachine =
-            findStateMachine(submissionEnvelopeReference.getUuid());
+            findStateMachine(UUID.fromString(submissionEnvelopeReference.getUuid()));
 
         if (stateMachine.isPresent()) {
             StateMachine<SubmissionState, SubmissionEvent> machine = stateMachine.get();
 
             Message<SubmissionEvent> message = MessageBuilder.withPayload(SubmissionEvent.DOCUMENT_PROCESSED)
-                .setHeader(MetadataDocumentInfo.DOCUMENT_ID, metadataDocumentReference.getUuid().toString())
+                .setHeader(MetadataDocumentInfo.DOCUMENT_ID, metadataDocumentReference.getId())
                 .setHeader(MetadataDocumentInfo.DOCUMENT_STATE, state)
                 .build();
 

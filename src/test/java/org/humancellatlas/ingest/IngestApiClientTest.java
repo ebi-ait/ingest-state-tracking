@@ -16,6 +16,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.boot.autoconfigure.couchbase.CouchbaseProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -23,6 +24,7 @@ import java.net.URI;
 import java.util.*;
 
 import static org.humancellatlas.ingest.testutil.MockConfigurationService.INGEST_API_ROOT_STRING;
+import static org.humancellatlas.ingest.testutil.MockConfigurationService.mockStateUpdateRels;
 import static org.junit.Assert.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
@@ -48,23 +50,23 @@ public class IngestApiClientTest {
     public IngestApiClientTest(){ }
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(8080);
+    public WireMockRule wireMockRule = new WireMockRule(8088);
 
     @Test
     public void testGetMetadataDocumentInfo() throws Exception {
         MetadataDocumentReference mockMetadataDocumentReference = new MetadataDocumentReference(
                 "mock-id",
-                UUID.randomUUID(),
+                UUID.randomUUID().toString(),
                 new URI("/mockmetadatatype/1234"));
 
         String mockEnvelopeUUID = UUID.randomUUID().toString();
 
         class MetadataDocumentJson {
-            @JsonProperty("documentState") String documentState;
+            @JsonProperty("validationState") String validationState;
             @JsonProperty("_links") Map<String, Object> _links;
 
             MetadataDocumentJson(){
-                documentState = "Valid";
+                validationState = "Valid";
                 _links = new HashMap<String, Object>() {{
                     put("self", new HashMap<String, Object>() {{
                         put("href",  INGEST_API_ROOT_STRING + mockMetadataDocumentReference.getCallbackLocation());
@@ -76,23 +78,30 @@ public class IngestApiClientTest {
             }
         }
 
+        class EnvelopeJson {
+            @JsonProperty("uuid") Map<String, Object> uuid;
+            @JsonProperty("_links")  Map<String, Object> _links;
+
+            EnvelopeJson() {
+                uuid = new HashMap<String, Object>() {{
+                    put("uuid", mockEnvelopeUUID);
+                }};
+                _links = new HashMap<String, Object>() {{
+                    put("self", new HashMap<String, Object>() {{
+                        put("href", INGEST_API_ROOT_STRING + "/submissionEnvelopes/mock-envelope-id");
+                    }});
+                }};
+            }
+        }
+
+        Object envelopeJson = new EnvelopeJson();
+
         class MetadataDocumentEmbeddedSubmissionEnvelopesJson {
             @JsonProperty("_embedded") Map<String, Object> _embedded;
 
             MetadataDocumentEmbeddedSubmissionEnvelopesJson() {
                 _embedded = new HashMap<String, Object>() {{
-                    put("submissionEnvelopes", Arrays.asList(
-                            new HashMap<String, Object>() {{
-                                put("uuid",  new HashMap<String, Object>() {{
-                                   put("uuid", mockEnvelopeUUID);
-                                }});
-                                put("_links", new HashMap<String, Object>() {{
-                                    put("self", new HashMap<String, Object>() {{
-                                        put("href", INGEST_API_ROOT_STRING + "/submissionEnvelopes/mock-envelope-id" );
-                                    }});
-                                }});
-                            }}
-                    ));
+                    put("submissionEnvelopes", Arrays.asList(envelopeJson));
                 }};
             }
         }
@@ -116,17 +125,26 @@ public class IngestApiClientTest {
                                 .withHeader("Content-Type", "application/hal+json")
                                 .withBody(new ObjectMapper().writeValueAsString(metadataDocumentEmbeddedEnvelopesResponse))));
 
+        stubFor(
+                get(urlEqualTo("/submissionEnvelopes/mock-envelope-id"))
+                        .withHeader("Accept", equalTo("application/hal+json"))
+                        .willReturn(aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/hal+json")
+                                            .withBody(new ObjectMapper().writeValueAsString(envelopeJson))));
+
         MetadataDocument mockMetadataDocument = ingestApiClient.retrieveMetadataDocument(mockMetadataDocumentReference);
 
         assertNotNull(mockMetadataDocument.getValidationState());
-        assertTrue(mockMetadataDocument.getSubmissionIds().size() == 1);
-        assertTrue(mockMetadataDocument.getSubmissionIds().get(0).equals("mock-envelope-id"));
+        assertTrue(mockMetadataDocument.getReferencedEnvelopes().size() == 1);
+        assertTrue(mockMetadataDocument.getReferencedEnvelopes().get(0).getId().equals("mock-envelope-id"));
+        assertTrue(mockMetadataDocument.getReferencedEnvelopes().get(0).getUuid().equals(mockEnvelopeUUID));
     }
 
     @Test
     public void testGetSubmissionEnvelopeInfo() throws Exception {
         String mockEnvelopeId = "mock-envelope-id";
-        UUID mockEnvelopeUUID = UUID.randomUUID();
+        String mockEnvelopeUUID = UUID.randomUUID().toString();
         String mockEnvelopeCallbackLocation = "/submissionEnvelopes/" + mockEnvelopeId;
 
         SubmissionEnvelopeReference submissionEnvelopeReference = new SubmissionEnvelopeReference(
@@ -167,7 +185,7 @@ public class IngestApiClientTest {
     @Test
     public void testUpdateSubmissionEnvelopeState() throws Exception {
         String mockEnvelopeId = "mock-envelope-id";
-        UUID mockEnvelopeUUID = UUID.randomUUID();
+        String mockEnvelopeUUID = UUID.randomUUID().toString();
         String mockEnvelopeCallbackLocation = "/submissionEnvelopes/" + mockEnvelopeId;
 
         SubmissionEnvelopeReference submissionEnvelopeReference = new SubmissionEnvelopeReference(
@@ -175,30 +193,60 @@ public class IngestApiClientTest {
                 mockEnvelopeUUID,
                 new URI(mockEnvelopeCallbackLocation));
 
-        class EnvelopePatchRequestJson {
+        class EnvelopeJson {
             @JsonProperty("submissionState") String submissionState;
+            @JsonProperty("_links") Map<String, Object> _links;
 
-            EnvelopePatchRequestJson() {
+            EnvelopeJson() {
                 this.submissionState = SubmissionState.SUBMITTED.toString();
+                _links = new HashMap<String, Object>() {{
+                    put(mockStateUpdateRels().get(SubmissionState.SUBMITTED), new HashMap<String, Object>() {{
+                        put("href", INGEST_API_ROOT_STRING + mockEnvelopeCallbackLocation + "/mockCommitSubmit");
+                    }});
+                }};
             }
         }
 
-        EnvelopePatchRequestJson envelopePatchRequestJson = new EnvelopePatchRequestJson();
+        class EnvelopeTransitionedJson {
+            @JsonProperty("submissionState") String submissionState;
+
+            EnvelopeTransitionedJson() {
+                submissionState = SubmissionState.SUBMITTED.toString();
+            }
+        }
+
+        Object envelopeJson = new EnvelopeJson();
+        Object envelopeTransitioned = new EnvelopeTransitionedJson();
 
         stubFor(
-                patch(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString()))
+                get(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString()))
                         .withHeader("Accept", equalTo("application/hal+json"))
-                        .withRequestBody(equalToJson(new ObjectMapper().writeValueAsString(envelopePatchRequestJson)))
                         .willReturn(aResponse()
                                 .withStatus(200)
                                 .withHeader("Content-Type", "application/hal+json")
-                                .withBody(new ObjectMapper().writeValueAsString(envelopePatchRequestJson))));
+                                .withBody(new ObjectMapper().writeValueAsString(envelopeJson))));
+
+
+        stubFor(
+                put(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString() + "/mockCommitSubmit"))
+                        .withHeader("Accept", equalTo("application/hal+json"))
+                        .willReturn(aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/hal+json")
+                                            .withBody(new ObjectMapper().writeValueAsString(envelopeTransitioned))));
+
 
         ingestApiClient.updateEnvelopeState(submissionEnvelopeReference, SubmissionState.SUBMITTED);
 
+
         verify(
-                patchRequestedFor(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString()))
-                        .withRequestBody(equalToJson(new ObjectMapper().writeValueAsString(envelopePatchRequestJson))));
+                getRequestedFor(
+                        urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString())));
+
+
+        verify(
+                putRequestedFor(
+                        urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString() + "/mockCommitSubmit" )));
 
     }
 

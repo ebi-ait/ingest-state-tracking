@@ -16,6 +16,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MetadataDocumentReference {
     private final String id;
-    private final UUID uuid;
+    private final String uuid;
     private final URI callbackLocation;
 }

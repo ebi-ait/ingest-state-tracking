@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class SubmissionStateListenerBuilder {
-    protected final SubmissionStateUpdater submissionStateUpdater;
+    private final SubmissionStateUpdater submissionStateUpdater;
 
     @Autowired
     public SubmissionStateListenerBuilder(SubmissionStateUpdater submissionStateUpdater) {

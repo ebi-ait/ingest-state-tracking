@@ -7,13 +7,11 @@ import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
 import org.humancellatlas.ingest.state.SubmissionEvent;
+import org.humancellatlas.ingest.state.SubmissionState;
 import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.Collection;
-import java.util.stream.Collectors;
 
 /**
  * Javadocs go here!
@@ -30,19 +28,20 @@ public class MessageReceiver {
 
     @RabbitListener(queues = Constants.Queues.ENVELOPE_CREATED)
     public void receiveSubmissionEnvelopeCreatedMessage(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
-        SubmissionEnvelopeReference seRef = ingestApiClient.referenceForSubmissionEnvelope(submissionEnvelopeMessage.getDocumentId());
+        SubmissionEnvelopeReference seRef = ingestApiClient.referenceForSubmissionEnvelope(submissionEnvelopeMessage);
         getSubmissionStateMonitor().monitorSubmissionEnvelope(seRef);
     }
 
     @RabbitListener(queues = Constants.Queues.ENVELOPE_UPDATE)
-    public void receiveSubmissionEnvelopeUpdatedMessage(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
-        SubmissionEvent submissionEvent = SubmissionEvent.valueOf(submissionEnvelopeMessage.getRequestedState());
-        submissionStateMonitor.sendEventForSubmissionEnvelope(getIngestApiClient().referenceForSubmissionEnvelope(submissionEnvelopeMessage), submissionEvent);
-    }
+    public void receiveSubmissionEnvelopeStateUpdateRequest(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
+        SubmissionEnvelopeReference envelopeReference = getIngestApiClient().referenceForSubmissionEnvelope(submissionEnvelopeMessage);
 
-    @RabbitListener(queues = Constants.Queues.DOCUMENT_CREATED)
-    public void receiveMetadataDocumentCreatedMessage(MetadataDocumentMessage metadataDocumentMessage) {
+        if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
+            submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
+        }
 
+        SubmissionEvent submissionEvent = SubmissionEvent.fromRequestedSubmissionState(SubmissionState.valueOf(submissionEnvelopeMessage.getRequestedState().toUpperCase()));
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeReference, submissionEvent);
     }
 
     @RabbitListener(queues = Constants.Queues.DOCUMENT_UPDATE)
@@ -52,9 +51,12 @@ public class MessageReceiver {
 
         MetadataDocumentState documentState = MetadataDocumentState.valueOf(metadataDocument.getValidationState().toUpperCase());
         metadataDocument
-                .getSubmissionIds()
-                .stream()
-                .map(envelopeId -> getIngestApiClient().referenceForSubmissionEnvelope(envelopeId))
-                .forEach(envelopeReference -> submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState));
+                .getReferencedEnvelopes()
+                .forEach(envelopeReference -> {
+                    if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
+                        submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
+                    }
+                    submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
+                });
     }
 }
