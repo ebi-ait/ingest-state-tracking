@@ -7,6 +7,7 @@ import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
 import org.humancellatlas.ingest.state.SubmissionEvent;
+import org.humancellatlas.ingest.state.SubmissionState;
 import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +34,7 @@ public class MessageReceiver {
 
     @RabbitListener(queues = Constants.Queues.ENVELOPE_UPDATE)
     public void receiveSubmissionEnvelopeStateUpdateRequest(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
-        SubmissionEvent submissionEvent = SubmissionEvent.valueOf(submissionEnvelopeMessage.getRequestedState());
+        SubmissionEvent submissionEvent = SubmissionEvent.fromRequestedSubmissionState(SubmissionState.valueOf(submissionEnvelopeMessage.getRequestedState().toUpperCase()));
         submissionStateMonitor.sendEventForSubmissionEnvelope(getIngestApiClient().referenceForSubmissionEnvelope(submissionEnvelopeMessage), submissionEvent);
     }
 
