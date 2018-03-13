@@ -75,15 +75,10 @@ public class QueueConfig {
     }
 
     @Bean
-    public RabbitMessagingTemplate rabbitMessagingTemplate(RabbitTemplate rabbitTemplate) {
-        RabbitMessagingTemplate rmt = new RabbitMessagingTemplate(rabbitTemplate);
-        rmt.setMessageConverter(this.jackson2Converter());
-        return rmt;
-    }
-
-    @Bean
     public Jackson2JsonMessageConverter converter() {
         return new Jackson2JsonMessageConverter();
     }
+
+
 }
 

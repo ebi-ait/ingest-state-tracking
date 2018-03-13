@@ -44,7 +44,7 @@ public class MessageReceiver {
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeReference, submissionEvent);
     }
 
-    @RabbitListener(queues = Constants.Queues.DOCUMENT_UPDATE)
+    @RabbitListener(queues = Constants.Queues.DOCUMENT_UPDATE, concurrency = "10")
     public void receiveMetadataDocumentupdatedMessage(MetadataDocumentMessage metadataDocumentMessage) {
         MetadataDocumentReference documentReference = getIngestApiClient().referenceForMetadataDocument(metadataDocumentMessage);
         MetadataDocument metadataDocument = getIngestApiClient().retrieveMetadataDocument(documentReference);
