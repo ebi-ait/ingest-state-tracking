@@ -38,9 +38,6 @@ public class SubmissionStateListener extends StateMachineListenerAdapter<Submiss
 
     @Override
     public void stateEntered(State<SubmissionState, SubmissionEvent> state) {
-        log.info(String.format("\tEnvelope '%s' -> State %s",
-                               submissionEnvelopeReference.getUuid(),
-                               state.getId().toString()));
 
     }
 
@@ -62,6 +59,12 @@ public class SubmissionStateListener extends StateMachineListenerAdapter<Submiss
 
     @Override
     public void stateChanged(State<SubmissionState, SubmissionEvent> from, State<SubmissionState, SubmissionEvent> to) {
-        this.submissionStateUpdater.requestStateUpdateForEnvelope(submissionEnvelopeReference, to.getId());
+        if(! from.getId().equals(to.getId())) {
+            log.info(String.format("\tEnvelope '%s' -> State %s",
+                                   submissionEnvelopeReference.getUuid(),
+                                   to.getId().toString()));
+
+            this.submissionStateUpdater.requestStateUpdateForEnvelope(submissionEnvelopeReference, to.getId());
+        }
     }
 }

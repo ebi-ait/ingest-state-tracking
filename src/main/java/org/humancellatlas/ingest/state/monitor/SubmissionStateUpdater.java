@@ -69,16 +69,7 @@ public class SubmissionStateUpdater {
     }
 
     private void update(PendingSubmissionUpdate pendingSubmissionUpdate) throws CoreStateUpdatedFailedException {
-        if(isUpdateNecessary(pendingSubmissionUpdate)) {
-            update(pendingSubmissionUpdate.getEnvelopeReference(), pendingSubmissionUpdate.getToState());
-        }
-    }
-
-    private boolean isUpdateNecessary(PendingSubmissionUpdate pendingSubmissionUpdate) {
-        // check if this update is necessary i.e check if the envelope is already in the state we want to update
-        // do this by retrieving the state of the envelope to update; if it's equal to state of the pending update, no need to update
-        return ! getIngestApiClient().retrieveSubmissionEnvelope(pendingSubmissionUpdate.getEnvelopeReference()).getSubmissionState().toUpperCase()
-                                     .equals(pendingSubmissionUpdate.getToState().toString().toUpperCase());
+        update(pendingSubmissionUpdate.getEnvelopeReference(), pendingSubmissionUpdate.getToState());
     }
 
     public void persistStates() {
