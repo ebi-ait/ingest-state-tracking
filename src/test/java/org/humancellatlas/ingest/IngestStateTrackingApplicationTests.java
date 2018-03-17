@@ -286,6 +286,42 @@ public class IngestStateTrackingApplicationTests {
         assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.VALID));
     }
 
+    @Test
+    public void testTransitionsBackToDraftWhenValidAndNewDocumentAdded(){
+        MetadataDocumentEventBarrage barrage = new MetadataDocumentEventBarrage();
+
+        // generate transition lifecycles for, say, 15 samples...
+        for (int i = 0; i < 10; i++) {
+            MetadataDocumentReference documentReference = generateMetadataDocumentReference();
+            MetadataDocumentTransitionLifecycle sampleTransitionLifecycle = new MetadataDocumentTransitionLifecycle
+                    .Builder(documentReference, envelopeRef)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
+                    .addStateTransition(MetadataDocumentState.VALIDATING)
+                    .addStateTransition(MetadataDocumentState.VALID)
+                    .build();
+
+            barrage.addToBarrage(sampleTransitionLifecycle);
+        }
+
+        barrage.commence(submissionStateMonitor);
+
+        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.VALID));
+
+        // add a draft document
+        barrage = new MetadataDocumentEventBarrage();
+        MetadataDocumentReference documentReference = generateMetadataDocumentReference();
+        MetadataDocumentTransitionLifecycle sampleTransitionLifecycle = new MetadataDocumentTransitionLifecycle
+                .Builder(documentReference, envelopeRef)
+                .addStateTransition(MetadataDocumentState.DRAFT)
+                .build();
+
+        barrage.addToBarrage(sampleTransitionLifecycle);
+
+        barrage.commence(submissionStateMonitor);
+
+        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.DRAFT));
+    }
+
     private MetadataDocumentReference generateMetadataDocumentReference() {
         int id = new Random().nextInt();
         return new MetadataDocumentReference(Integer.toString(id), UUID.randomUUID().toString(),
