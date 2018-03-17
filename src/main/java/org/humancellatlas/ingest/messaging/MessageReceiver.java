@@ -12,6 +12,7 @@ import org.humancellatlas.ingest.state.SubmissionState;
 import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -61,9 +62,9 @@ public class MessageReceiver {
             try {
                 log.info(new ObjectMapper().writeValueAsString(metadataDocumentMessage));
             } catch (IOException ioe) {
-                throw new RuntimeException(ioe);
+                throw new AmqpRejectAndDontRequeueException(e);
             }
-            throw e;
+            throw new AmqpRejectAndDontRequeueException(e);
         }
 
         MetadataDocumentState documentState = MetadataDocumentState.valueOf(metadataDocument.getValidationState().toUpperCase());
