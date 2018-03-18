@@ -140,7 +140,7 @@ public class SubmissionStateMonitor {
         stateMachineMap.remove(submissionEnvelopeUuid);
     }
 
-    private Optional<StateMachine<SubmissionState, SubmissionEvent>> findStateMachine(UUID submissionEnvelopeUuid) {
+    public Optional<StateMachine<SubmissionState, SubmissionEvent>> findStateMachine(UUID submissionEnvelopeUuid) {
         if (stateMachineMap.containsKey(submissionEnvelopeUuid)) {
             return Optional.of(stateMachineMap.get(submissionEnvelopeUuid));
         }

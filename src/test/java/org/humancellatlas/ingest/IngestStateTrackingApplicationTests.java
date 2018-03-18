@@ -111,6 +111,9 @@ public class IngestStateTrackingApplicationTests {
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.VALID, state);
 
+        // assert 0 documents in extended state map
+        assertTrue(submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().entrySet().size() == 0);
+
         log.debug("Sending SUBMISSION_REQUESTED event");
         submissionStateMonitor
                 .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
@@ -321,6 +324,7 @@ public class IngestStateTrackingApplicationTests {
 
         assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.DRAFT));
     }
+
 
     private MetadataDocumentReference generateMetadataDocumentReference() {
         int id = new Random().nextInt();

@@ -202,32 +202,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
         return context -> {
             Map<Object, Object> docMap = Collections.synchronizedMap(context.getExtendedState().getVariables());
 
-            for (Object key : docMap.keySet()) {
-                if (key.getClass() != String.class) {
-                    // extra content somehow?
-                    log.error("An extended state key was fubared");
-                }
-                else {
-                    String documentId = (String) key;
-                    Object value = docMap.get(documentId);
-                    if (value.getClass() != MetadataDocumentState.class) {
-                        // extra content somehow?
-                        log.error("An extended state value was fubared");
-                    }
-                    else {
-                        MetadataDocumentState documentState = (MetadataDocumentState) value;
-                        log.debug(String.format("Testing content from extended state. Document tracker: { %s : %s }",
-                                                documentId,
-                                                documentState));
-                        if (! documentState.equals(MetadataDocumentState.VALID)) {
-                            return false;
-                        }
-                    }
-                }
-            }
-
-            // check if all documents attached to the current state engine extended context are valid
-            return true;
+            return docMap.entrySet().size() == 0;
         };
     }
 
@@ -244,7 +219,13 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
             log.debug(String.format("Adding content to extended state. Document tracker: { %s : %s }",
                                     documentId,
                                     documentState));
-            context.getExtendedState().getVariables().put(documentId, documentState);
+            if(! documentState.equals(MetadataDocumentState.VALID)) {
+                context.getExtendedState().getVariables().put(documentId, documentState);
+            } else {
+                if ( context.getExtendedState().getVariables().containsKey(documentId)){
+                    context.getExtendedState().getVariables().remove(documentId);
+                }
+            }
         };
     }
 }
