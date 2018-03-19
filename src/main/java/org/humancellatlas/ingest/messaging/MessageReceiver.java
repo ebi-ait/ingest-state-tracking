@@ -16,6 +16,7 @@ import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.io.IOException;
 
@@ -57,8 +58,8 @@ public class MessageReceiver {
         MetadataDocument metadataDocument;
         try{
             metadataDocument = getIngestApiClient().retrieveMetadataDocument(documentReference, metadataDocumentMessage.getEnvelopeIds());
-        } catch (RuntimeException e) {
-            log.info("Failed to fetch metadata document. Message was: ");
+        } catch (HttpClientErrorException e) {
+            log.info(String.format("Failed to fetch metadata document. Response was: %s Message was: ", e.getResponseBodyAsString()));
             try {
                 log.info(new ObjectMapper().writeValueAsString(metadataDocumentMessage));
             } catch (IOException ioe) {
