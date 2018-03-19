@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.UUID;
 
 /**

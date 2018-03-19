@@ -56,7 +56,7 @@ public class MessageReceiver {
         MetadataDocumentReference documentReference = getIngestApiClient().referenceForMetadataDocument(metadataDocumentMessage);
         MetadataDocument metadataDocument;
         try{
-            metadataDocument = getIngestApiClient().retrieveMetadataDocument(documentReference);
+            metadataDocument = getIngestApiClient().retrieveMetadataDocument(documentReference, metadataDocumentMessage.getEnvelopeIds());
         } catch (RuntimeException e) {
             log.info("Failed to fetch metadata document. Message was: ");
             try {

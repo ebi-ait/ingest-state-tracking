@@ -7,6 +7,7 @@ import com.jayway.jsonpath.JsonPath;
 import lombok.Getter;
 import org.humancellatlas.ingest.client.model.MetadataDocument;
 import org.humancellatlas.ingest.client.model.SubmissionEnvelope;
+import org.humancellatlas.ingest.client.util.EnvelopeReferenceCache;
 import org.humancellatlas.ingest.config.ConfigurationService;
 import org.humancellatlas.ingest.messaging.MetadataDocumentMessage;
 import org.humancellatlas.ingest.messaging.SubmissionEnvelopeMessage;
@@ -54,6 +55,7 @@ public class IngestApiClient implements InitializingBean {
 
     private String submissionEnvelopesPath;
     private Map<String, String> metadataTypesLinkMap = new HashMap<>();
+    private EnvelopeReferenceCache envelopeReferenceCache;
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -68,6 +70,7 @@ public class IngestApiClient implements InitializingBean {
         this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
         this.submissionEnvelopesPath = "/submissionEnvelopes";
         this.metadataTypesLinkMap.put("sample",  config.getIngestApiUri() + "/samples");
+        this.envelopeReferenceCache = new EnvelopeReferenceCache(100);
     }
 
     public SubmissionEnvelope updateEnvelopeState(SubmissionEnvelopeReference envelopeReference, SubmissionState submissionState) {
@@ -100,22 +103,17 @@ public class IngestApiClient implements InitializingBean {
         return new SubmissionEnvelope(submissionState);
     }
 
-    public MetadataDocument retrieveMetadataDocument(MetadataDocumentReference documentReference) {
+    public MetadataDocument retrieveMetadataDocument(MetadataDocumentReference documentReference, Collection<String> envelopeIds) {
         String documentURIString = config.getIngestApiUri() + documentReference.getCallbackLocation().toString();
 
         URI documentURI = uriFor(documentURIString);
         Traverson halTraverser = halTraverserOn(documentURI);
-
         String validationState = halTraverser.follow("self").toObject("$.validationState");
-        List<SubmissionEnvelopeReference> relatedSubmissionIds = halTraverser
-                .follow("submissionEnvelopes")
-                .toObject(new ParameterizedTypeReference<PagedResources<Resource<LinkedHashMap>>>() {} )
-                .getContent()
-                .stream()
-                .map(resource -> envelopeReferenceFromEnvelopeUri(URI.create(resource.getLink("self").getHref())))
-                .collect(Collectors.toList());
 
-        return new MetadataDocument(validationState, relatedSubmissionIds);
+        MetadataDocument document = new MetadataDocument();
+        document.setValidationState(validationState);
+        document.setReferencedEnvelopes(envelopeIds.stream().map(this::envelopeReferenceFromEnvelopeId).collect(Collectors.toList()));
+        return document;
     }
 
     public SubmissionEnvelopeReference referenceForSubmissionEnvelope(SubmissionEnvelopeMessage message) {
@@ -132,6 +130,25 @@ public class IngestApiClient implements InitializingBean {
 
     private Traverson halTraverserOn(URI baseUri) {
         return new Traverson(baseUri, MediaTypes.HAL_JSON);
+    }
+
+
+    /**
+     * first looks in a cache of envelope IDs to envelope references, retrieves envelope info from the core API
+     * when there's a cache miss
+     *
+     * @param envelopeId
+     * @return
+     */
+    private SubmissionEnvelopeReference envelopeReferenceFromEnvelopeId(String envelopeId) {
+        Optional<SubmissionEnvelopeReference> envelopeReferenceOptional = Optional.ofNullable(envelopeReferenceCache.get(envelopeId));
+        if(envelopeReferenceOptional.isPresent()) {
+            return envelopeReferenceOptional.get();
+        } else {
+            SubmissionEnvelopeReference envelopeReference = envelopeReferenceFromEnvelopeUri(URI.create(config.getIngestApiUri().toString() + submissionEnvelopesPath + "/" + envelopeId));
+            envelopeReferenceCache.put(envelopeId, envelopeReference);
+            return envelopeReference;
+        }
     }
 
     private SubmissionEnvelopeReference envelopeReferenceFromEnvelopeUri(URI envelopeUri) {

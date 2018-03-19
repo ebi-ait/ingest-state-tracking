@@ -133,7 +133,7 @@ public class IngestApiClientTest {
                                             .withHeader("Content-Type", "application/hal+json")
                                             .withBody(new ObjectMapper().writeValueAsString(envelopeJson))));
 
-        MetadataDocument mockMetadataDocument = ingestApiClient.retrieveMetadataDocument(mockMetadataDocumentReference);
+        MetadataDocument mockMetadataDocument = ingestApiClient.retrieveMetadataDocument(mockMetadataDocumentReference, Collections.singletonList("mock-envelope-id"));
 
         assertNotNull(mockMetadataDocument.getValidationState());
         assertTrue(mockMetadataDocument.getReferencedEnvelopes().size() == 1);
