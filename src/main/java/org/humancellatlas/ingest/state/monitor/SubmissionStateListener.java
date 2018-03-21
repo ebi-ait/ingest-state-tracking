@@ -1,7 +1,9 @@
 package org.humancellatlas.ingest.state.monitor;
 
 import org.humancellatlas.ingest.exception.CoreStateUpdatedFailedException;
+import org.humancellatlas.ingest.messaging.Constants;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
+import org.humancellatlas.ingest.state.MetadataDocumentState;
 import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
 import org.slf4j.Logger;
@@ -10,6 +12,9 @@ import org.springframework.messaging.Message;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.listener.StateMachineListenerAdapter;
 import org.springframework.statemachine.state.State;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Javadocs go here!
@@ -34,6 +39,19 @@ public class SubmissionStateListener extends StateMachineListenerAdapter<Submiss
         this.submissionStateUpdater = submissionStateUpdater;
         this.autoremove = autoremove;
         log.info(String.format("\tCreated Envelope '%s'", submissionEnvelopeReference.getUuid()));
+    }
+
+
+    @Override
+    public void stateMachineStarted(StateMachine<SubmissionState, SubmissionEvent> stateMachine) {
+        // add the metadata document state map
+        Map<String, MetadataDocumentState> metadataDocumentTracker = new HashMap<>();
+        stateMachine.getExtendedState().getVariables().put(Constants.METADATA_DOCUMENT_TRACKER, metadataDocumentTracker);
+
+        // add the assay bundle state map
+        Map<String, String> assayBundleTracker = new HashMap<>();
+        stateMachine.getExtendedState().getVariables().put(Constants.ASSAY_BUNDLE_TRACKER, assayBundleTracker);
+
     }
 
     @Override

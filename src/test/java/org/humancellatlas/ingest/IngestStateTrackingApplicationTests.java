@@ -1,5 +1,6 @@
 package org.humancellatlas.ingest;
 
+import org.humancellatlas.ingest.messaging.Constants;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
@@ -19,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.net.URI;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -112,7 +114,8 @@ public class IngestStateTrackingApplicationTests {
         assertEquals(SubmissionState.VALID, state);
 
         // assert 0 documents in extended state map
-        assertTrue(submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().entrySet().size() == 0);
+        Map<String, MetadataDocumentState> metadataDocumentStateMap = (Map<String, MetadataDocumentState>) submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
+        assertTrue(metadataDocumentStateMap.entrySet().size() == 0);
 
         log.debug("Sending SUBMISSION_REQUESTED event");
         submissionStateMonitor

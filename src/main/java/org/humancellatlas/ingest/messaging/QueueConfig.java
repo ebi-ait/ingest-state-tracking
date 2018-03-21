@@ -22,6 +22,9 @@ public class QueueConfig {
     @Bean
     TopicExchange stateTrackingExchange() { return new TopicExchange(Constants.Exchanges.STATE_TRACKING); }
 
+    @Bean
+    TopicExchange assayExchange() { return new TopicExchange(Constants.Exchanges.ASSAY_EXCHANGE); }
+
     /* queues */
 
     @Bean
@@ -32,6 +35,9 @@ public class QueueConfig {
 
     @Bean
     Queue queueDocumentUpdate() { return new Queue(Constants.Queues.DOCUMENT_UPDATE, false); }
+
+    @Bean
+    Queue queueAssaySubmitted() { return new Queue(Constants.Queues.ASSAY_SUBMITTED, false); }
 
     /* queue bindings */
 
@@ -48,6 +54,11 @@ public class QueueConfig {
     @Bean
     Binding bindingDocumentsUpdate(Queue queueDocumentUpdate, TopicExchange stateTrackingExchange) {
         return BindingBuilder.bind(queueDocumentUpdate).to(stateTrackingExchange).with(Constants.RoutingKeys.METADATA_UPDATE);
+    }
+
+    @Bean
+    Binding bindingAssaySubmitted(Queue queueAssaySubmitted, TopicExchange assayExchange) {
+        return BindingBuilder.bind(queueAssaySubmitted).to(assayExchange).with(Constants.RoutingKeys.ASSAY_SUBMITTED_ROUTING_KEY);
     }
 
     /* rabbit message config */

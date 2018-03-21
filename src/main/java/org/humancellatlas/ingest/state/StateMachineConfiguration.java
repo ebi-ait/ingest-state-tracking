@@ -1,8 +1,11 @@
 package org.humancellatlas.ingest.state;
 
+import org.humancellatlas.ingest.client.model.MetadataDocument;
+import org.humancellatlas.ingest.messaging.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
@@ -129,7 +132,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
 
     private Guard<SubmissionState, SubmissionEvent> documentsInvalidGuard() {
         return context -> {
-            Map<Object, Object> docMap = Collections.synchronizedMap(context.getExtendedState().getVariables());
+            Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
 
             for (Object key : docMap.keySet()) {
                 if (key.getClass() != String.class) {
@@ -164,7 +167,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
 
     private Guard<SubmissionState, SubmissionEvent> documentsValidatingGuard() {
         return context -> {
-            Map<Object, Object> docMap = Collections.synchronizedMap(context.getExtendedState().getVariables());
+            Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
 
             for (Object key : docMap.keySet()) {
                 if (key.getClass() != String.class) {
@@ -200,7 +203,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
 
     private Guard<SubmissionState, SubmissionEvent> allValidGuard() {
         return context -> {
-            Map<Object, Object> docMap = Collections.synchronizedMap(context.getExtendedState().getVariables());
+            Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
 
             return docMap.entrySet().size() == 0;
         };
@@ -219,13 +222,18 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
             log.debug(String.format("Adding content to extended state. Document tracker: { %s : %s }",
                                     documentId,
                                     documentState));
+            Map<String, MetadataDocumentState> metadataDocumentTracker = getMetadataDocumentTrackerFromContext(context);
             if(! documentState.equals(MetadataDocumentState.VALID)) {
-                context.getExtendedState().getVariables().put(documentId, documentState);
+                metadataDocumentTracker.put(documentId, documentState);
             } else {
-                if ( context.getExtendedState().getVariables().containsKey(documentId)){
-                    context.getExtendedState().getVariables().remove(documentId);
+                if ( metadataDocumentTracker.containsKey(documentId)){
+                    metadataDocumentTracker.remove(documentId);
                 }
             }
         };
+    }
+
+    private Map<String, MetadataDocumentState> getMetadataDocumentTrackerFromContext(StateContext<SubmissionState, SubmissionEvent> context) {
+        return (Map<String, MetadataDocumentState>) context.getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
     }
 }
