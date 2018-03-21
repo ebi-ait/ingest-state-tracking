@@ -156,7 +156,6 @@ public class SubmissionStateMonitor {
                     "Submission envelope reference '%s' is not currently being monitored",
                     envelopeUuid));
         }
-
     }
 
     private void removeStateMachine(UUID submissionEnvelopeUuid) {

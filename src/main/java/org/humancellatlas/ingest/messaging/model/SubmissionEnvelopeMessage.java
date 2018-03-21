@@ -1,4 +1,4 @@
-package org.humancellatlas.ingest.messaging;
+package org.humancellatlas.ingest.messaging.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
