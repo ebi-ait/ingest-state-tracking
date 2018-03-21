@@ -92,7 +92,7 @@ public class MessageReceiver {
                                                   MetadataDocumentState.PROCESSING);
     }
 
-    @RabbitListener(queues = Constants.Queues.ASSAY_SUBMITTED)
+    @RabbitListener(queues = Constants.Queues.ASSAY_COMPLETED)
     public void receiveAssayCompletedMessage(AssayCompletedMessage assayCompletedMessage) {
         /* track the newly submitted assay */
         submissionStateMonitor.notifyOfAssayState(assayCompletedMessage.getDocumentId(),
