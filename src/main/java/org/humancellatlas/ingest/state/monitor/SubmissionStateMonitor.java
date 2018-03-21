@@ -1,5 +1,6 @@
 package org.humancellatlas.ingest.state.monitor;
 
+import org.humancellatlas.ingest.client.model.MetadataDocument;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.MetadataDocumentInfo;
@@ -135,6 +136,28 @@ public class SubmissionStateMonitor {
         }
     }
 
+    public boolean notifyOfAssayState(String assayDocumentId, String envelopeUuid, int totalAssaysExpected, MetadataDocumentState assayState) {
+        Optional<StateMachine<SubmissionState, SubmissionEvent>> stateMachine =
+                findStateMachine(UUID.fromString(envelopeUuid));
+
+        if (stateMachine.isPresent()) {
+            StateMachine<SubmissionState, SubmissionEvent> machine = stateMachine.get();
+
+            Message<SubmissionEvent> message = MessageBuilder.withPayload(SubmissionEvent.ASSAY_STATE_UPDATE)
+                                                             .setHeader(MetadataDocumentInfo.DOCUMENT_ID, assayDocumentId)
+                                                             .setHeader(MetadataDocumentInfo.DOCUMENT_STATE, assayState)
+                                                             .setHeader(MetadataDocumentInfo.ASSAYS_TOTAL_EXPECTED, totalAssaysExpected)
+                                                             .setHeader(MetadataDocumentInfo.ENVELOPE_UUID, envelopeUuid)
+                                                             .build();
+
+            return machine.sendEvent(message);
+        } else {
+            throw new IllegalArgumentException(String.format(
+                    "Submission envelope reference '%s' is not currently being monitored",
+                    envelopeUuid));
+        }
+
+    }
 
     private void removeStateMachine(UUID submissionEnvelopeUuid) {
         stateMachineMap.remove(submissionEnvelopeUuid);

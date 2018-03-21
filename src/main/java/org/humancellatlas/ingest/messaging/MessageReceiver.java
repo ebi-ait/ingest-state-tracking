@@ -82,14 +82,9 @@ public class MessageReceiver {
     @RabbitListener(queues = Constants.Queues.ASSAY_SUBMITTED)
     public void receiveAssaySubmittedMessage(AssaySubmittedMessage assaySubmittedMessage) {
         /* track the newly submitted assay */
-//
-//        SubmissionEnvelopeReference envelopeReference = getIngestApiClient().referenceForSubmissionEnvelope(submissionEnvelopeMessage);
-//
-//        if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
-//            submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
-//        }
-//
-//        SubmissionEvent submissionEvent = SubmissionEvent.fromRequestedSubmissionState(SubmissionState.valueOf(submissionEnvelopeMessage.getRequestedState().toUpperCase()));
-//        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeReference, submissionEvent);
+        submissionStateMonitor.notifyOfAssayState(assaySubmittedMessage.getDocumentId(),
+                                                  assaySubmittedMessage.getEnvelopeUuid(),
+                                                  assaySubmittedMessage.getTotalAssays(),
+                                                  MetadataDocumentState.PROCESSING);
     }
 }

@@ -10,5 +10,7 @@ public enum MetadataDocumentState {
     DRAFT,
     VALIDATING,
     VALID,
-    INVALID
+    INVALID,
+    PROCESSING,
+    COMPLETE
 }
