@@ -39,6 +39,9 @@ public class QueueConfig {
     @Bean
     Queue queueAssaySubmitted() { return new Queue(Constants.Queues.ASSAY_SUBMITTED, false); }
 
+    @Bean
+    Queue queueAssayCompleted() { return new Queue(Constants.Queues.ASSAY_COMPLETED, false); }
+
     /* queue bindings */
 
     @Bean
@@ -59,6 +62,11 @@ public class QueueConfig {
     @Bean
     Binding bindingAssaySubmitted(Queue queueAssaySubmitted, TopicExchange assayExchange) {
         return BindingBuilder.bind(queueAssaySubmitted).to(assayExchange).with(Constants.RoutingKeys.ASSAY_SUBMITTED_ROUTING_KEY);
+    }
+
+    @Bean
+    Binding bindingAssayCompleted(Queue queueAssayCompleted, TopicExchange assayExchange) {
+        return BindingBuilder.bind(queueAssayCompleted).to(assayExchange).with(Constants.RoutingKeys.ASSAY_COMPLETED_ROUTING_KEY);
     }
 
     /* rabbit message config */

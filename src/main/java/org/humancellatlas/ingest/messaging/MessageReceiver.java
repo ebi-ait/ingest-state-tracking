@@ -87,4 +87,14 @@ public class MessageReceiver {
                                                   assaySubmittedMessage.getTotalAssays(),
                                                   MetadataDocumentState.PROCESSING);
     }
+
+    @RabbitListener(queues = Constants.Queues.ASSAY_SUBMITTED)
+    public void receiveAssayCompletedMessage(AssaySubmittedMessage assaySubmittedMessage) {
+        /* track the newly submitted assay */
+        submissionStateMonitor.notifyOfAssayState(assaySubmittedMessage.getDocumentId(),
+                                                  assaySubmittedMessage.getEnvelopeUuid(),
+                                                  assaySubmittedMessage.getTotalAssays(),
+                                                  MetadataDocumentState.COMPLETE);
+    }
+
 }
