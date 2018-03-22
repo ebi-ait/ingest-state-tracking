@@ -6,6 +6,7 @@ import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
 import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
+import org.humancellatlas.ingest.state.monitor.util.AssayBundleTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.messaging.Message;
@@ -47,11 +48,6 @@ public class SubmissionStateListener extends StateMachineListenerAdapter<Submiss
         // add the metadata document state map
         Map<String, MetadataDocumentState> metadataDocumentTracker = new HashMap<>();
         stateMachine.getExtendedState().getVariables().put(Constants.METADATA_DOCUMENT_TRACKER, metadataDocumentTracker);
-
-        // add the assay bundle state map
-        Map<String, String> assayBundleTracker = new HashMap<>();
-        stateMachine.getExtendedState().getVariables().put(Constants.ASSAY_BUNDLE_TRACKER, assayBundleTracker);
-
     }
 
     @Override

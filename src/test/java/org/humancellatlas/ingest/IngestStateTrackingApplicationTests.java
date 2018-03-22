@@ -123,15 +123,21 @@ public class IngestStateTrackingApplicationTests {
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.SUBMITTED, state);
 
-        log.debug("Sending PROCESSING_STARTED event");
-        submissionStateMonitor
-                .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.PROCESSING_STARTED);
+        log.debug("Sending ASSAY_STATE_UPDATE event for a submitted assay");
+        submissionStateMonitor.notifyOfAssayState("mock-assay-id",
+                                                  envelopeRef.getUuid(),
+                                                  1,
+                                                  MetadataDocumentState.PROCESSING);
+
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.PROCESSING, state);
 
-        log.debug("Sending CLEANUP_STARTED event");
-        submissionStateMonitor
-                .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CLEANUP_STARTED);
+        log.debug("Sending ASSAY_STATE_UPDATE event for a completed assay");
+        submissionStateMonitor.notifyOfAssayState("mock-assay-id",
+                                                  envelopeRef.getUuid(),
+                                                  1,
+                                                  MetadataDocumentState.COMPLETE);
+
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.CLEANUP, state);
 
@@ -202,13 +208,29 @@ public class IngestStateTrackingApplicationTests {
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.SUBMITTED, state);
 
-        log.debug("Sending PROCESSING_STARTED event");
-        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.PROCESSING_STARTED);
+
+        // send mock events about assays submitted for processing to bundles
+        int expectedAssays = 5;
+        String mockAssayDocumentId = "mock-assay-id";
+
+        for(int i = 0; i < expectedAssays; i ++) {
+            submissionStateMonitor.notifyOfAssayState(mockAssayDocumentId + i,
+                                                      envelopeRef.getUuid(),
+                                                      expectedAssays,
+                                                      MetadataDocumentState.PROCESSING);
+        }
+
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.PROCESSING, state);
 
-        log.debug("Sending CLEANUP_STARTED event");
-        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CLEANUP_STARTED);
+        // mock events for bundled/completed assays
+        for(int i = 0; i < expectedAssays; i ++) {
+            submissionStateMonitor.notifyOfAssayState(mockAssayDocumentId + i,
+                                                      envelopeRef.getUuid(),
+                                                      expectedAssays,
+                                                      MetadataDocumentState.COMPLETE);
+        }
+
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.CLEANUP, state);
 

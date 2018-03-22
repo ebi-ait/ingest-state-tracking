@@ -14,7 +14,8 @@ public enum SubmissionEvent {
     PROCESSING_STARTED,
     PROCESSING_FAILED,
     CLEANUP_STARTED,
-    ALL_TASKS_COMPLETE;
+    ALL_TASKS_COMPLETE,
+    ASSAY_STATE_UPDATE;
 
     public static SubmissionEvent fromRequestedSubmissionState(SubmissionState state) {
         switch (state) {
