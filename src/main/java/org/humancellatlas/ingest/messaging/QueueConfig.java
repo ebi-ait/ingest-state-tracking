@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.annotation.RabbitListenerConfigurer;
 import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistrar;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +19,7 @@ import org.springframework.messaging.handler.annotation.support.DefaultMessageHa
  * Created by rolando on 11/03/2018.
  */
 @Configuration
-public class QueueConfig {
+public class QueueConfig implements RabbitListenerConfigurer  {
 
     @Bean
     TopicExchange stateTrackingExchange() { return new TopicExchange(Constants.Exchanges.STATE_TRACKING); }
@@ -98,6 +100,17 @@ public class QueueConfig {
         return new Jackson2JsonMessageConverter();
     }
 
+    @Bean
+    public RabbitMessagingTemplate rabbitMessagingTemplate(RabbitTemplate rabbitTemplate) {
+        RabbitMessagingTemplate rmt = new RabbitMessagingTemplate(rabbitTemplate);
+        rmt.setMessageConverter(this.jackson2Converter());
+        return rmt;
+    }
+
+    @Override
+    public void configureRabbitListeners(RabbitListenerEndpointRegistrar registrar) {
+        registrar.setMessageHandlerMethodFactory(myHandlerMethodFactory());
+    }
 
 }
 
