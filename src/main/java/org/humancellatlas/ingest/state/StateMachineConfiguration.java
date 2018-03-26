@@ -1,8 +1,12 @@
 package org.humancellatlas.ingest.state;
 
+import org.humancellatlas.ingest.client.model.MetadataDocument;
+import org.humancellatlas.ingest.messaging.Constants;
+import org.humancellatlas.ingest.state.monitor.util.AssayBundleTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
@@ -13,32 +17,9 @@ import org.springframework.statemachine.guard.Guard;
 import java.util.Collections;
 import java.util.Map;
 
-import static org.humancellatlas.ingest.state.MetadataDocumentInfo.DOCUMENT_ID;
-import static org.humancellatlas.ingest.state.MetadataDocumentInfo.DOCUMENT_STATE;
-import static org.humancellatlas.ingest.state.SubmissionEvent.ALL_TASKS_COMPLETE;
-import static org.humancellatlas.ingest.state.SubmissionEvent.CLEANUP_STARTED;
-import static org.humancellatlas.ingest.state.SubmissionEvent.CONTENT_ADDED;
-import static org.humancellatlas.ingest.state.SubmissionEvent.DOCUMENT_PROCESSED;
-import static org.humancellatlas.ingest.state.SubmissionEvent.PROCESSING_FAILED;
-import static org.humancellatlas.ingest.state.SubmissionEvent.PROCESSING_STARTED;
-import static org.humancellatlas.ingest.state.SubmissionEvent.SUBMISSION_REQUESTED;
-import static org.humancellatlas.ingest.state.SubmissionEvent.VALIDATION_STARTED;
-import static org.humancellatlas.ingest.state.SubmissionState.CLEANUP;
-import static org.humancellatlas.ingest.state.SubmissionState.COMPLETE;
-import static org.humancellatlas.ingest.state.SubmissionState.DOCUMENTS_INVALID;
-import static org.humancellatlas.ingest.state.SubmissionState.DOCUMENTS_VALID;
-import static org.humancellatlas.ingest.state.SubmissionState.DOCUMENTS_VALIDATING;
-import static org.humancellatlas.ingest.state.SubmissionState.DOCUMENTS_WAITING;
-import static org.humancellatlas.ingest.state.SubmissionState.DOCUMENT_VALIDATION;
-import static org.humancellatlas.ingest.state.SubmissionState.DOCUMENT_VALIDATION_STARTING;
-import static org.humancellatlas.ingest.state.SubmissionState.DRAFT;
-import static org.humancellatlas.ingest.state.SubmissionState.INVALID;
-import static org.humancellatlas.ingest.state.SubmissionState.PENDING;
-import static org.humancellatlas.ingest.state.SubmissionState.PROCESSING;
-import static org.humancellatlas.ingest.state.SubmissionState.SUBMITTED;
-import static org.humancellatlas.ingest.state.SubmissionState.VALID;
-import static org.humancellatlas.ingest.state.SubmissionState.VALIDATING;
-import static org.humancellatlas.ingest.state.SubmissionState.VALIDATION_STATE_EVAL_JUNCTION;
+import static org.humancellatlas.ingest.state.MetadataDocumentInfo.*;
+import static org.humancellatlas.ingest.state.SubmissionEvent.*;
+import static org.humancellatlas.ingest.state.SubmissionState.*;
 
 /**
  * Javadocs go here!
@@ -61,6 +42,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .state(INVALID)
                 .junction(VALIDATION_STATE_EVAL_JUNCTION)
                 .state(SUBMITTED)
+                .junction(PROCESSING_STATE_EVAL_JUNCTION)
                 .state(PROCESSING)
                 .state(CLEANUP)
                 .end(COMPLETE);
@@ -73,6 +55,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
+            /* draft, validating, valid or invalid? */
             .withExternal()
                 .source(DRAFT).target(VALIDATION_STATE_EVAL_JUNCTION)
                 .action(addOrUpdateContent())
@@ -100,14 +83,28 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .then(VALID, allValidGuard())
                 .last(DRAFT)
                 .and()
+            /* valid -> submitted */
             .withExternal()
                 .source(VALID).target(SUBMITTED)
                 .event(SUBMISSION_REQUESTED)
                 .and()
+            /* still processing or complete? */
             .withExternal()
-                .source(SUBMITTED).target(PROCESSING)
-                .event(PROCESSING_STARTED)
+                .source(SUBMITTED).target(PROCESSING_STATE_EVAL_JUNCTION)
+                .event(ASSAY_STATE_UPDATE)
+                .action(addOrUpdateAssayContent())
                 .and()
+            .withExternal()
+                .source(PROCESSING).target(PROCESSING_STATE_EVAL_JUNCTION)
+                .event(ASSAY_STATE_UPDATE)
+                .action(addOrUpdateAssayContent())
+                .and()
+            .withJunction()
+                .source(PROCESSING_STATE_EVAL_JUNCTION)
+                .first(PROCESSING, stillProcessingGuard())
+                .last(CLEANUP)
+                .and()
+            /* Processing -> cleanup -> complete*/
             .withExternal()
                 .source(PROCESSING).target(CLEANUP)
                 .event(CLEANUP_STARTED)
@@ -123,13 +120,9 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
     }
 
 
-    private Action<SubmissionState, SubmissionEvent> timerAction() {
-        return context -> System.out.println("Validating...");
-    }
-
     private Guard<SubmissionState, SubmissionEvent> documentsInvalidGuard() {
         return context -> {
-            Map<Object, Object> docMap = Collections.synchronizedMap(context.getExtendedState().getVariables());
+            Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
 
             for (Object key : docMap.keySet()) {
                 if (key.getClass() != String.class) {
@@ -164,7 +157,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
 
     private Guard<SubmissionState, SubmissionEvent> documentsValidatingGuard() {
         return context -> {
-            Map<Object, Object> docMap = Collections.synchronizedMap(context.getExtendedState().getVariables());
+            Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
 
             for (Object key : docMap.keySet()) {
                 if (key.getClass() != String.class) {
@@ -200,7 +193,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
 
     private Guard<SubmissionState, SubmissionEvent> allValidGuard() {
         return context -> {
-            Map<Object, Object> docMap = Collections.synchronizedMap(context.getExtendedState().getVariables());
+            Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
 
             return docMap.entrySet().size() == 0;
         };
@@ -219,13 +212,52 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
             log.debug(String.format("Adding content to extended state. Document tracker: { %s : %s }",
                                     documentId,
                                     documentState));
+            Map<String, MetadataDocumentState> metadataDocumentTracker = getMetadataDocumentTrackerFromContext(context);
             if(! documentState.equals(MetadataDocumentState.VALID)) {
-                context.getExtendedState().getVariables().put(documentId, documentState);
+                metadataDocumentTracker.put(documentId, documentState);
             } else {
-                if ( context.getExtendedState().getVariables().containsKey(documentId)){
-                    context.getExtendedState().getVariables().remove(documentId);
+                if ( metadataDocumentTracker.containsKey(documentId)){
+                    metadataDocumentTracker.remove(documentId);
                 }
             }
         };
+    }
+
+    private Guard<SubmissionState, SubmissionEvent> stillProcessingGuard() {
+        return context -> {
+            AssayBundleTracker assayBundleTracker = getAssayBundleTrackerFromContext(context);
+            return ! assayBundleTracker.bundlesCompleted();
+        };
+    }
+    private Action<SubmissionState, SubmissionEvent> addOrUpdateAssayContent() {
+        return context -> {
+            String assayId = context.getMessageHeaders().get(DOCUMENT_ID, String.class);
+            MetadataDocumentState assayState = context.getMessageHeaders().get(DOCUMENT_STATE, MetadataDocumentState.class);
+
+            AssayBundleTracker assayBundleTracker = (AssayBundleTracker) context.getExtendedState().getVariables().get(Constants.ASSAY_BUNDLE_TRACKER);
+            // is this the first assay notification event? if so, initialize the assayBundleTracker
+            if(assayBundleTracker == null) {
+                String envelopeUuid = context.getMessageHeaders().get(ENVELOPE_UUID, String.class);
+                int numAssaysExpected = context.getMessageHeaders().get(ASSAYS_TOTAL_EXPECTED, Integer.class);
+
+                assayBundleTracker =  new AssayBundleTracker(numAssaysExpected, envelopeUuid);
+                context.getExtendedState().getVariables().put(Constants.ASSAY_BUNDLE_TRACKER, assayBundleTracker);
+            }
+
+            if(assayState.equals(MetadataDocumentState.COMPLETE)
+                    && assayBundleTracker.getAssayBundleStateMap().get(assayId).equals(MetadataDocumentState.PROCESSING)) {
+                assayBundleTracker.completedAssay(assayId);
+            } else {
+                assayBundleTracker.processingAssay(assayId);
+            }
+        };
+    }
+
+    private Map<String, MetadataDocumentState> getMetadataDocumentTrackerFromContext(StateContext<SubmissionState, SubmissionEvent> context) {
+        return (Map<String, MetadataDocumentState>) context.getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
+    }
+
+    private AssayBundleTracker getAssayBundleTrackerFromContext(StateContext<SubmissionState, SubmissionEvent> context) {
+        return (AssayBundleTracker) context.getExtendedState().getVariables().get(Constants.ASSAY_BUNDLE_TRACKER);
     }
 }

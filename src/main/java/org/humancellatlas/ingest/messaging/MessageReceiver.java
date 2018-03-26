@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import org.humancellatlas.ingest.client.IngestApiClient;
 import org.humancellatlas.ingest.client.model.MetadataDocument;
+import org.humancellatlas.ingest.messaging.model.AssayCompletedMessage;
+import org.humancellatlas.ingest.messaging.model.AssaySubmittedMessage;
+import org.humancellatlas.ingest.messaging.model.MetadataDocumentMessage;
+import org.humancellatlas.ingest.messaging.model.SubmissionEnvelopeMessage;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
@@ -78,4 +82,23 @@ public class MessageReceiver {
                     submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
                 });
     }
+
+    @RabbitListener(queues = Constants.Queues.ASSAY_SUBMITTED)
+    public void receiveAssaySubmittedMessage(AssaySubmittedMessage assaySubmittedMessage) {
+        /* track the newly submitted assay */
+        submissionStateMonitor.notifyOfAssayState(assaySubmittedMessage.getDocumentId(),
+                                                  assaySubmittedMessage.getEnvelopeUuid(),
+                                                  assaySubmittedMessage.getTotalAssays(),
+                                                  MetadataDocumentState.PROCESSING);
+    }
+
+    @RabbitListener(queues = Constants.Queues.ASSAY_COMPLETED)
+    public void receiveAssayCompletedMessage(AssayCompletedMessage assayCompletedMessage) {
+        /* track the newly submitted assay */
+        submissionStateMonitor.notifyOfAssayState(assayCompletedMessage.getDocumentId(),
+                                                  assayCompletedMessage.getEnvelopeUuid(),
+                                                  assayCompletedMessage.getTotalAssays(),
+                                                  MetadataDocumentState.COMPLETE);
+    }
+
 }

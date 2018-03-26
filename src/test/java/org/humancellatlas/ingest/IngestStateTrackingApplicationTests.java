@@ -1,5 +1,6 @@
 package org.humancellatlas.ingest;
 
+import org.humancellatlas.ingest.messaging.Constants;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
@@ -19,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.net.URI;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -112,7 +114,8 @@ public class IngestStateTrackingApplicationTests {
         assertEquals(SubmissionState.VALID, state);
 
         // assert 0 documents in extended state map
-        assertTrue(submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().entrySet().size() == 0);
+        Map<String, MetadataDocumentState> metadataDocumentStateMap = (Map<String, MetadataDocumentState>) submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
+        assertTrue(metadataDocumentStateMap.entrySet().size() == 0);
 
         log.debug("Sending SUBMISSION_REQUESTED event");
         submissionStateMonitor
@@ -120,15 +123,21 @@ public class IngestStateTrackingApplicationTests {
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.SUBMITTED, state);
 
-        log.debug("Sending PROCESSING_STARTED event");
-        submissionStateMonitor
-                .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.PROCESSING_STARTED);
+        log.debug("Sending ASSAY_STATE_UPDATE event for a submitted assay");
+        submissionStateMonitor.notifyOfAssayState("mock-assay-id",
+                                                  envelopeRef.getUuid(),
+                                                  1,
+                                                  MetadataDocumentState.PROCESSING);
+
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.PROCESSING, state);
 
-        log.debug("Sending CLEANUP_STARTED event");
-        submissionStateMonitor
-                .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CLEANUP_STARTED);
+        log.debug("Sending ASSAY_STATE_UPDATE event for a completed assay");
+        submissionStateMonitor.notifyOfAssayState("mock-assay-id",
+                                                  envelopeRef.getUuid(),
+                                                  1,
+                                                  MetadataDocumentState.COMPLETE);
+
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.CLEANUP, state);
 
@@ -199,13 +208,29 @@ public class IngestStateTrackingApplicationTests {
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.SUBMITTED, state);
 
-        log.debug("Sending PROCESSING_STARTED event");
-        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.PROCESSING_STARTED);
+
+        // send mock events about assays submitted for processing to bundles
+        int expectedAssays = 5;
+        String mockAssayDocumentId = "mock-assay-id";
+
+        for(int i = 0; i < expectedAssays; i ++) {
+            submissionStateMonitor.notifyOfAssayState(mockAssayDocumentId + i,
+                                                      envelopeRef.getUuid(),
+                                                      expectedAssays,
+                                                      MetadataDocumentState.PROCESSING);
+        }
+
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.PROCESSING, state);
 
-        log.debug("Sending CLEANUP_STARTED event");
-        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CLEANUP_STARTED);
+        // mock events for bundled/completed assays
+        for(int i = 0; i < expectedAssays; i ++) {
+            submissionStateMonitor.notifyOfAssayState(mockAssayDocumentId + i,
+                                                      envelopeRef.getUuid(),
+                                                      expectedAssays,
+                                                      MetadataDocumentState.COMPLETE);
+        }
+
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.CLEANUP, state);
 
