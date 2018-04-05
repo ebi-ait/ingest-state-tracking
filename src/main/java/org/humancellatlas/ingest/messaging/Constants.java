@@ -8,8 +8,8 @@ package org.humancellatlas.ingest.messaging;
  */
 public class Constants {
     public class Queues {
-        public static final String ASSAY_SUBMITTED = "ingest.state-tracking.assay.submitted.queue";
-        public static final String ASSAY_COMPLETED = "ingest.state-tracking.assay.completed.queue";
+        public static final String BUNDLEABLE_PROCESS_SUBMITTED = "ingest.state-tracking.bundle.submitted.queue";
+        public static final String BUNDLEABLE_PROCESS_COMPLETED = "ingest.state-tracking.bundle.completed.queue";
         public static final String DOCUMENT_CREATED = "ingest.state-tracking.metadata.created.queue";
         public static final String DOCUMENT_UPDATE = "ingest.state-tracking.metadata.update.queue";
         public static final String ENVELOPE_CREATED = "ingest.state-tracking.envelope.created.queue";
@@ -18,19 +18,19 @@ public class Constants {
 
     public class Exchanges {
         public static final String STATE_TRACKING = "ingest.state-tracking.exchange";
-        public static final String ASSAY_EXCHANGE = "ingest.assays.exchange";
+        public static final String BUNDLE_EXCHANGE = "ingest.bundles.exchange";
     }
 
     public class RoutingKeys {
         public static final String ENVELOPE_STATE_UPDATE = "ingest.state-tracking.envelope.state.update";
         public static final String ENVELOPE_CREATE = "ingest.state-tracking.envelope.create";
         public static final String METADATA_UPDATE = "ingest.state-tracking.document.update";
-        public static final String ASSAY_SUBMITTED_ROUTING_KEY = "ingest.assays.submitted";
-        public static final String ASSAY_COMPLETED_ROUTING_KEY = "ingest.assays.completed";
+        public static final String BUNDLEABLE_PROCESS_SUBMITTED_ROUTING_KEY = "ingest.bundle.*.submitted";
+        public static final String BUNDLEABLE_PROCESS_COMPLETED_ROUTING_KEY = "ingest.bundle.*.completed";
     }
 
     public static final String METADATA_DOCUMENT_TRACKER = "METADATA_DOCUMENT_TRACKER";
-    public static final String ASSAY_BUNDLE_TRACKER = "ASSAY_BUNDLE_TRACKER";
+    public static final String BUNDLE_TRACKER = "BUNDLE_TRACKER";
 
 
 }

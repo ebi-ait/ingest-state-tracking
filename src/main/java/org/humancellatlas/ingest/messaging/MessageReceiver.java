@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import org.humancellatlas.ingest.client.IngestApiClient;
 import org.humancellatlas.ingest.client.model.MetadataDocument;
-import org.humancellatlas.ingest.messaging.model.AssayCompletedMessage;
-import org.humancellatlas.ingest.messaging.model.AssaySubmittedMessage;
+import org.humancellatlas.ingest.messaging.model.BundleCompletedMessage;
+import org.humancellatlas.ingest.messaging.model.BundleSubmittedMessage;
 import org.humancellatlas.ingest.messaging.model.MetadataDocumentMessage;
 import org.humancellatlas.ingest.messaging.model.SubmissionEnvelopeMessage;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
@@ -83,22 +83,21 @@ public class MessageReceiver {
                 });
     }
 
-    @RabbitListener(queues = Constants.Queues.ASSAY_SUBMITTED)
-    public void receiveAssaySubmittedMessage(AssaySubmittedMessage assaySubmittedMessage) {
-        /* track the newly submitted assay */
-        submissionStateMonitor.notifyOfAssayState(assaySubmittedMessage.getDocumentId(),
-                                                  assaySubmittedMessage.getEnvelopeUuid(),
-                                                  assaySubmittedMessage.getTotalAssays(),
-                                                  MetadataDocumentState.PROCESSING);
+    @RabbitListener(queues = Constants.Queues.BUNDLEABLE_PROCESS_SUBMITTED)
+    public void receiveBundleableProcessSubmittedMessage(BundleSubmittedMessage bundleSubmittedMessage) {
+        /* track the newly submitted bundleable process */
+        submissionStateMonitor.notifyOfBundleState(bundleSubmittedMessage.getDocumentId(),
+                                                   bundleSubmittedMessage.getEnvelopeUuid(),
+                                                   bundleSubmittedMessage.getTotalBundles(),
+                                                   MetadataDocumentState.PROCESSING);
     }
 
-    @RabbitListener(queues = Constants.Queues.ASSAY_COMPLETED)
-    public void receiveAssayCompletedMessage(AssayCompletedMessage assayCompletedMessage) {
-        /* track the newly submitted assay */
-        submissionStateMonitor.notifyOfAssayState(assayCompletedMessage.getDocumentId(),
-                                                  assayCompletedMessage.getEnvelopeUuid(),
-                                                  assayCompletedMessage.getTotalAssays(),
-                                                  MetadataDocumentState.COMPLETE);
+    @RabbitListener(queues = Constants.Queues.BUNDLEABLE_PROCESS_COMPLETED)
+    public void receiveBundleableProcessCompletedMessage(BundleCompletedMessage bundleCompletedMessage) {
+        submissionStateMonitor.notifyOfBundleState(bundleCompletedMessage.getDocumentId(),
+                                                   bundleCompletedMessage.getEnvelopeUuid(),
+                                                   bundleCompletedMessage.getTotalBundles(),
+                                                   MetadataDocumentState.COMPLETE);
     }
 
 }

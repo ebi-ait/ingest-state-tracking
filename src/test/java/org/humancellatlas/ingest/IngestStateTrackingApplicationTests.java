@@ -123,20 +123,20 @@ public class IngestStateTrackingApplicationTests {
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.SUBMITTED, state);
 
-        log.debug("Sending ASSAY_STATE_UPDATE event for a submitted assay");
-        submissionStateMonitor.notifyOfAssayState("mock-assay-id",
-                                                  envelopeRef.getUuid(),
-                                                  1,
-                                                  MetadataDocumentState.PROCESSING);
+        log.debug("Sending BUNDLE_STATE_UPDATE event for a submitted assay");
+        submissionStateMonitor.notifyOfBundleState("mock-assay-id",
+                                                   envelopeRef.getUuid(),
+                                                   1,
+                                                   MetadataDocumentState.PROCESSING);
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.PROCESSING, state);
 
-        log.debug("Sending ASSAY_STATE_UPDATE event for a completed assay");
-        submissionStateMonitor.notifyOfAssayState("mock-assay-id",
-                                                  envelopeRef.getUuid(),
-                                                  1,
-                                                  MetadataDocumentState.COMPLETE);
+        log.debug("Sending BUNDLE_STATE_UPDATE event for a completed assay");
+        submissionStateMonitor.notifyOfBundleState("mock-assay-id",
+                                                   envelopeRef.getUuid(),
+                                                   1,
+                                                   MetadataDocumentState.COMPLETE);
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.CLEANUP, state);
@@ -214,10 +214,10 @@ public class IngestStateTrackingApplicationTests {
         String mockAssayDocumentId = "mock-assay-id";
 
         for(int i = 0; i < expectedAssays; i ++) {
-            submissionStateMonitor.notifyOfAssayState(mockAssayDocumentId + i,
-                                                      envelopeRef.getUuid(),
-                                                      expectedAssays,
-                                                      MetadataDocumentState.PROCESSING);
+            submissionStateMonitor.notifyOfBundleState(mockAssayDocumentId + i,
+                                                       envelopeRef.getUuid(),
+                                                       expectedAssays,
+                                                       MetadataDocumentState.PROCESSING);
         }
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
@@ -225,10 +225,10 @@ public class IngestStateTrackingApplicationTests {
 
         // mock events for bundled/completed assays
         for(int i = 0; i < expectedAssays; i ++) {
-            submissionStateMonitor.notifyOfAssayState(mockAssayDocumentId + i,
-                                                      envelopeRef.getUuid(),
-                                                      expectedAssays,
-                                                      MetadataDocumentState.COMPLETE);
+            submissionStateMonitor.notifyOfBundleState(mockAssayDocumentId + i,
+                                                       envelopeRef.getUuid(),
+                                                       expectedAssays,
+                                                       MetadataDocumentState.COMPLETE);
         }
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
