@@ -25,7 +25,7 @@ public class QueueConfig implements RabbitListenerConfigurer  {
     TopicExchange stateTrackingExchange() { return new TopicExchange(Constants.Exchanges.STATE_TRACKING); }
 
     @Bean
-    TopicExchange assayExchange() { return new TopicExchange(Constants.Exchanges.ASSAY_EXCHANGE); }
+    TopicExchange assayExchange() { return new TopicExchange(Constants.Exchanges.BUNDLE_EXCHANGE); }
 
     /* queues */
 
@@ -39,10 +39,10 @@ public class QueueConfig implements RabbitListenerConfigurer  {
     Queue queueDocumentUpdate() { return new Queue(Constants.Queues.DOCUMENT_UPDATE, false); }
 
     @Bean
-    Queue queueAssaySubmitted() { return new Queue(Constants.Queues.ASSAY_SUBMITTED, false); }
+    Queue queueBundleableProcessSubmitted() { return new Queue(Constants.Queues.BUNDLEABLE_PROCESS_SUBMITTED, false); }
 
     @Bean
-    Queue queueAssayCompleted() { return new Queue(Constants.Queues.ASSAY_COMPLETED, false); }
+    Queue queueBundleableProcessCompleted() { return new Queue(Constants.Queues.BUNDLEABLE_PROCESS_COMPLETED, false); }
 
     /* queue bindings */
 
@@ -62,13 +62,13 @@ public class QueueConfig implements RabbitListenerConfigurer  {
     }
 
     @Bean
-    Binding bindingAssaySubmitted(Queue queueAssaySubmitted, TopicExchange assayExchange) {
-        return BindingBuilder.bind(queueAssaySubmitted).to(assayExchange).with(Constants.RoutingKeys.ASSAY_SUBMITTED_ROUTING_KEY);
+    Binding bindingBundleableProcessSubmitted(Queue queueBundleableProcessSubmitted, TopicExchange assayExchange) {
+        return BindingBuilder.bind(queueBundleableProcessSubmitted).to(assayExchange).with(Constants.RoutingKeys.BUNDLEABLE_PROCESS_SUBMITTED_ROUTING_KEY);
     }
 
     @Bean
-    Binding bindingAssayCompleted(Queue queueAssayCompleted, TopicExchange assayExchange) {
-        return BindingBuilder.bind(queueAssayCompleted).to(assayExchange).with(Constants.RoutingKeys.ASSAY_COMPLETED_ROUTING_KEY);
+    Binding bindingBundleableProcessCompleted(Queue queueBundleableProcessCompleted, TopicExchange assayExchange) {
+        return BindingBuilder.bind(queueBundleableProcessCompleted).to(assayExchange).with(Constants.RoutingKeys.BUNDLEABLE_PROCESS_COMPLETED_ROUTING_KEY);
     }
 
     /* rabbit message config */

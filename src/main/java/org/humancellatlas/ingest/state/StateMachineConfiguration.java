@@ -1,8 +1,7 @@
 package org.humancellatlas.ingest.state;
 
-import org.humancellatlas.ingest.client.model.MetadataDocument;
 import org.humancellatlas.ingest.messaging.Constants;
-import org.humancellatlas.ingest.state.monitor.util.AssayBundleTracker;
+import org.humancellatlas.ingest.state.monitor.util.BundleTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
@@ -91,13 +90,13 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
             /* still processing or complete? */
             .withExternal()
                 .source(SUBMITTED).target(PROCESSING_STATE_EVAL_JUNCTION)
-                .event(ASSAY_STATE_UPDATE)
-                .action(addOrUpdateAssayContent())
+                .event(BUNDLE_STATE_UPDATE)
+                .action(addOrUpdateBundleContent())
                 .and()
             .withExternal()
                 .source(PROCESSING).target(PROCESSING_STATE_EVAL_JUNCTION)
-                .event(ASSAY_STATE_UPDATE)
-                .action(addOrUpdateAssayContent())
+                .event(BUNDLE_STATE_UPDATE)
+                .action(addOrUpdateBundleContent())
                 .and()
             .withJunction()
                 .source(PROCESSING_STATE_EVAL_JUNCTION)
@@ -225,30 +224,30 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
 
     private Guard<SubmissionState, SubmissionEvent> stillProcessingGuard() {
         return context -> {
-            AssayBundleTracker assayBundleTracker = getAssayBundleTrackerFromContext(context);
-            return ! assayBundleTracker.bundlesCompleted();
+            BundleTracker bundleTracker = getBundleTrackerFromContext(context);
+            return ! bundleTracker.bundlesCompleted();
         };
     }
-    private Action<SubmissionState, SubmissionEvent> addOrUpdateAssayContent() {
+    private Action<SubmissionState, SubmissionEvent> addOrUpdateBundleContent() {
         return context -> {
-            String assayId = context.getMessageHeaders().get(DOCUMENT_ID, String.class);
-            MetadataDocumentState assayState = context.getMessageHeaders().get(DOCUMENT_STATE, MetadataDocumentState.class);
+            String bundleableProcessId = context.getMessageHeaders().get(DOCUMENT_ID, String.class);
+            MetadataDocumentState bundleProcessState = context.getMessageHeaders().get(DOCUMENT_STATE, MetadataDocumentState.class);
 
-            AssayBundleTracker assayBundleTracker = (AssayBundleTracker) context.getExtendedState().getVariables().get(Constants.ASSAY_BUNDLE_TRACKER);
-            // is this the first assay notification event? if so, initialize the assayBundleTracker
-            if(assayBundleTracker == null) {
+            BundleTracker bundleTracker = (BundleTracker) context.getExtendedState().getVariables().get(Constants.BUNDLE_TRACKER);
+            // is this the first bundle notification event? if so, initialize the bundleTracker
+            if(bundleTracker == null) {
                 String envelopeUuid = context.getMessageHeaders().get(ENVELOPE_UUID, String.class);
-                int numAssaysExpected = context.getMessageHeaders().get(ASSAYS_TOTAL_EXPECTED, Integer.class);
+                int numBundlesExpected = context.getMessageHeaders().get(BUNDLES_TOTAL_EXPECTED, Integer.class);
 
-                assayBundleTracker =  new AssayBundleTracker(numAssaysExpected, envelopeUuid);
-                context.getExtendedState().getVariables().put(Constants.ASSAY_BUNDLE_TRACKER, assayBundleTracker);
+                bundleTracker = new BundleTracker(numBundlesExpected, envelopeUuid);
+                context.getExtendedState().getVariables().put(Constants.BUNDLE_TRACKER, bundleTracker);
             }
 
-            if(assayState.equals(MetadataDocumentState.COMPLETE)
-                    && assayBundleTracker.getAssayBundleStateMap().get(assayId).equals(MetadataDocumentState.PROCESSING)) {
-                assayBundleTracker.completedAssay(assayId);
+            if(bundleProcessState.equals(MetadataDocumentState.COMPLETE)
+                    && bundleTracker.getBundleableProcessStateMap().get(bundleableProcessId).equals(MetadataDocumentState.PROCESSING)) {
+                bundleTracker.completedBundle(bundleableProcessId);
             } else {
-                assayBundleTracker.processingAssay(assayId);
+                bundleTracker.processingAssay(bundleableProcessId);
             }
         };
     }
@@ -257,7 +256,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
         return (Map<String, MetadataDocumentState>) context.getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
     }
 
-    private AssayBundleTracker getAssayBundleTrackerFromContext(StateContext<SubmissionState, SubmissionEvent> context) {
-        return (AssayBundleTracker) context.getExtendedState().getVariables().get(Constants.ASSAY_BUNDLE_TRACKER);
+    private BundleTracker getBundleTrackerFromContext(StateContext<SubmissionState, SubmissionEvent> context) {
+        return (BundleTracker) context.getExtendedState().getVariables().get(Constants.BUNDLE_TRACKER);
     }
 }
