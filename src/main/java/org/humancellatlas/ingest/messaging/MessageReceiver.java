@@ -88,7 +88,7 @@ public class MessageReceiver {
         /* track the newly submitted bundleable process */
         submissionStateMonitor.notifyOfBundleState(bundleSubmittedMessage.getDocumentId(),
                                                    bundleSubmittedMessage.getEnvelopeUuid(),
-                                                   bundleSubmittedMessage.getTotalBundles(),
+                                                   bundleSubmittedMessage.getTotal(),
                                                    MetadataDocumentState.PROCESSING);
     }
 

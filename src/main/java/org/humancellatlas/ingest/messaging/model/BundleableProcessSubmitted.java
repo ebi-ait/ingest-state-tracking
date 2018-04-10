@@ -6,8 +6,8 @@ import lombok.Getter;
  * Created by rolando on 20/03/2018.
  */
 @Getter
-public class BundleSubmittedMessage {
-    BundleSubmittedMessage(){}
+public class AssaySubmittedMessage{
+    AssaySubmittedMessage(){}
 
     private String documentId;
     private String documentUuid;
@@ -15,6 +15,6 @@ public class BundleSubmittedMessage {
     private String documentType;
     private String envelopeId;
     private String envelopeUuid;
-    private int index;
-    private int total;
+    private int assayIndex;
+    private int totalAssays;
 }

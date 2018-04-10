@@ -18,7 +18,7 @@ public class Constants {
 
     public class Exchanges {
         public static final String STATE_TRACKING = "ingest.state-tracking.exchange";
-        public static final String BUNDLE_EXCHANGE = "ingest.bundles.exchange";
+        public static final String BUNDLE_EXCHANGE = "ingest.bundle.exchange";
     }
 
     public class RoutingKeys {
