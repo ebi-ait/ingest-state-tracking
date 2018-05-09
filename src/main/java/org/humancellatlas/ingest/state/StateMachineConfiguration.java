@@ -127,12 +127,6 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
 
     }
 
-    @Override
-    public void configure(StateMachineConfigurationConfigurer<SubmissionState, SubmissionEvent> config) throws Exception {
-        config.withPersistence().runtimePersister(stateMachineRuntimePersister);
-    }
-
-
     private Guard<SubmissionState, SubmissionEvent> documentsInvalidGuard() {
         return context -> {
             Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
