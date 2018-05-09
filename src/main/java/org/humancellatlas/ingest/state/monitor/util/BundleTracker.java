@@ -12,10 +12,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Getter
 public class BundleTracker {
-    private final int numBundlesExpected;
-    private final AtomicInteger numBundlesProcessed;
-    private final Map<String, MetadataDocumentState> bundleableProcessStateMap;
-    private final String envelopeUuid;
+    private int numBundlesExpected;
+    private AtomicInteger numBundlesProcessed;
+    private Map<String, MetadataDocumentState> bundleableProcessStateMap;
+    private String envelopeUuid;
+
+    public BundleTracker() {}
 
     public BundleTracker(int numBundlesExpected, String envelopeUuid){
         this.numBundlesExpected = numBundlesExpected;

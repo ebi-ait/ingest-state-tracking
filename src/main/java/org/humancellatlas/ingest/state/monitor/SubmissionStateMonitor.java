@@ -13,6 +13,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
+import org.springframework.statemachine.service.StateMachineService;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -29,18 +30,21 @@ import java.util.UUID;
 @Component
 public class SubmissionStateMonitor {
     private final StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory;
+    private final StateMachineService<SubmissionState, SubmissionEvent> stateMachineService;
     private final SubmissionStateListenerBuilder submissionStateListenerBuilder;
 
-    // in memory map of currently running state machines
-    private final Map<UUID, StateMachine<SubmissionState, SubmissionEvent>> stateMachineMap;
+//    // in memory map of currently running state machines
+//    private final Map<UUID, StateMachine<SubmissionState, SubmissionEvent>> stateMachineMap;
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
-    public SubmissionStateMonitor(StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory, SubmissionStateListenerBuilder submissionStateListenerBuilder) {
+    public SubmissionStateMonitor(StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory,
+                                  SubmissionStateListenerBuilder submissionStateListenerBuilder,
+                                  StateMachineService<SubmissionState, SubmissionEvent> stateMachineService) {
         this.stateMachineFactory = stateMachineFactory;
         this.submissionStateListenerBuilder = submissionStateListenerBuilder;
-        this.stateMachineMap = new HashMap<>();
+        this.stateMachineService = stateMachineService;
     }
 
     public void monitorSubmissionEnvelope(SubmissionEnvelopeReference submissionEnvelopeReference) {
@@ -48,31 +52,22 @@ public class SubmissionStateMonitor {
     }
 
     public void monitorSubmissionEnvelope(SubmissionEnvelopeReference submissionEnvelopeReference, boolean autoremove) {
-        StateMachine<SubmissionState, SubmissionEvent> stateMachine =
-                stateMachineFactory.getStateMachine(submissionEnvelopeReference.getUuid());
+        StateMachine<SubmissionState, SubmissionEvent> stateMachine = stateMachineService.acquireStateMachine(submissionEnvelopeReference.getUuid());
         stateMachine.addStateListener(submissionStateListenerBuilder.listenerFor(submissionEnvelopeReference, this, autoremove));
 
         stateMachine.start();
-        stateMachineMap.put(UUID.fromString(submissionEnvelopeReference.getUuid()), stateMachine);
     }
 
     public void stopMonitoring(SubmissionEnvelopeReference submissionEnvelopeReference) {
-        UUID submissionEnvelopeUuid = UUID.fromString(submissionEnvelopeReference.getUuid());
-        if (stateMachineMap.containsKey(submissionEnvelopeUuid)) {
-            removeStateMachine(submissionEnvelopeUuid);
-        }
-        else {
-            throw new IllegalArgumentException(String.format(
-                    "Submission envelope '%s' is not currently being monitored", submissionEnvelopeUuid.toString()));
-        }
+        stateMachineService.releaseStateMachine(submissionEnvelopeReference.getUuid());
     }
 
     public void stopMonitoring(StateMachine<SubmissionState, SubmissionEvent> stateMachine) {
-        stateMachineMap.entrySet().removeIf(entry -> entry.getValue().equals(stateMachine));
+        stateMachineService.releaseStateMachine(stateMachine.getId());
     }
 
     public boolean isMonitoring(SubmissionEnvelopeReference submissionEnvelopeReference) {
-        return stateMachineMap.containsKey(UUID.fromString(submissionEnvelopeReference.getUuid()));
+        return stateMachineService.acquireStateMachine(submissionEnvelopeReference.getUuid()) != null;
     }
 
     public SubmissionState findCurrentState(SubmissionEnvelopeReference submissionEnvelopeReference) {
@@ -120,6 +115,7 @@ public class SubmissionStateMonitor {
 
         if (stateMachine.isPresent()) {
             StateMachine<SubmissionState, SubmissionEvent> machine = stateMachine.get();
+            machine.addStateListener(submissionStateListenerBuilder.listenerFor(submissionEnvelopeReference, this, true));
 
             Message<SubmissionEvent> message = MessageBuilder.withPayload(SubmissionEvent.DOCUMENT_PROCESSED)
                 .setHeader(MetadataDocumentInfo.DOCUMENT_ID, metadataDocumentReference.getId())
@@ -157,15 +153,10 @@ public class SubmissionStateMonitor {
     }
 
     private void removeStateMachine(UUID submissionEnvelopeUuid) {
-        stateMachineMap.remove(submissionEnvelopeUuid);
+        stateMachineService.releaseStateMachine(submissionEnvelopeUuid.toString());
     }
 
     public Optional<StateMachine<SubmissionState, SubmissionEvent>> findStateMachine(UUID submissionEnvelopeUuid) {
-        if (stateMachineMap.containsKey(submissionEnvelopeUuid)) {
-            return Optional.of(stateMachineMap.get(submissionEnvelopeUuid));
-        }
-        else {
-            return Optional.empty();
-        }
+        return Optional.of(stateMachineService.acquireStateMachine(submissionEnvelopeUuid.toString()));
     }
 }
