@@ -30,7 +30,7 @@ import java.util.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
-@TestPropertySource(properties = "app.scheduling.enable=false")
+@TestPropertySource(properties = {"app.auto-persist.enable=false", "app.auto-load.enable=false"})
 public class RedisPersisterTest {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -94,7 +94,7 @@ public class RedisPersisterTest {
 
         // stop monitoring the state machine, reload it from redis, and point another barrage at it
         submissionStateMonitor.stopMonitoring(envelopeRef);
-        submissionStateMonitor.loadStateMachines();
+        submissionStateMonitor.loadStateMachines(redisPersister.retrieveStateMachines());
 
         for (int i = 0; i < 50; i++) {
             MetadataDocumentReference documentReference = generateMetadataDocumentReference();

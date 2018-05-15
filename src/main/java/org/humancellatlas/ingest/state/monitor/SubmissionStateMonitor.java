@@ -19,6 +19,7 @@ import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Javadocs go here!
@@ -30,7 +31,6 @@ import java.util.*;
 public class SubmissionStateMonitor {
     private final StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory;
     private final SubmissionStateListenerBuilder submissionStateListenerBuilder;
-    private final Persister redisPersister;
 
     // in memory map of currently running state machines
     private final Map<UUID, StateMachine<SubmissionState, SubmissionEvent>> stateMachineMap;
@@ -39,12 +39,10 @@ public class SubmissionStateMonitor {
 
     @Autowired
     public SubmissionStateMonitor(StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory,
-                                  SubmissionStateListenerBuilder submissionStateListenerBuilder,
-                                  RedisPersister redisPersister) {
+                                  SubmissionStateListenerBuilder submissionStateListenerBuilder) {
         this.stateMachineFactory = stateMachineFactory;
         this.submissionStateListenerBuilder = submissionStateListenerBuilder;
-        this.redisPersister = redisPersister;
-        this.stateMachineMap = new HashMap<>();
+        this.stateMachineMap = new ConcurrentHashMap<>();
     }
 
     public void monitorSubmissionEnvelope(SubmissionEnvelopeReference submissionEnvelopeReference) {
@@ -177,10 +175,10 @@ public class SubmissionStateMonitor {
         return stateMachineMap.values();
     }
 
-    public Collection<String> loadStateMachines() {
+    public Collection<String> loadStateMachines(Collection<StateMachine<SubmissionState, SubmissionEvent>> machinesToLoad) {
         Collection<String> loadedMachinesIds = new HashSet<>();
 
-        redisPersister.retrieveStateMachines().forEach(loadedMachine -> {
+        machinesToLoad.forEach(loadedMachine -> {
             this.stateMachineMap.put(UUID.fromString(loadedMachine.getId()), loadedMachine);
             loadedMachinesIds.add(loadedMachine.getId());
         });

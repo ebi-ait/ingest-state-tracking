@@ -3,8 +3,8 @@ package org.humancellatlas.ingest.state.persistence;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /**
@@ -13,15 +13,18 @@ import org.springframework.stereotype.Service;
 @Service
 @AllArgsConstructor
 @ConditionalOnProperty(
-        value = "app.auto-persist.enable", havingValue = "true", matchIfMissing = true
+        value = "app.auto-load.enable", havingValue = "true", matchIfMissing = true
 )
-public class AutoPersister {
-    private final @NonNull Persister persister;
+public class AutoLoader implements InitializingBean {
     private final @NonNull SubmissionStateMonitor submissionStateMonitor;
-    private static final int AUTO_PERSIST_INTERVAL_EVERY_MINUTE = 1000 * 60;
+    private final @NonNull Persister persister;
 
-    @Scheduled(fixedDelay = AUTO_PERSIST_INTERVAL_EVERY_MINUTE)
-    public void autoPersist() {
-        persister.persistStateMachines(submissionStateMonitor.getStateMachines());
+    public void autoLoad() {
+        submissionStateMonitor.loadStateMachines(persister.retrieveStateMachines());
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        autoLoad();
     }
 }
