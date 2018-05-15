@@ -6,6 +6,7 @@ import org.humancellatlas.ingest.state.MetadataDocumentInfo;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
 import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
+import org.humancellatlas.ingest.state.persistence.Persister;
 import org.humancellatlas.ingest.state.persistence.RedisPersister;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +30,7 @@ import java.util.*;
 public class SubmissionStateMonitor {
     private final StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory;
     private final SubmissionStateListenerBuilder submissionStateListenerBuilder;
-    private final RedisPersister redisPersister;
+    private final Persister redisPersister;
 
     // in memory map of currently running state machines
     private final Map<UUID, StateMachine<SubmissionState, SubmissionEvent>> stateMachineMap;

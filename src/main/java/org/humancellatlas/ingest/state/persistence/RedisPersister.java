@@ -25,7 +25,7 @@ import java.util.stream.Stream;
  */
 @Service
 @AllArgsConstructor
-public class RedisPersister {
+public class RedisPersister implements Persister {
 
     private final @NonNull StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory;
     private final @NonNull StateMachineRepository<RedisRepositoryStateMachine> stateMachineRepository;
