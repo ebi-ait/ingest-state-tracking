@@ -19,17 +19,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.net.URI;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by rolando on 14/05/2018.
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
+@TestPropertySource(properties = "app.scheduling.enable=false")
 public class RedisPersisterTest {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -41,14 +42,11 @@ public class RedisPersisterTest {
     private SubmissionStateMonitor submissionStateMonitor;
 
     private SubmissionEnvelopeReference envelopeRef;
-    private MetadataDocumentReference documentRef;
 
     @Before
     public void setup() {
         envelopeRef = new SubmissionEnvelopeReference("1234", UUID.randomUUID().toString(),
                                                       URI.create("http://localhost:8080/api/submissionEnvelopes/1234"));
-        documentRef = new MetadataDocumentReference("5678", UUID.randomUUID().toString(),
-                                                    URI.create("http://localhost:8080/api/metadataDocuments/5678"));
 
         submissionStateMonitor.monitorSubmissionEnvelope(envelopeRef, false);
 
