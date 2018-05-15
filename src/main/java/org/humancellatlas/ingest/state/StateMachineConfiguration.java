@@ -36,7 +36,6 @@ import static org.humancellatlas.ingest.state.SubmissionState.*;
 @EnableStateMachineFactory
 @AllArgsConstructor
 public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter<SubmissionState, SubmissionEvent> {
-    private final @Autowired StateMachineRuntimePersister<SubmissionState, SubmissionEvent, String> stateMachineRuntimePersister;
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 

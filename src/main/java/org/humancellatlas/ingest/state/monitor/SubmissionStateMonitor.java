@@ -6,20 +6,18 @@ import org.humancellatlas.ingest.state.MetadataDocumentInfo;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
 import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
+import org.humancellatlas.ingest.state.persistence.RedisPersister;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
-import org.springframework.statemachine.service.StateMachineService;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Javadocs go here!
@@ -30,21 +28,22 @@ import java.util.UUID;
 @Component
 public class SubmissionStateMonitor {
     private final StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory;
-    private final StateMachineService<SubmissionState, SubmissionEvent> stateMachineService;
     private final SubmissionStateListenerBuilder submissionStateListenerBuilder;
+    private final RedisPersister redisPersister;
 
-//    // in memory map of currently running state machines
-//    private final Map<UUID, StateMachine<SubmissionState, SubmissionEvent>> stateMachineMap;
+    // in memory map of currently running state machines
+    private final Map<UUID, StateMachine<SubmissionState, SubmissionEvent>> stateMachineMap;
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
     public SubmissionStateMonitor(StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory,
                                   SubmissionStateListenerBuilder submissionStateListenerBuilder,
-                                  StateMachineService<SubmissionState, SubmissionEvent> stateMachineService) {
+                                  RedisPersister redisPersister) {
         this.stateMachineFactory = stateMachineFactory;
         this.submissionStateListenerBuilder = submissionStateListenerBuilder;
-        this.stateMachineService = stateMachineService;
+        this.redisPersister = redisPersister;
+        this.stateMachineMap = new HashMap<>();
     }
 
     public void monitorSubmissionEnvelope(SubmissionEnvelopeReference submissionEnvelopeReference) {
@@ -52,22 +51,31 @@ public class SubmissionStateMonitor {
     }
 
     public void monitorSubmissionEnvelope(SubmissionEnvelopeReference submissionEnvelopeReference, boolean autoremove) {
-        StateMachine<SubmissionState, SubmissionEvent> stateMachine = stateMachineService.acquireStateMachine(submissionEnvelopeReference.getUuid());
+        StateMachine<SubmissionState, SubmissionEvent> stateMachine =
+                stateMachineFactory.getStateMachine(submissionEnvelopeReference.getUuid());
         stateMachine.addStateListener(submissionStateListenerBuilder.listenerFor(submissionEnvelopeReference, this, autoremove));
 
         stateMachine.start();
+        stateMachineMap.put(UUID.fromString(submissionEnvelopeReference.getUuid()), stateMachine);
     }
 
     public void stopMonitoring(SubmissionEnvelopeReference submissionEnvelopeReference) {
-        stateMachineService.releaseStateMachine(submissionEnvelopeReference.getUuid());
+        UUID submissionEnvelopeUuid = UUID.fromString(submissionEnvelopeReference.getUuid());
+        if (stateMachineMap.containsKey(submissionEnvelopeUuid)) {
+            removeStateMachine(submissionEnvelopeUuid);
+        }
+        else {
+            throw new IllegalArgumentException(String.format(
+                    "Submission envelope '%s' is not currently being monitored", submissionEnvelopeUuid.toString()));
+        }
     }
 
     public void stopMonitoring(StateMachine<SubmissionState, SubmissionEvent> stateMachine) {
-        stateMachineService.releaseStateMachine(stateMachine.getId());
+        stateMachineMap.entrySet().removeIf(entry -> entry.getValue().equals(stateMachine));
     }
 
     public boolean isMonitoring(SubmissionEnvelopeReference submissionEnvelopeReference) {
-        return stateMachineService.acquireStateMachine(submissionEnvelopeReference.getUuid()) != null;
+        return stateMachineMap.containsKey(UUID.fromString(submissionEnvelopeReference.getUuid()));
     }
 
     public SubmissionState findCurrentState(SubmissionEnvelopeReference submissionEnvelopeReference) {
@@ -115,7 +123,6 @@ public class SubmissionStateMonitor {
 
         if (stateMachine.isPresent()) {
             StateMachine<SubmissionState, SubmissionEvent> machine = stateMachine.get();
-            machine.addStateListener(submissionStateListenerBuilder.listenerFor(submissionEnvelopeReference, this, true));
 
             Message<SubmissionEvent> message = MessageBuilder.withPayload(SubmissionEvent.DOCUMENT_PROCESSED)
                 .setHeader(MetadataDocumentInfo.DOCUMENT_ID, metadataDocumentReference.getId())
@@ -153,10 +160,30 @@ public class SubmissionStateMonitor {
     }
 
     private void removeStateMachine(UUID submissionEnvelopeUuid) {
-        stateMachineService.releaseStateMachine(submissionEnvelopeUuid.toString());
+        stateMachineMap.remove(submissionEnvelopeUuid);
     }
 
     public Optional<StateMachine<SubmissionState, SubmissionEvent>> findStateMachine(UUID submissionEnvelopeUuid) {
-        return Optional.of(stateMachineService.acquireStateMachine(submissionEnvelopeUuid.toString()));
+        if (stateMachineMap.containsKey(submissionEnvelopeUuid)) {
+            return Optional.of(stateMachineMap.get(submissionEnvelopeUuid));
+        }
+        else {
+            return Optional.empty();
+        }
+    }
+
+    public Collection<StateMachine<SubmissionState, SubmissionEvent>> getStateMachines() {
+        return stateMachineMap.values();
+    }
+
+    public Collection<String> loadStateMachines() {
+        Collection<String> loadedMachinesIds = new HashSet<>();
+
+        redisPersister.retrieveStateMachines().forEach(loadedMachine -> {
+            this.stateMachineMap.put(UUID.fromString(loadedMachine.getId()), loadedMachine);
+            loadedMachinesIds.add(loadedMachine.getId());
+        });
+
+        return loadedMachinesIds;
     }
 }
