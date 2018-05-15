@@ -378,36 +378,4 @@ public class IngestStateTrackingApplicationTests {
                 URI.create("http://localhost:8080/api/submissionEnvelopes/" + id));
     }
 
-//    @Configuration
-//    static class TestConfiguration {
-//
-//        @Bean
-//        public StateMachineRuntimePersister<SubmissionState, SubmissionEvent, String> stateMachineRuntimePersister() {
-//            return new StateMachineRuntimePersister() {
-//                @Override
-//                public StateMachineInterceptor getInterceptor() {
-//                    return new StateMachineInterceptorAdapter();
-//                }
-//
-//                @Override
-//                public void write(StateMachineContext context, Object contextObj) throws Exception {
-//
-//                }
-//
-//                @Override
-//                public StateMachineContext read(Object contextObj) throws Exception {
-//                    return null;
-//                }
-//            };
-//        }
-//
-//        @Bean
-//        public SubmissionStateMonitor submissionStateMonitor(StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory,
-//                                                             SubmissionStateListenerBuilder submissionStateListenerBuilder,
-//                                                             StateMachineService<SubmissionState, SubmissionEvent> stateMachineService) {
-//            return new SubmissionStateMonitor(stateMachineFactory, submissionStateListenerBuilder, stateMachineService);
-//        }
-//    }
-
-
 }
