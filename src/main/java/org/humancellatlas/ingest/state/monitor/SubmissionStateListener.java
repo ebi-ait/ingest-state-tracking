@@ -57,7 +57,8 @@ public class SubmissionStateListener extends StateMachineListenerAdapter<Submiss
 
     @Override
     public void eventNotAccepted(Message<SubmissionEvent> eventMsg) {
-        log.error(String.format("Submission event was not accepted: [%s : %s]",
+        log.error(String.format("Submission event was not accepted(Current state: %s): [%s : %s]",
+                                submissionStateMonitor.findCurrentState(submissionEnvelopeReference).toString(),
                                 eventMsg.getHeaders().toString(),
                                 eventMsg.getPayload().toString()));
     }
