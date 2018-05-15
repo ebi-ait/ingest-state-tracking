@@ -7,6 +7,7 @@ import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
 import org.humancellatlas.ingest.state.monitor.SubmissionStateListenerBuilder;
 import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
+import org.humancellatlas.ingest.state.persistence.Persister;
 import org.humancellatlas.ingest.state.persistence.RedisPersister;
 import org.humancellatlas.ingest.testutil.MetadataDocumentEventBarrage;
 import org.humancellatlas.ingest.testutil.MetadataDocumentTransitionLifecycle;
@@ -37,7 +38,7 @@ public class RedisPersisterTest {
     @Autowired
     private StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory;
     @Autowired
-    private RedisPersister redisPersister;
+    private Persister redisPersister;
     @Autowired
     private SubmissionStateMonitor submissionStateMonitor;
 

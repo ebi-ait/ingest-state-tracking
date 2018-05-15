@@ -13,5 +13,5 @@ public interface Persister {
     void persistStateMachines(Collection<StateMachine<SubmissionState, SubmissionEvent>> machines);
     Collection<StateMachine<SubmissionState, SubmissionEvent>> retrieveStateMachines();
     Collection<String> deleteStateMachines(Collection<String> stateMachineIds);
-
+    Collection<String> deleteAllStateMachines();
 }

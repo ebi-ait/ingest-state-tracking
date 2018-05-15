@@ -7,6 +7,7 @@ import org.humancellatlas.ingest.state.SubmissionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.data.StateMachineRepository;
@@ -25,6 +26,7 @@ import java.util.stream.Stream;
  */
 @Service
 @AllArgsConstructor
+@Profile("redis-persistence")
 public class RedisPersister implements Persister {
 
     private final @NonNull StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory;
