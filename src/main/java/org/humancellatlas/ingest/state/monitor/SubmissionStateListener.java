@@ -1,12 +1,10 @@
 package org.humancellatlas.ingest.state.monitor;
 
-import org.humancellatlas.ingest.exception.CoreStateUpdatedFailedException;
 import org.humancellatlas.ingest.messaging.Constants;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
 import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
-import org.humancellatlas.ingest.state.monitor.util.AssayBundleTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.messaging.Message;
