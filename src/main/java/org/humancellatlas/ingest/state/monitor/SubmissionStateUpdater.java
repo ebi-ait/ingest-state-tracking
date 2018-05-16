@@ -78,7 +78,6 @@ public class SubmissionStateUpdater {
             Set<Map.Entry<String, PendingSubmissionUpdate>> updatedEntries = new HashSet<>();
 
             for (Map.Entry<String, PendingSubmissionUpdate> entry : pendingUpdates.entrySet()) {
-                String envelopeId = entry.getKey();
                 PendingSubmissionUpdate pendingSubmissionUpdate = entry.getValue();
                 try {
                     updatedEntries.add(entry);
@@ -90,8 +89,10 @@ public class SubmissionStateUpdater {
 
             // only remove a pending state update if it matches an update entry in updatedEntries
             updatedEntries.forEach(updateEntry -> {
-                if(this.pendingUpdates.get(updateEntry.getKey()).getToState()
-                                      .equals(updateEntry.getValue().getToState())){
+                String envelopeId = updateEntry.getKey();
+                SubmissionState toState = updateEntry.getValue().getToState();
+
+                if(this.pendingUpdates.get(envelopeId).getToState().equals(toState)){
                     this.pendingUpdates.remove(updateEntry.getKey());
                 }
             });
