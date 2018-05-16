@@ -350,6 +350,55 @@ public class IngestStateTrackingApplicationTests {
         assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.DRAFT));
     }
 
+    @Test
+    public void testDoesNotTransitionBackToValidAfterSubmitted() {
+        MetadataDocumentEventBarrage barrage = new MetadataDocumentEventBarrage();
+
+        // generate transition lifecycles for, say, 15 samples...
+        for (int i = 0; i < 10; i++) {
+            MetadataDocumentReference documentReference = generateMetadataDocumentReference();
+            MetadataDocumentTransitionLifecycle sampleTransitionLifecycle = new MetadataDocumentTransitionLifecycle
+                    .Builder(documentReference, envelopeRef)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
+                    .addStateTransition(MetadataDocumentState.VALIDATING)
+                    .addStateTransition(MetadataDocumentState.VALID)
+                    .build();
+
+            barrage.addToBarrage(sampleTransitionLifecycle);
+        }
+
+        barrage.commence(submissionStateMonitor);
+
+        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.VALID));
+
+        SubmissionState state;
+
+        log.debug("Sending SUBMISSION_REQUESTED event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.SUBMITTED, state);
+
+        barrage = new MetadataDocumentEventBarrage();
+
+        // generate transition lifecycles for, say, 15 samples...
+        for (int i = 0; i < 10; i++) {
+            MetadataDocumentReference documentReference = generateMetadataDocumentReference();
+            MetadataDocumentTransitionLifecycle sampleTransitionLifecycle = new MetadataDocumentTransitionLifecycle
+                    .Builder(documentReference, envelopeRef)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
+                    .addStateTransition(MetadataDocumentState.VALIDATING)
+                    .addStateTransition(MetadataDocumentState.VALID)
+                    .build();
+
+            barrage.addToBarrage(sampleTransitionLifecycle);
+        }
+
+        barrage.commence(submissionStateMonitor);
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.SUBMITTED, state);
+    }
 
     private MetadataDocumentReference generateMetadataDocumentReference() {
         int id = new Random().nextInt();
