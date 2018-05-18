@@ -74,28 +74,18 @@ public class SubmissionStateUpdater {
 
     public void persistStates() {
         if(pendingUpdates.entrySet().size() > 0) {
-            log.info(String.format("Pesisting state updates. Pending updates: %s", pendingUpdates.entrySet().size()));
-            Set<Map.Entry<String, PendingSubmissionUpdate>> updatedEntries = new HashSet<>();
+            Set<String> envelopesToUpdate = pendingUpdates.keySet();
 
-            for (Map.Entry<String, PendingSubmissionUpdate> entry : pendingUpdates.entrySet()) {
-                PendingSubmissionUpdate pendingSubmissionUpdate = entry.getValue();
+            log.info(String.format("Pesisting state updates. Pending updates: %s", pendingUpdates.entrySet().size()));
+
+            for (String envelopeToUpdate : envelopesToUpdate) {
+                PendingSubmissionUpdate pendingSubmissionUpdate = pendingUpdates.remove(envelopeToUpdate);
                 try {
-                    updatedEntries.add(entry);
                     update(pendingSubmissionUpdate);
                 } catch (CoreStateUpdatedFailedException e) {
                     log.error("Failed to update state in the core", e);
                 }
             }
-
-            // only remove a pending state update if it matches an update entry in updatedEntries
-            updatedEntries.forEach(updateEntry -> {
-                String envelopeId = updateEntry.getKey();
-                SubmissionState toState = updateEntry.getValue().getToState();
-
-                if(this.pendingUpdates.get(envelopeId).getToState().equals(toState)){
-                    this.pendingUpdates.remove(updateEntry.getKey());
-                }
-            });
         }
     }
 
