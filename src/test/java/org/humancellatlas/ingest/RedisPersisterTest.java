@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -32,6 +33,7 @@ import java.util.*;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @TestPropertySource(properties = {"app.auto-persist.enable=false", "app.auto-load.enable=false"})
+@ActiveProfiles("redis-persistence")
 public class RedisPersisterTest {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
