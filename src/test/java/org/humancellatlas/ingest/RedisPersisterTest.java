@@ -97,7 +97,7 @@ public class RedisPersisterTest {
 
         // stop monitoring the state machine, reload it from redis, and point another barrage at it
         submissionStateMonitor.stopMonitoring(envelopeRef);
-        submissionStateMonitor.loadStateMachines(redisPersister.retrieveStateMachines());
+        redisPersister.retrieveStateMachines().forEach(stateMachine -> submissionStateMonitor.monitorSubmissionEnvelope(envelopeRef, stateMachine));
 
         for (int i = 0; i < 50; i++) {
             MetadataDocumentReference documentReference = generateMetadataDocumentReference();

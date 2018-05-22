@@ -58,6 +58,14 @@ public class SubmissionStateMonitor {
         stateMachineMap.put(UUID.fromString(submissionEnvelopeReference.getUuid()), stateMachine);
     }
 
+    public void monitorSubmissionEnvelope(SubmissionEnvelopeReference submissionEnvelopeReference,
+                                           StateMachine<SubmissionState, SubmissionEvent> stateMachine) {
+        stateMachine.addStateListener(submissionStateListenerBuilder.listenerFor(submissionEnvelopeReference, this, true));
+
+        stateMachine.start();
+        stateMachineMap.put(UUID.fromString(submissionEnvelopeReference.getUuid()), stateMachine);
+    }
+
     public void stopMonitoring(SubmissionEnvelopeReference submissionEnvelopeReference) {
         UUID submissionEnvelopeUuid = UUID.fromString(submissionEnvelopeReference.getUuid());
         if (stateMachineMap.containsKey(submissionEnvelopeUuid)) {
@@ -173,16 +181,5 @@ public class SubmissionStateMonitor {
 
     public Collection<StateMachine<SubmissionState, SubmissionEvent>> getStateMachines() {
         return stateMachineMap.values();
-    }
-
-    public Collection<String> loadStateMachines(Collection<StateMachine<SubmissionState, SubmissionEvent>> machinesToLoad) {
-        Collection<String> loadedMachinesIds = new HashSet<>();
-
-        machinesToLoad.forEach(loadedMachine -> {
-            this.stateMachineMap.put(UUID.fromString(loadedMachine.getId()), loadedMachine);
-            loadedMachinesIds.add(loadedMachine.getId());
-        });
-
-        return loadedMachinesIds;
     }
 }
