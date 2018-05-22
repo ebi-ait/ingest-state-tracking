@@ -13,6 +13,9 @@ import java.util.UUID;
 
 /**
  * Created by rolando on 15/05/2018.
+ *
+ * Finds all persisted state machines and loads them into the submission state monitor
+ *
  */
 @Service
 @AllArgsConstructor
