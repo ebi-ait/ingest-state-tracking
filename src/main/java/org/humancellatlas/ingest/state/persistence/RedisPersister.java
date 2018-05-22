@@ -26,7 +26,7 @@ import java.util.stream.Stream;
  */
 @Service
 @AllArgsConstructor
-@Profile("redis-persistence")
+@Profile({"persistence", "redis-persistence"})
 public class RedisPersister implements Persister {
 
     private final @NonNull StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory;

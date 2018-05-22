@@ -17,4 +17,4 @@ COPY gradlew build.gradle ./
 
 RUN ./gradlew assemble
 
-CMD java -jar build/libs/*.jar --spring.rabbitmq.host=$RABBIT_HOST --spring.rabbitmq.port=$RABBIT_PORT --spring.profiles.active=redis-persistence --spring.redis.host=$REDIS_HOST --spring.redis.port=$REDIS_PORT
+CMD java -jar build/libs/*.jar --spring.rabbitmq.host=$RABBIT_HOST --spring.rabbitmq.port=$RABBIT_PORT --spring.profiles.active=persistence,redis-persistence --spring.redis.host=$REDIS_HOST --spring.redis.port=$REDIS_PORT

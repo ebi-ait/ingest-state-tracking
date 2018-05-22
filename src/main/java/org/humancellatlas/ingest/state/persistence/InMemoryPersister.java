@@ -2,6 +2,7 @@ package org.humancellatlas.ingest.state.persistence;
 
 import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
+import org.springframework.context.annotation.Profile;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Use in unit tests or if disabled Redis persistence is desired
  */
 @Service
+@Profile("!persistence")
 public class InMemoryPersister implements Persister {
     private final Map<String, StateMachine<SubmissionState, SubmissionEvent>> inMemoryMachines = new ConcurrentHashMap<>();
 
