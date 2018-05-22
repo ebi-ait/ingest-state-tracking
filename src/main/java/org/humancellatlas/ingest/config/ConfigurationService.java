@@ -24,15 +24,23 @@ public class ConfigurationService implements InitializingBean {
     private String ingestApiRootString;
     @Value("${UPDATER_PERIOD_SECONDS:2}")
     private String updaterPeriodSecondsString;
+    @Value("${REDIS_HOST:localhost}")
+    private String redisHostString;
+    @Value("${REDIS_PORT:80}")
+    private String redisPortString;
 
     @Getter @Setter private URI ingestApiUri;
     @Getter @Setter private int updaterPeriodSeconds;
+    @Getter @Setter private String redisHost;
+    @Getter @Setter private int redisPort;
     @Getter @Setter private Map<SubmissionState, String> stateUpdateRels;
 
     private void init() {
         try {
             this.ingestApiUri = new URI(ingestApiRootString);
             this.updaterPeriodSeconds = Integer.parseInt(updaterPeriodSecondsString);
+            this.redisHost = redisHostString;
+            this.redisPort = Integer.parseInt(redisPortString);
 
             // map of submissions states to the rels of the links for transitioning to that state
             this.stateUpdateRels = stateUpdateRelsMap();
