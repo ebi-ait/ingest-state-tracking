@@ -26,7 +26,7 @@ public class ConfigurationService implements InitializingBean {
     private String updaterPeriodSecondsString;
     @Value("${REDIS_HOST:localhost}")
     private String redisHostString;
-    @Value("${REDIS_PORT:80}")
+    @Value("${REDIS_PORT:6379}")
     private String redisPortString;
 
     @Getter @Setter private URI ingestApiUri;
