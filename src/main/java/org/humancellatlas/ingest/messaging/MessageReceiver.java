@@ -78,7 +78,7 @@ public class MessageReceiver {
                 .forEach(envelopeReference -> {
                     SubmissionState envelopeState = SubmissionState.valueOf(ingestApiClient.retrieveSubmissionEnvelope(envelopeReference)
                                                                                            .getSubmissionState());
-                    if(!submissionStateMonitor.isMonitoring(envelopeReference) && !envelopeState.equals(SubmissionState.COMPLETE)) {
+                    if(!submissionStateMonitor.isMonitoring(envelopeReference) && !envelopeState.after(SubmissionState.SUBMITTED)) {
                         submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
                     }
                     submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
