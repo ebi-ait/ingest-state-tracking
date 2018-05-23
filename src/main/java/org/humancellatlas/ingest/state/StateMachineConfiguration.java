@@ -1,19 +1,25 @@
 package org.humancellatlas.ingest.state;
 
+import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import org.humancellatlas.ingest.messaging.Constants;
 import org.humancellatlas.ingest.state.monitor.util.BundleTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
+import org.springframework.statemachine.config.builders.StateMachineConfigurationConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 import org.springframework.statemachine.guard.Guard;
+import org.springframework.statemachine.persist.StateMachineRuntimePersister;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.humancellatlas.ingest.state.MetadataDocumentInfo.*;
@@ -28,7 +34,9 @@ import static org.humancellatlas.ingest.state.SubmissionState.*;
  */
 @Configuration
 @EnableStateMachineFactory
+@AllArgsConstructor
 public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter<SubmissionState, SubmissionEvent> {
+
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Override
@@ -117,7 +125,6 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .event(ALL_TASKS_COMPLETE);
 
     }
-
 
     private Guard<SubmissionState, SubmissionEvent> documentsInvalidGuard() {
         return context -> {
@@ -212,6 +219,13 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                                     documentId,
                                     documentState));
             Map<String, MetadataDocumentState> metadataDocumentTracker = getMetadataDocumentTrackerFromContext(context);
+
+            if(metadataDocumentTracker == null) {
+                // add the metadata document state map
+                metadataDocumentTracker = new HashMap<>();
+                context.getExtendedState().getVariables().put(Constants.METADATA_DOCUMENT_TRACKER, metadataDocumentTracker);
+            }
+
             if(! documentState.equals(MetadataDocumentState.VALID)) {
                 metadataDocumentTracker.put(documentId, documentState);
             } else {

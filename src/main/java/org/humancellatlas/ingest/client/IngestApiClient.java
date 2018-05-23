@@ -27,6 +27,7 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 
 import java.io.IOException;
@@ -116,6 +117,24 @@ public class IngestApiClient implements InitializingBean {
         return new SubmissionEnvelopeReference(message.getDocumentId(),
                                                message.getDocumentUuid(),
                                                URI.create(message.getCallbackLink()));
+    }
+
+    public SubmissionEnvelopeReference referenceForSubmissionEnvelope(UUID envelopeUuid) {
+        URI findSubmissionByUuid = uriFor(halTraverserOn(config.getIngestApiUri()).follow("submissionEnvelopes")
+                                                                                  .follow("search")
+                                                                                  .follow("findByUuid").asLink().getHref());
+        URI submissionByUuid = UriComponentsBuilder.fromUri(findSubmissionByUuid)
+                                                   .queryParam("uuid", envelopeUuid.toString())
+                                                   .build().toUri();
+
+        JsonNode envelopeJson = this.restTemplate.getForEntity(submissionByUuid, JsonNode.class)
+                                                 .getBody();
+
+        URI envelopeUri = URI.create(envelopeJson.at(JsonPointer.valueOf("/links/self/href")).asText());
+
+        return new SubmissionEnvelopeReference(extractIdFromSubmissionEnvelopeURI(envelopeUri),
+                                               envelopeUuid.toString(),
+                                               extractCallbackUriFromSubmissionEnvelopeUri(envelopeUri));
     }
 
     public MetadataDocumentReference referenceForMetadataDocument(MetadataDocumentMessage message) {

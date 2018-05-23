@@ -43,9 +43,7 @@ public class SubmissionStateListener extends StateMachineListenerAdapter<Submiss
 
     @Override
     public void stateMachineStarted(StateMachine<SubmissionState, SubmissionEvent> stateMachine) {
-        // add the metadata document state map
-        Map<String, MetadataDocumentState> metadataDocumentTracker = new HashMap<>();
-        stateMachine.getExtendedState().getVariables().put(Constants.METADATA_DOCUMENT_TRACKER, metadataDocumentTracker);
+
     }
 
     @Override
