@@ -415,6 +415,16 @@ public class IngestStateTrackingApplicationTests {
         assertEquals(SubmissionState.SUBMITTED, state);
     }
 
+    @Test
+    public void testSubmissionStateOrdering() {
+        assertTrue(SubmissionState.DRAFT.after(SubmissionState.PENDING));
+        assertTrue(SubmissionState.SUBMITTED.after(SubmissionState.VALID));
+        assertTrue(SubmissionState.PROCESSING.after(SubmissionState.VALID));
+        assertTrue(SubmissionState.CLEANUP.after(SubmissionState.VALID));
+        assertTrue(SubmissionState.COMPLETE.after(SubmissionState.VALID));
+
+    }
+
     private MetadataDocumentReference generateMetadataDocumentReference() {
         int id = new Random().nextInt();
         return new MetadataDocumentReference(Integer.toString(id), UUID.randomUUID().toString(),
