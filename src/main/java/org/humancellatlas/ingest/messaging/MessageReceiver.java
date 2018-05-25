@@ -78,7 +78,8 @@ public class MessageReceiver {
                 .getReferencedEnvelopes()
                 .forEach(envelopeReference -> {
                     SubmissionState envelopeState = SubmissionState.valueOf(ingestApiClient.retrieveSubmissionEnvelope(envelopeReference)
-                                                                                           .getSubmissionState());
+                                                                                           .getSubmissionState()
+                                                                                           .toUpperCase());
                     if(!submissionStateMonitor.isMonitoring(envelopeReference) && !envelopeState.after(SubmissionState.SUBMITTED)) {
                         submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
                     }

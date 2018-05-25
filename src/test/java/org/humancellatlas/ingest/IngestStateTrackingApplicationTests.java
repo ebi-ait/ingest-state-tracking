@@ -417,12 +417,11 @@ public class IngestStateTrackingApplicationTests {
 
     @Test
     public void testSubmissionStateOrdering() {
-        assertTrue(SubmissionState.DRAFT.after(SubmissionState.PENDING));
+        assertTrue(SubmissionState.DRAFT.after(SubmissionState.valueOf("pEnDing".toUpperCase())));
         assertTrue(SubmissionState.SUBMITTED.after(SubmissionState.VALID));
         assertTrue(SubmissionState.PROCESSING.after(SubmissionState.VALID));
         assertTrue(SubmissionState.CLEANUP.after(SubmissionState.VALID));
         assertTrue(SubmissionState.COMPLETE.after(SubmissionState.VALID));
-
     }
 
     private MetadataDocumentReference generateMetadataDocumentReference() {
