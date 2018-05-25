@@ -80,10 +80,12 @@ public class MessageReceiver {
                     SubmissionState envelopeState = SubmissionState.valueOf(ingestApiClient.retrieveSubmissionEnvelope(envelopeReference)
                                                                                            .getSubmissionState()
                                                                                            .toUpperCase());
-                    if(!submissionStateMonitor.isMonitoring(envelopeReference) && !envelopeState.after(SubmissionState.SUBMITTED)) {
-                        submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
+                    if(!envelopeState.after(SubmissionState.SUBMITTED)){
+                        if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
+                            submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
+                        }
+                        submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
                     }
-                    submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
                 });
     }
 
