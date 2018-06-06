@@ -6,19 +6,20 @@ import org.humancellatlas.ingest.state.MetadataDocumentInfo;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
 import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
+import org.humancellatlas.ingest.state.persistence.Persister;
+import org.humancellatlas.ingest.state.persistence.RedisPersister;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Javadocs go here!
@@ -37,10 +38,11 @@ public class SubmissionStateMonitor {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
-    public SubmissionStateMonitor(StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory, SubmissionStateListenerBuilder submissionStateListenerBuilder) {
+    public SubmissionStateMonitor(StateMachineFactory<SubmissionState, SubmissionEvent> stateMachineFactory,
+                                  SubmissionStateListenerBuilder submissionStateListenerBuilder) {
         this.stateMachineFactory = stateMachineFactory;
         this.submissionStateListenerBuilder = submissionStateListenerBuilder;
-        this.stateMachineMap = new HashMap<>();
+        this.stateMachineMap = new ConcurrentHashMap<>();
     }
 
     public void monitorSubmissionEnvelope(SubmissionEnvelopeReference submissionEnvelopeReference) {
@@ -51,6 +53,14 @@ public class SubmissionStateMonitor {
         StateMachine<SubmissionState, SubmissionEvent> stateMachine =
                 stateMachineFactory.getStateMachine(submissionEnvelopeReference.getUuid());
         stateMachine.addStateListener(submissionStateListenerBuilder.listenerFor(submissionEnvelopeReference, this, autoremove));
+
+        stateMachine.start();
+        stateMachineMap.put(UUID.fromString(submissionEnvelopeReference.getUuid()), stateMachine);
+    }
+
+    public void monitorSubmissionEnvelope(SubmissionEnvelopeReference submissionEnvelopeReference,
+                                           StateMachine<SubmissionState, SubmissionEvent> stateMachine) {
+        stateMachine.addStateListener(submissionStateListenerBuilder.listenerFor(submissionEnvelopeReference, this, true));
 
         stateMachine.start();
         stateMachineMap.put(UUID.fromString(submissionEnvelopeReference.getUuid()), stateMachine);
@@ -167,5 +177,9 @@ public class SubmissionStateMonitor {
         else {
             return Optional.empty();
         }
+    }
+
+    public Collection<StateMachine<SubmissionState, SubmissionEvent>> getStateMachines() {
+        return stateMachineMap.values();
     }
 }

@@ -4,8 +4,10 @@ import org.humancellatlas.ingest.messaging.Constants;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
+import org.humancellatlas.ingest.state.StateMachineConfiguration;
 import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
+import org.humancellatlas.ingest.state.monitor.SubmissionStateListenerBuilder;
 import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
 import org.humancellatlas.ingest.testutil.MetadataDocumentEventBarrage;
 import org.humancellatlas.ingest.testutil.MetadataDocumentTransitionLifecycle;
@@ -17,6 +19,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
+import org.springframework.statemachine.StateContext;
+import org.springframework.statemachine.StateMachine;
+import org.springframework.statemachine.StateMachineContext;
+import org.springframework.statemachine.config.StateMachineFactory;
+import org.springframework.statemachine.persist.StateMachineRuntimePersister;
+import org.springframework.statemachine.service.StateMachineService;
+import org.springframework.statemachine.state.State;
+import org.springframework.statemachine.support.StateMachineInterceptor;
+import org.springframework.statemachine.support.StateMachineInterceptorAdapter;
+import org.springframework.statemachine.transition.Transition;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.net.URI;
@@ -398,6 +413,15 @@ public class IngestStateTrackingApplicationTests {
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.SUBMITTED, state);
+    }
+
+    @Test
+    public void testSubmissionStateOrdering() {
+        assertTrue(SubmissionState.DRAFT.after(SubmissionState.valueOf("pEnDing".toUpperCase())));
+        assertTrue(SubmissionState.SUBMITTED.after(SubmissionState.VALID));
+        assertTrue(SubmissionState.PROCESSING.after(SubmissionState.VALID));
+        assertTrue(SubmissionState.CLEANUP.after(SubmissionState.VALID));
+        assertTrue(SubmissionState.COMPLETE.after(SubmissionState.VALID));
     }
 
     private MetadataDocumentReference generateMetadataDocumentReference() {

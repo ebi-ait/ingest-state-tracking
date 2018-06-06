@@ -43,9 +43,7 @@ public class SubmissionStateListener extends StateMachineListenerAdapter<Submiss
 
     @Override
     public void stateMachineStarted(StateMachine<SubmissionState, SubmissionEvent> stateMachine) {
-        // add the metadata document state map
-        Map<String, MetadataDocumentState> metadataDocumentTracker = new HashMap<>();
-        stateMachine.getExtendedState().getVariables().put(Constants.METADATA_DOCUMENT_TRACKER, metadataDocumentTracker);
+
     }
 
     @Override
@@ -55,13 +53,10 @@ public class SubmissionStateListener extends StateMachineListenerAdapter<Submiss
 
     @Override
     public void eventNotAccepted(Message<SubmissionEvent> eventMsg) {
-        SubmissionState currentEnvelopeState = submissionStateMonitor.findCurrentState(submissionEnvelopeReference);
         log.error(String.format("Submission event was not accepted(Current state: %s): [%s : %s]",
                                 submissionStateMonitor.findCurrentState(submissionEnvelopeReference).toString(),
                                 eventMsg.getHeaders().toString(),
                                 eventMsg.getPayload().toString()));
-
-        this.submissionStateUpdater.requestStateUpdateForEnvelope(submissionEnvelopeReference, currentEnvelopeState);
     }
 
     @Override

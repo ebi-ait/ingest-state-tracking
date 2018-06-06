@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 
@@ -76,10 +77,15 @@ public class MessageReceiver {
         metadataDocument
                 .getReferencedEnvelopes()
                 .forEach(envelopeReference -> {
-                    if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
-                        submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
+                    SubmissionState envelopeState = SubmissionState.valueOf(ingestApiClient.retrieveSubmissionEnvelope(envelopeReference)
+                                                                                           .getSubmissionState()
+                                                                                           .toUpperCase());
+                    if(!envelopeState.after(SubmissionState.SUBMITTED)){
+                        if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
+                            submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
+                        }
+                        submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
                     }
-                    submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
                 });
     }
 
