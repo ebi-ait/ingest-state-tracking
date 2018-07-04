@@ -94,9 +94,13 @@ public class IngestApiClient implements InitializingBean {
         String envelopeURIString = config.getIngestApiUri().toString() + envelopeReference.getCallbackLocation();
 
         URI envelopeURI = uriFor(envelopeURIString);
-        Traverson halTraverser = halTraverserOn(envelopeURI);
+        JsonNode documentJson = getRestTemplate().exchange(envelopeURI,
+                                                           HttpMethod.GET,
+                                                           halRequestEntityFor(Collections.emptyMap()),
+                                                           JsonNode.class)
+                                                 .getBody();
 
-        String submissionState = halTraverser.follow("self").toObject("$.submissionState");
+        String submissionState = documentJson.at(JsonPointer.valueOf("/submissionState")).asText();
         return new SubmissionEnvelope(submissionState);
     }
 
