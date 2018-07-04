@@ -104,9 +104,13 @@ public class IngestApiClient implements InitializingBean {
         String documentURIString = config.getIngestApiUri() + documentReference.getCallbackLocation().toString();
 
         URI documentURI = uriFor(documentURIString);
-        Traverson halTraverser = halTraverserOn(documentURI);
-        String validationState = halTraverser.follow("self").toObject("$.validationState");
+        JsonNode documentJson = getRestTemplate().exchange(documentURI,
+                                                           HttpMethod.GET,
+                                                           halRequestEntityFor(Collections.emptyMap()),
+                                                           JsonNode.class)
+                                                 .getBody();
 
+        String validationState = documentJson.at(JsonPointer.valueOf("/validationState")).asText();
         MetadataDocument document = new MetadataDocument();
         document.setValidationState(validationState);
         document.setReferencedEnvelopes(envelopeIds.stream().map(this::envelopeReferenceFromEnvelopeId).collect(Collectors.toList()));
