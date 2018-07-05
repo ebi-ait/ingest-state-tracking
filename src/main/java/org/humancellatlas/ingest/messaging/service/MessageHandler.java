@@ -36,13 +36,13 @@ public class MessageHandler {
     private final @NonNull IngestApiClient ingestApiClient;
     private final @NonNull SubmissionStateMonitor submissionStateMonitor;
 
-    private int numMetadataDocumentUpdateThreads = configurationService.getMetadataStateHandlerThreads();
-    private ExecutorService metadataDocumentUpdatePool = Executors.newFixedThreadPool(numMetadataDocumentUpdateThreads);
+    private int numHandlerThreads = configurationService.getNumHandlerThreads();
+    private ExecutorService workers = Executors.newFixedThreadPool(numHandlerThreads);
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     public void handleMetadataDocumentUpdate(MetadataDocumentMessage metadataDocumentMessage) {
-        metadataDocumentUpdatePool.submit(() -> handleMetadataDocumentUpdate(metadataDocumentMessage));
+        workers.submit(() -> handleMetadataDocumentUpdate(metadataDocumentMessage));
     }
 
     public void handleSubmissionEnvelopeCreated(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
