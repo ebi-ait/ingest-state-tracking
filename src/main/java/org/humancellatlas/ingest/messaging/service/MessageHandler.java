@@ -6,11 +6,16 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.humancellatlas.ingest.client.IngestApiClient;
 import org.humancellatlas.ingest.client.model.MetadataDocument;
+import org.humancellatlas.ingest.client.model.SubmissionEnvelope;
 import org.humancellatlas.ingest.config.ConfigurationService;
+import org.humancellatlas.ingest.messaging.model.BundleCompletedMessage;
+import org.humancellatlas.ingest.messaging.model.BundleSubmittedMessage;
 import org.humancellatlas.ingest.messaging.model.MetadataDocumentMessage;
 import org.humancellatlas.ingest.messaging.model.SubmissionEnvelopeMessage;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
+import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
+import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
 import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
 import org.slf4j.Logger;
@@ -42,12 +47,26 @@ public class MessageHandler {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     public void handleMetadataDocumentUpdate(MetadataDocumentMessage metadataDocumentMessage) {
-        workers.submit(() -> handleMetadataDocumentUpdate(metadataDocumentMessage));
+        workers.submit(() -> doHandleMetadataDocumentUpdate(metadataDocumentMessage));
     }
 
     public void handleSubmissionEnvelopeCreated(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
+        workers.submit(() -> doHandleSubmissionEnvelopeCreated(submissionEnvelopeMessage));
+    }
+
+    public void handleSubmissionEnvelopeStateUpdateRequest(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
+        workers.submit(() -> doHandleSubmissionEnvelopeStateUpdateRequest(submissionEnvelopeMessage));
+    }
+
+    public void handleBundleableProcessSubmittedMessage(BundleSubmittedMessage bundleSubmittedMessage) {
+        workers.submit(() -> doHandleBundleableProcessSubmittedMessage(bundleSubmittedMessage));
 
     }
+
+    public void handleBundleableProcessCompletedMessage(BundleCompletedMessage bundleCompletedMessage) {
+        workers.submit(() -> doHandleBundleableProcessCompletedMessage(bundleCompletedMessage));
+    }
+
 
     private void doHandleMetadataDocumentUpdate(MetadataDocumentMessage metadataDocumentMessage) {
         MetadataDocumentReference documentReference = getIngestApiClient().referenceForMetadataDocument(metadataDocumentMessage);
@@ -78,6 +97,36 @@ public class MessageHandler {
                         submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
                     }
                 });
+    }
+
+    private void doHandleSubmissionEnvelopeCreated(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
+        SubmissionEnvelopeReference seRef = ingestApiClient.referenceForSubmissionEnvelope(submissionEnvelopeMessage);
+        getSubmissionStateMonitor().monitorSubmissionEnvelope(seRef);
+    }
+
+    private void doHandleSubmissionEnvelopeStateUpdateRequest(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
+        SubmissionEnvelopeReference envelopeReference = getIngestApiClient().referenceForSubmissionEnvelope(submissionEnvelopeMessage);
+
+        if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
+            submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
+        }
+
+        SubmissionEvent submissionEvent = SubmissionEvent.fromRequestedSubmissionState(SubmissionState.valueOf(submissionEnvelopeMessage.getRequestedState().toUpperCase()));
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeReference, submissionEvent);
+    }
+
+    private void doHandleBundleableProcessSubmittedMessage(BundleSubmittedMessage bundleSubmittedMessage) {
+        submissionStateMonitor.notifyOfBundleState(bundleSubmittedMessage.getDocumentId(),
+                                                   bundleSubmittedMessage.getEnvelopeUuid(),
+                                                   bundleSubmittedMessage.getTotal(),
+                                                   MetadataDocumentState.PROCESSING);
+    }
+
+    private void doHandleBundleableProcessCompletedMessage(BundleCompletedMessage bundleCompletedMessage) {
+        submissionStateMonitor.notifyOfBundleState(bundleCompletedMessage.getDocumentId(),
+                                                   bundleCompletedMessage.getEnvelopeUuid(),
+                                                   bundleCompletedMessage.getTotalBundles(),
+                                                   MetadataDocumentState.COMPLETE);
     }
 
 }
