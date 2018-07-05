@@ -21,6 +21,7 @@ import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -34,15 +35,25 @@ import java.util.concurrent.Executors;
  */
 @Service
 @DependsOn("configuration")
-@AllArgsConstructor
 @Getter
 public class MessageHandler {
     private final @NonNull ConfigurationService configurationService;
     private final @NonNull IngestApiClient ingestApiClient;
     private final @NonNull SubmissionStateMonitor submissionStateMonitor;
 
-    private int numHandlerThreads = configurationService.getNumHandlerThreads();
-    private ExecutorService workers = Executors.newFixedThreadPool(numHandlerThreads);
+    private final int numHandlerThreads;
+    private final ExecutorService workers;
+
+    public MessageHandler(@Autowired ConfigurationService configurationService,
+                          @Autowired IngestApiClient ingestApiClient,
+                          @Autowired SubmissionStateMonitor submissionStateMonitor) {
+        this.configurationService = configurationService;
+        this.ingestApiClient = ingestApiClient;
+        this.submissionStateMonitor = submissionStateMonitor;
+
+        this.numHandlerThreads = configurationService.getNumHandlerThreads();
+        this.workers = Executors.newFixedThreadPool(numHandlerThreads);
+    }
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -66,7 +77,6 @@ public class MessageHandler {
     public void handleBundleableProcessCompletedMessage(BundleCompletedMessage bundleCompletedMessage) {
         workers.submit(() -> doHandleBundleableProcessCompletedMessage(bundleCompletedMessage));
     }
-
 
     private void doHandleMetadataDocumentUpdate(MetadataDocumentMessage metadataDocumentMessage) {
         MetadataDocumentReference documentReference = getIngestApiClient().referenceForMetadataDocument(metadataDocumentMessage);
@@ -128,5 +138,4 @@ public class MessageHandler {
                                                    bundleCompletedMessage.getTotalBundles(),
                                                    MetadataDocumentState.COMPLETE);
     }
-
 }

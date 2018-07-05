@@ -28,7 +28,7 @@ public class ConfigurationService implements InitializingBean {
     private String redisHostString;
     @Value("${REDIS_PORT:6379}")
     private String redisPortString;
-    @Value("${NUM_HANDLER_THREADS:10}")
+    @Value("${NUM_HANDLER_THREADS:15}")
     private String numHandlerThreadsString;
 
     @Getter @Setter private URI ingestApiUri;
