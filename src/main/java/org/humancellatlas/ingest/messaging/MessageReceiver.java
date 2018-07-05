@@ -1,13 +1,17 @@
 package org.humancellatlas.ingest.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NonNull;
 import org.humancellatlas.ingest.client.IngestApiClient;
 import org.humancellatlas.ingest.client.model.MetadataDocument;
+import org.humancellatlas.ingest.config.ConfigurationService;
 import org.humancellatlas.ingest.messaging.model.BundleCompletedMessage;
 import org.humancellatlas.ingest.messaging.model.BundleSubmittedMessage;
 import org.humancellatlas.ingest.messaging.model.MetadataDocumentMessage;
 import org.humancellatlas.ingest.messaging.model.SubmissionEnvelopeMessage;
+import org.humancellatlas.ingest.messaging.service.MessageHandler;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
@@ -33,16 +37,19 @@ import java.io.IOException;
  */
 @Component
 @Getter
+@DependsOn("configuration")
+@AllArgsConstructor
 public class MessageReceiver {
-    private @Autowired IngestApiClient ingestApiClient;
-    private @Autowired SubmissionStateMonitor submissionStateMonitor;
+    private final @NonNull ConfigurationService configuration;
+    private final @NonNull IngestApiClient ingestApiClient;
+    private final @NonNull SubmissionStateMonitor submissionStateMonitor;
+    private final  @NonNull MessageHandler messageHandler;
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     @RabbitListener(queues = Constants.Queues.ENVELOPE_CREATED)
     public void receiveSubmissionEnvelopeCreatedMessage(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
-        SubmissionEnvelopeReference seRef = ingestApiClient.referenceForSubmissionEnvelope(submissionEnvelopeMessage);
-        getSubmissionStateMonitor().monitorSubmissionEnvelope(seRef);
+        getMessageHandler().handleSubmissionEnvelopeCreated(submissionEnvelopeMessage);
     }
 
     @RabbitListener(queues = Constants.Queues.ENVELOPE_UPDATE)
@@ -57,36 +64,9 @@ public class MessageReceiver {
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeReference, submissionEvent);
     }
 
-    @RabbitListener(queues = Constants.Queues.DOCUMENT_UPDATE, concurrency = "10")
-    public void receiveMetadataDocumentupdatedMessage(MetadataDocumentMessage metadataDocumentMessage) {
-        MetadataDocumentReference documentReference = getIngestApiClient().referenceForMetadataDocument(metadataDocumentMessage);
-        MetadataDocument metadataDocument;
-        try{
-            metadataDocument = getIngestApiClient().retrieveMetadataDocument(documentReference, metadataDocumentMessage.getEnvelopeIds());
-        } catch (HttpClientErrorException e) {
-            log.info(String.format("Failed to fetch metadata document. Response was: %s Message was: ", e.getResponseBodyAsString()));
-            try {
-                log.info(new ObjectMapper().writeValueAsString(metadataDocumentMessage));
-            } catch (IOException ioe) {
-                throw new AmqpRejectAndDontRequeueException(e);
-            }
-            throw new AmqpRejectAndDontRequeueException(e);
-        }
-
-        MetadataDocumentState documentState = MetadataDocumentState.valueOf(metadataDocument.getValidationState().toUpperCase());
-        metadataDocument
-                .getReferencedEnvelopes()
-                .forEach(envelopeReference -> {
-                    SubmissionState envelopeState = SubmissionState.valueOf(ingestApiClient.retrieveSubmissionEnvelope(envelopeReference)
-                                                                                           .getSubmissionState()
-                                                                                           .toUpperCase());
-                    if(!envelopeState.after(SubmissionState.SUBMITTED)){
-                        if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
-                            submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
-                        }
-                        submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
-                    }
-                });
+    @RabbitListener(queues = Constants.Queues.DOCUMENT_UPDATE)
+    public void receiveMetadataDocumentUpdatedMessage(MetadataDocumentMessage metadataDocumentMessage) {
+        getMessageHandler().handleMetadataDocumentUpdate(metadataDocumentMessage);
     }
 
     @RabbitListener(queues = Constants.Queues.BUNDLEABLE_PROCESS_SUBMITTED)

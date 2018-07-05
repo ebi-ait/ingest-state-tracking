@@ -28,11 +28,14 @@ public class ConfigurationService implements InitializingBean {
     private String redisHostString;
     @Value("${REDIS_PORT:6379}")
     private String redisPortString;
+    @Value("${METADATA_STATE_HANDLER_THREADS:10}")
+    private String metadataStateHandlerThreadsString;
 
     @Getter @Setter private URI ingestApiUri;
     @Getter @Setter private int updaterPeriodSeconds;
     @Getter @Setter private String redisHost;
     @Getter @Setter private int redisPort;
+    @Getter @Setter private int metadataStateHandlerThreads;
     @Getter @Setter private Map<SubmissionState, String> stateUpdateRels;
 
     private void init() {
@@ -41,6 +44,7 @@ public class ConfigurationService implements InitializingBean {
             this.updaterPeriodSeconds = Integer.parseInt(updaterPeriodSecondsString);
             this.redisHost = redisHostString;
             this.redisPort = Integer.parseInt(redisPortString);
+            this.metadataStateHandlerThreads = Integer.parseInt(metadataStateHandlerThreadsString);
 
             // map of submissions states to the rels of the links for transitioning to that state
             this.stateUpdateRels = stateUpdateRelsMap();
