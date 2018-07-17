@@ -29,7 +29,10 @@ dependencies {
 
     compile("org.springframework.hateoas:spring-hateoas")
     compile("org.springframework.boot:spring-boot-starter")
-    compile 'org.springframework.statemachine:spring-statemachine-core:1.2.8.RELEASE'
+    compile 'org.springframework.statemachine:spring-statemachine-core:2.0.1.RELEASE'
+    compile 'org.springframework.statemachine:spring-statemachine-data-redis:2.0.1.RELEASE'
+    compile 'io.lettuce:lettuce-core'
+    compile 'org.springframework.statemachine:spring-statemachine-autoconfigure:2.0.1.RELEASE'
     compile('org.springframework.boot:spring-boot-starter-amqp')
     compile 'org.springframework.plugin:spring-plugin-core'
     compile 'com.jayway.jsonpath:json-path:2.2.0'
