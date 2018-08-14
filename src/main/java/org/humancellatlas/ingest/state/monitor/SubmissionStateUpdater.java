@@ -90,7 +90,7 @@ public class SubmissionStateUpdater {
     }
 
     private void init() {
-        this.executorService.scheduleAtFixedRate(() -> {
+        this.executorService.scheduleWithFixedDelay(() -> {
             try {
                 persistStates();
             } catch (Throwable e) {

@@ -104,21 +104,10 @@ public class IngestApiClient implements InitializingBean {
         return new SubmissionEnvelope(submissionState);
     }
 
-    public MetadataDocument retrieveMetadataDocument(MetadataDocumentReference documentReference, Collection<String> envelopeIds) {
-        String documentURIString = config.getIngestApiUri() + documentReference.getCallbackLocation().toString();
-
-        URI documentURI = uriFor(documentURIString);
-        JsonNode documentJson = getRestTemplate().exchange(documentURI,
-                                                           HttpMethod.GET,
-                                                           halRequestEntityFor(Collections.emptyMap()),
-                                                           JsonNode.class)
-                                                 .getBody();
-
-        String validationState = documentJson.at(JsonPointer.valueOf("/validationState")).asText();
-        MetadataDocument document = new MetadataDocument();
-        document.setValidationState(validationState);
-        document.setReferencedEnvelopes(envelopeIds.stream().map(this::envelopeReferenceFromEnvelopeId).collect(Collectors.toList()));
-        return document;
+    public List<SubmissionEnvelopeReference> envelopeReferencesFromEnvelopeIds(Collection<String> envelopeIds){
+        return envelopeIds.stream()
+                          .map(this::envelopeReferenceFromEnvelopeId)
+                          .collect(Collectors.toList());
     }
 
     public SubmissionEnvelopeReference referenceForSubmissionEnvelope(SubmissionEnvelopeMessage message) {

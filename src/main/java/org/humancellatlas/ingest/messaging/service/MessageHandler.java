@@ -80,9 +80,10 @@ public class MessageHandler {
 
     private void doHandleMetadataDocumentUpdate(MetadataDocumentMessage metadataDocumentMessage) {
         MetadataDocumentReference documentReference = getIngestApiClient().referenceForMetadataDocument(metadataDocumentMessage);
-        MetadataDocument metadataDocument;
+        MetadataDocument metadataDocument = new MetadataDocument();
         try{
-            metadataDocument = getIngestApiClient().retrieveMetadataDocument(documentReference, metadataDocumentMessage.getEnvelopeIds());
+            metadataDocument.setReferencedEnvelopes(this.getIngestApiClient().envelopeReferencesFromEnvelopeIds(metadataDocumentMessage.getEnvelopeIds()));
+            metadataDocument.setValidationState(metadataDocument.getValidationState());
         } catch (HttpClientErrorException e) {
             log.info(String.format("Failed to fetch metadata document. Response was: %s Message was: ", e.getResponseBodyAsString()));
             try {
