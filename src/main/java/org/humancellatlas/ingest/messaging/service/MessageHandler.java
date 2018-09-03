@@ -1,7 +1,6 @@
 package org.humancellatlas.ingest.messaging.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 import org.humancellatlas.ingest.client.IngestApiClient;
@@ -27,8 +26,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
 import java.io.IOException;
+import java.math.BigInteger;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by rolando on 05/07/2018.
@@ -42,7 +45,7 @@ public class MessageHandler {
     private final @NonNull SubmissionStateMonitor submissionStateMonitor;
 
     private final int numHandlerThreads;
-    private final ExecutorService workers;
+    private final Workers workers;
 
     public MessageHandler(@Autowired ConfigurationService configurationService,
                           @Autowired IngestApiClient ingestApiClient,
@@ -52,30 +55,30 @@ public class MessageHandler {
         this.submissionStateMonitor = submissionStateMonitor;
 
         this.numHandlerThreads = configurationService.getNumHandlerThreads();
-        this.workers = Executors.newFixedThreadPool(numHandlerThreads);
+        this.workers = new Workers(this.numHandlerThreads);
     }
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     public void handleMetadataDocumentUpdate(MetadataDocumentMessage metadataDocumentMessage) {
-        workers.submit(() -> doHandleMetadataDocumentUpdate(metadataDocumentMessage));
+        workers.submit(() -> doHandleMetadataDocumentUpdate(metadataDocumentMessage), metadataDocumentMessage.getDocumentId());
     }
 
     public void handleSubmissionEnvelopeCreated(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
-        workers.submit(() -> doHandleSubmissionEnvelopeCreated(submissionEnvelopeMessage));
+        workers.submit(() -> doHandleSubmissionEnvelopeCreated(submissionEnvelopeMessage), submissionEnvelopeMessage.getDocumentId());
     }
 
     public void handleSubmissionEnvelopeStateUpdateRequest(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
-        workers.submit(() -> doHandleSubmissionEnvelopeStateUpdateRequest(submissionEnvelopeMessage));
+        workers.submit(() -> doHandleSubmissionEnvelopeStateUpdateRequest(submissionEnvelopeMessage), submissionEnvelopeMessage.getDocumentId());
     }
 
     public void handleBundleableProcessSubmittedMessage(BundleSubmittedMessage bundleSubmittedMessage) {
-        workers.submit(() -> doHandleBundleableProcessSubmittedMessage(bundleSubmittedMessage));
+        workers.submit(() -> doHandleBundleableProcessSubmittedMessage(bundleSubmittedMessage), bundleSubmittedMessage.getDocumentId());
 
     }
 
     public void handleBundleableProcessCompletedMessage(BundleCompletedMessage bundleCompletedMessage) {
-        workers.submit(() -> doHandleBundleableProcessCompletedMessage(bundleCompletedMessage));
+        workers.submit(() -> doHandleBundleableProcessCompletedMessage(bundleCompletedMessage), bundleCompletedMessage.getDocumentId());
     }
 
     private void doHandleMetadataDocumentUpdate(MetadataDocumentMessage metadataDocumentMessage) {
@@ -138,5 +141,29 @@ public class MessageHandler {
                                                    bundleCompletedMessage.getEnvelopeUuid(),
                                                    bundleCompletedMessage.getTotalBundles(),
                                                    MetadataDocumentState.COMPLETE);
+    }
+
+    private List<ExecutorService> initWorkers(int numHandlerThreads) {
+        return IntStream.range(0,numHandlerThreads)
+                        .mapToObj(x -> Executors.newFixedThreadPool(1))
+                        .collect(Collectors.toList());
+    }
+
+    private class Workers {
+        final BigInteger numWorkerThreads;
+        final List<ExecutorService> workers;
+
+        Workers(int numWorkerThreads){
+            this.numWorkerThreads = BigInteger.valueOf(numWorkerThreads);
+            this.workers = IntStream.range(0,numWorkerThreads)
+                                    .mapToObj(x -> Executors.newFixedThreadPool(1))
+                                    .collect(Collectors.toList());
+        }
+
+        void submit(Runnable runnable, String resourceId) {
+            BigInteger resourceValue = new BigInteger(resourceId, 16); // assuming resource is hex
+            ExecutorService worker = this.workers.get(resourceValue.mod(this.numWorkerThreads).intValue());
+            worker.submit(runnable);
+        }
     }
 }
