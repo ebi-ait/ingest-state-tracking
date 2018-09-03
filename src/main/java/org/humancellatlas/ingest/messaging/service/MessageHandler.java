@@ -143,27 +143,26 @@ public class MessageHandler {
                                                    MetadataDocumentState.COMPLETE);
     }
 
-    private List<ExecutorService> initWorkers(int numHandlerThreads) {
-        return IntStream.range(0,numHandlerThreads)
-                        .mapToObj(x -> Executors.newFixedThreadPool(1))
-                        .collect(Collectors.toList());
-    }
-
     private class Workers {
-        final BigInteger numWorkerThreads;
+        final int numWorkerThreads;
         final List<ExecutorService> workers;
 
         Workers(int numWorkerThreads){
-            this.numWorkerThreads = BigInteger.valueOf(numWorkerThreads);
+            this.numWorkerThreads = numWorkerThreads;
             this.workers = IntStream.range(0,numWorkerThreads)
                                     .mapToObj(x -> Executors.newFixedThreadPool(1))
                                     .collect(Collectors.toList());
         }
 
         void submit(Runnable runnable, String resourceId) {
-            BigInteger resourceValue = new BigInteger(resourceId, 16); // assuming resource is hex
-            ExecutorService worker = this.workers.get(resourceValue.mod(this.numWorkerThreads).intValue());
+            int workerIndex = this.workerIndexForResourceId(resourceId, this.numWorkerThreads);
+            ExecutorService worker = this.workers.get(workerIndex);
             worker.submit(runnable);
+        }
+
+        int workerIndexForResourceId(String resourceId, int numWorkers) {
+            BigInteger resourceValue = new BigInteger(resourceId, 16); // assuming resource is hex
+            return resourceValue.mod(BigInteger.valueOf(numWorkers)).intValue();
         }
     }
 }
