@@ -150,7 +150,7 @@ public class MessageHandler {
         Workers(int numWorkerThreads){
             this.numWorkerThreads = numWorkerThreads;
             this.workers = IntStream.range(0,numWorkerThreads)
-                                    .mapToObj(x -> Executors.newFixedThreadPool(1))
+                                    .mapToObj(x -> Executors.newSingleThreadExecutor())
                                     .collect(Collectors.toList());
         }
 
