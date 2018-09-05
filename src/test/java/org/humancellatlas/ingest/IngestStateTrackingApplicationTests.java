@@ -34,6 +34,7 @@ import org.springframework.statemachine.support.StateMachineInterceptorAdapter;
 import org.springframework.statemachine.transition.Transition;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.math.BigInteger;
 import java.net.URI;
 import java.util.Map;
 import java.util.Random;
@@ -436,4 +437,24 @@ public class IngestStateTrackingApplicationTests {
                 URI.create("http://localhost:8080/api/submissionEnvelopes/" + id));
     }
 
+
+    @Test
+    public void testThreadAssigner() {
+        String[] resourceIds = {
+                "abcdef12345abab78903a",
+                "abcdef12345abab78903b",
+                "abcdef12345abab78903c",
+                "abcdef12345abab78903d",
+                "abcdef12345abab78903e",
+                "abcdef12345abab78903f"
+        };
+
+        int numWorkers = 6;
+        for(int i =0; i < numWorkers; i ++) {
+            String resourceId = resourceIds[i];
+            BigInteger resourceValue = new BigInteger(resourceId, 16); // assuming resource is hex
+            int index = resourceValue.mod(BigInteger.valueOf(numWorkers)).intValue();
+            int h = 2222;
+        }
+    }
 }
