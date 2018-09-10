@@ -28,10 +28,11 @@ import org.springframework.web.client.HttpClientErrorException;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Created by rolando on 05/07/2018.
@@ -165,4 +166,5 @@ public class MessageHandler {
             return resourceValue.mod(BigInteger.valueOf(numWorkers)).intValue();
         }
     }
+
 }

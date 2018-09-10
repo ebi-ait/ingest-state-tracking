@@ -38,11 +38,6 @@ public class MessageReceiver {
        getMessageHandler().handleSubmissionEnvelopeStateUpdateRequest(submissionEnvelopeMessage);
     }
 
-    @RabbitListener(queues = Constants.Queues.DOCUMENT_UPDATE)
-    public void receiveMetadataDocumentUpdatedMessage(MetadataDocumentMessage metadataDocumentMessage) {
-        getMessageHandler().handleMetadataDocumentUpdate(metadataDocumentMessage);
-    }
-
     @RabbitListener(queues = Constants.Queues.BUNDLEABLE_PROCESS_SUBMITTED)
     public void receiveBundleableProcessSubmittedMessage(BundleSubmittedMessage bundleSubmittedMessage) {
       getMessageHandler().handleBundleableProcessSubmittedMessage(bundleSubmittedMessage);
@@ -52,5 +47,4 @@ public class MessageReceiver {
     public void receiveBundleableProcessCompletedMessage(BundleCompletedMessage bundleCompletedMessage) {
         getMessageHandler().handleBundleableProcessCompletedMessage(bundleCompletedMessage);
     }
-
 }
