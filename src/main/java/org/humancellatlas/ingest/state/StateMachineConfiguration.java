@@ -21,6 +21,7 @@ import org.springframework.statemachine.persist.StateMachineRuntimePersister;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.humancellatlas.ingest.state.MetadataDocumentInfo.*;
 import static org.humancellatlas.ingest.state.SubmissionEvent.*;
@@ -222,7 +223,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
 
             if(metadataDocumentTracker == null) {
                 // add the metadata document state map
-                metadataDocumentTracker = new HashMap<>();
+                metadataDocumentTracker = new ConcurrentHashMap<>();
                 context.getExtendedState().getVariables().put(Constants.METADATA_DOCUMENT_TRACKER, metadataDocumentTracker);
             }
 

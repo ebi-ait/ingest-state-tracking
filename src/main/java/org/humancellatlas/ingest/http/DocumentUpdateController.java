@@ -21,5 +21,4 @@ public class DocumentUpdateController {
         messageHandler.handleMetadataDocumentUpdate(message);
         return ResponseEntity.ok(ResponseEntity.EMPTY);
     }
-
 }
