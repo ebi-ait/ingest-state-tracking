@@ -18,7 +18,7 @@ public class MetadataDocumentEventBarrage {
      * @param stateMonitor
      */
     public void commence(SubmissionStateMonitor stateMonitor) {
-        this.prepareBarrage(3000);
+        this.prepareBarrage(1000);
 
         while(!queuedTransitionEvents.isEmpty()) {
             MetadataDocumentTransition nextEvent = queuedTransitionEvents.peek();
