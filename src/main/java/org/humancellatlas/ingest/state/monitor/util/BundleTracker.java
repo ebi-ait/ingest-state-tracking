@@ -36,7 +36,7 @@ public class BundleTracker {
     }
 
     public boolean bundlesCompleted() {
-        return numBundlesProcessed.get() == numBundlesExpected;
+        return numBundlesProcessed.get() >= numBundlesExpected;
     }
 
 }
