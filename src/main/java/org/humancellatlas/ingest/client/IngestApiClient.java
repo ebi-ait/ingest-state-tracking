@@ -127,7 +127,7 @@ public class IngestApiClient implements InitializingBean {
         JsonNode envelopeJson = this.restTemplate.getForEntity(submissionByUuid, JsonNode.class)
                                                  .getBody();
 
-        URI envelopeUri = URI.create(envelopeJson.at(JsonPointer.valueOf("/links/self/href")).asText());
+        URI envelopeUri = URI.create(envelopeJson.at(JsonPointer.valueOf("/_links/self/href")).asText());
 
         return new SubmissionEnvelopeReference(extractIdFromSubmissionEnvelopeURI(envelopeUri),
                                                envelopeUuid.toString(),
