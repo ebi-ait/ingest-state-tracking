@@ -53,12 +53,14 @@ public class RedisPersister implements Persister {
         Collection<StateMachine<SubmissionState, SubmissionEvent>> machines = new HashSet<>();
 
         stateMachineRepository.findAll().forEach(savedStateMachine -> {
-            String savedMachineId = savedStateMachine.getMachineId();
-            StateMachine<SubmissionState, SubmissionEvent> stateMachine = stateMachineFactory.getStateMachine(savedMachineId);
-            try {
-                machines.add(persister.restore(stateMachine, savedMachineId));
-            } catch (Exception e) {
-                log.error("Failed to retrieve state machine with id: " + savedMachineId, e);
+            if(savedStateMachine != null) {
+                String savedMachineId = savedStateMachine.getMachineId();
+                StateMachine<SubmissionState, SubmissionEvent> stateMachine = stateMachineFactory.getStateMachine(savedMachineId);
+                try {
+                    machines.add(persister.restore(stateMachine, savedMachineId));
+                } catch (Exception e) {
+                    log.error("Failed to retrieve state machine with id: " + savedMachineId, e);
+                }
             }
         });
 
