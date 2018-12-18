@@ -7,6 +7,7 @@ import org.humancellatlas.ingest.messaging.model.BundleCompletedMessage;
 import org.humancellatlas.ingest.messaging.model.BundleSubmittedMessage;
 import org.humancellatlas.ingest.messaging.model.MetadataDocumentMessage;
 import org.humancellatlas.ingest.messaging.model.SubmissionEnvelopeMessage;
+import org.humancellatlas.ingest.messaging.service.MessageBuffers;
 import org.humancellatlas.ingest.messaging.service.MessageHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Component;
 @AllArgsConstructor
 public class MessageReceiver {
     private final @NonNull MessageHandler messageHandler;
+    private final @NonNull MessageBuffers messageBuffers;
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -46,5 +48,10 @@ public class MessageReceiver {
     @RabbitListener(queues = Constants.Queues.BUNDLEABLE_PROCESS_COMPLETED)
     public void receiveBundleableProcessCompletedMessage(BundleCompletedMessage bundleCompletedMessage) {
         getMessageHandler().handleBundleableProcessCompletedMessage(bundleCompletedMessage);
+    }
+
+    @RabbitListener(queues = Constants.Queues.DOCUMENT_UPDATE)
+    public void receiveMetadataDocumentUpdateMessage(MetadataDocumentMessage metadataDocumentMessage) {
+        getMessageBuffers().addDocumentUpdateMessage(metadataDocumentMessage);
     }
 }

@@ -15,10 +15,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 @RequiredArgsConstructor
 public class DocumentUpdateController {
     private final @NonNull MessageHandler messageHandler;
-
-    @RequestMapping(path = "state-updates/metadata-documents", method = RequestMethod.POST)
-    public ResponseEntity metadataDocumentStateUpdate(@RequestBody MetadataDocumentMessage message){
-        messageHandler.handleMetadataDocumentUpdate(message);
-        return ResponseEntity.ok(ResponseEntity.EMPTY);
-    }
+//
+//    @RequestMapping(path = "state-updates/metadata-documents", method = RequestMethod.POST)
+//    public ResponseEntity metadataDocumentStateUpdate(@RequestBody MetadataDocumentMessage message){
+//        messageHandler.handleMetadataDocumentUpdate(message);
+//        return ResponseEntity.ok(ResponseEntity.EMPTY);
+//    }
 }
