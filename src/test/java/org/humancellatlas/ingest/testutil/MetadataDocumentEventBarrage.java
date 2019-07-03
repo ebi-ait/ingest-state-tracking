@@ -1,8 +1,8 @@
 package org.humancellatlas.ingest.testutil;
 
+import java.time.Instant;
 import java.util.HashSet;
 import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
-import org.joda.time.DateTime;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -22,7 +22,7 @@ public class MetadataDocumentEventBarrage {
 
         while(!queuedTransitionEvents.isEmpty()) {
             MetadataDocumentTransition nextEvent = queuedTransitionEvents.peek();
-            if (nextEvent.getDateTime().isBeforeNow()) {
+            if (nextEvent.getDateTime().isBefore(Instant.now())) {
                 nextEvent = queuedTransitionEvents.remove();
                 // call a method on the monitor depending on the target state for this event
                 stateMonitor
@@ -52,7 +52,7 @@ public class MetadataDocumentEventBarrage {
      * Adds an offset to each date to account for the time required to compute this method
      */
     private void prepareBarrage(int offset){
-        DateTime offsetDate = DateTime.now().plusMillis(offset);
+        Instant offsetDate = Instant.now().plusMillis(offset);
         for(MetadataDocumentTransition event : transitionEvents) {
             event.setDateTime(offsetDate.plusMillis((event.getEventTime().intValue())));
         }

@@ -5,7 +5,8 @@ import lombok.Data;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
-import org.joda.time.DateTime;
+
+import java.time.Instant;
 
 /**
  * for a specified submission envelope, descibes a metadata document state transition at a moment of time
@@ -16,6 +17,6 @@ class MetadataDocumentTransition {
     private MetadataDocumentReference metadataDocumentReference;
     private SubmissionEnvelopeReference submissionEnvelopeReference;
     private Long eventTime;
-    private DateTime dateTime;
+    private Instant dateTime;
     private MetadataDocumentState targetState;
 }
