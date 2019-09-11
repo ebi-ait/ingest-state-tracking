@@ -2,6 +2,7 @@ package org.humancellatlas.ingest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import org.humancellatlas.ingest.client.IngestApiClient;
@@ -10,17 +11,16 @@ import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.SubmissionState;
 import org.humancellatlas.ingest.state.monitor.SubmissionStateUpdater;
 import org.humancellatlas.ingest.testutil.MockConfigurationService;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -35,18 +35,20 @@ import static org.junit.Assert.*;
 /**
  * Created by rolando on 15/02/2018.
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest
 public class SubmissionStateUpdaterTest {
 
     private IngestApiClient ingestApiClient;
     private ConfigurationService config;
     private SubmissionStateUpdater submissionStateUpdater;
+    
+    private WireMockServer wireMockServer;
 
     public SubmissionStateUpdaterTest() {
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         ingestApiClient = new IngestApiClient(MockConfigurationService.create());
         ingestApiClient.init();
@@ -54,14 +56,22 @@ public class SubmissionStateUpdaterTest {
         submissionStateUpdater = new SubmissionStateUpdater(ingestApiClient, config);
     }
 
-    @After
+    @BeforeEach
+    public void setupWireMockServer() {
+        wireMockServer = new WireMockServer(8088);
+        wireMockServer.start();
+    }
+
+    @AfterEach
+    public void teardownWireMockServer() {
+        wireMockServer.stop();
+        wireMockServer.resetAll();
+    }
+
+    @AfterEach
     public void after() {
         submissionStateUpdater.stop();
     }
-
-    @Rule
-    public WireMockRule wireMockRule = new WireMockRule(8088);
-
 
     @Test
     public void testOnlyKeepsOneCopyOfAnUpdateRequest() throws Exception {
@@ -136,7 +146,7 @@ public class SubmissionStateUpdaterTest {
         EnvelopePatchedJson envelopePatchedJson = new EnvelopePatchedJson();
 
         // scenario: envelope state is initially in state "valid", the updater should patch it and it should then be in state "submitted"
-        stubFor(
+        wireMockServer.stubFor(
                 get(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString()))
                         .withHeader("Accept", equalTo("application/hal+json"))
                         .willReturn(aResponse()
@@ -144,7 +154,7 @@ public class SubmissionStateUpdaterTest {
                                 .withHeader("Content-Type", "application/hal+json")
                                 .withBody(new ObjectMapper().writeValueAsString(envelopeInitialJson))));
 
-        stubFor(
+        wireMockServer.stubFor(
                 put(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString() + "/mockCommitSubmit")).inScenario("update submission state")
                         .whenScenarioStateIs(Scenario.STARTED)
                         .willReturn(aResponse()
@@ -153,7 +163,7 @@ public class SubmissionStateUpdaterTest {
                                 .withBody(new ObjectMapper().writeValueAsString(envelopePatchedJson)))
                         .willSetStateTo("submission state transitioned"));
 
-        stubFor(
+        wireMockServer.stubFor(
                 get(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString())).inScenario("update submission state")
                         .whenScenarioStateIs("submission state transitioned")
                         .withHeader("Accept", equalTo("application/hal+json"))

@@ -2,6 +2,7 @@ package org.humancellatlas.ingest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.humancellatlas.ingest.client.IngestApiClient;
 import org.humancellatlas.ingest.client.model.MetadataDocument;
@@ -10,48 +11,51 @@ import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.SubmissionState;
 import org.humancellatlas.ingest.testutil.MockConfigurationService;
-import org.junit.After;
-import org.junit.Before;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.boot.autoconfigure.couchbase.CouchbaseProperties;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.net.URI;
 import java.util.*;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.humancellatlas.ingest.testutil.MockConfigurationService.INGEST_API_ROOT_STRING;
 import static org.humancellatlas.ingest.testutil.MockConfigurationService.mockStateUpdateRels;
 import static org.junit.Assert.*;
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
 /**
  * Created by rolando on 08/02/2018.
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest
 public class IngestApiClientTest {
     private IngestApiClient ingestApiClient;
+    private WireMockServer wireMockServer;
 
-    @Before
+    @BeforeEach
     public void before() {
         ingestApiClient = new IngestApiClient(MockConfigurationService.create());
         ingestApiClient.init();
     }
-
-    @After
-    public void after(){
-
+    
+    @BeforeEach
+    public void setupWireMockServer() {
+        wireMockServer = new WireMockServer(8088);
+        wireMockServer.start();
     }
 
+    @AfterEach
+    public void teardownWireMockServer() {
+        wireMockServer.stop();
+        wireMockServer.resetAll();
+    }
+    
     public IngestApiClientTest(){ }
-
-    @Rule
-    public WireMockRule wireMockRule = new WireMockRule(8088);
-
+    
     @Test
     public void testGetMetadataDocumentInfo() throws Exception {
         MetadataDocumentReference mockMetadataDocumentReference = new MetadataDocumentReference(
@@ -109,7 +113,7 @@ public class IngestApiClientTest {
         Object metadataDocumentResponse = new MetadataDocumentJson();
         Object metadataDocumentEmbeddedEnvelopesResponse = new MetadataDocumentEmbeddedSubmissionEnvelopesJson();
 
-        stubFor(
+        wireMockServer.stubFor(
                 get(urlEqualTo(mockMetadataDocumentReference.getCallbackLocation().toString()))
                         .withHeader("Accept", equalTo("application/hal+json"))
                         .willReturn(aResponse()
@@ -117,7 +121,7 @@ public class IngestApiClientTest {
                                 .withHeader("Content-Type", "application/hal+json")
                                 .withBody(new ObjectMapper().writeValueAsString(metadataDocumentResponse))));
 
-        stubFor(
+        wireMockServer.stubFor(
                 get(urlEqualTo(mockMetadataDocumentReference.getCallbackLocation().toString() + "/submissionEnvelopes"))
                         .withHeader("Accept", equalTo("application/hal+json"))
                         .willReturn(aResponse()
@@ -125,7 +129,7 @@ public class IngestApiClientTest {
                                 .withHeader("Content-Type", "application/hal+json")
                                 .withBody(new ObjectMapper().writeValueAsString(metadataDocumentEmbeddedEnvelopesResponse))));
 
-        stubFor(
+        wireMockServer.stubFor(
                 get(urlEqualTo("/submissionEnvelopes/mock-envelope-id"))
                         .withHeader("Accept", equalTo("application/hal+json"))
                         .willReturn(aResponse()
@@ -168,7 +172,7 @@ public class IngestApiClientTest {
 
         SubmissionEnvelopeJson submissionEnvelopeJson = new SubmissionEnvelopeJson();
 
-        stubFor(
+        wireMockServer.stubFor(
                 get(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString()))
                         .withHeader("Accept", equalTo("application/hal+json"))
                         .willReturn(aResponse()
@@ -218,7 +222,7 @@ public class IngestApiClientTest {
         Object envelopeJson = new EnvelopeJson();
         Object envelopeTransitioned = new EnvelopeTransitionedJson();
 
-        stubFor(
+        wireMockServer.stubFor(
                 get(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString()))
                         .withHeader("Accept", equalTo("application/hal+json"))
                         .willReturn(aResponse()
@@ -227,7 +231,7 @@ public class IngestApiClientTest {
                                 .withBody(new ObjectMapper().writeValueAsString(envelopeJson))));
 
 
-        stubFor(
+        wireMockServer.stubFor(
                 put(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString() + "/mockCommitSubmit"))
                         .withHeader("Accept", equalTo("application/hal+json"))
                         .willReturn(aResponse()
@@ -239,12 +243,12 @@ public class IngestApiClientTest {
         ingestApiClient.updateEnvelopeState(submissionEnvelopeReference, SubmissionState.SUBMITTED);
 
 
-        verify(
+        wireMockServer.verify(
                 getRequestedFor(
                         urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString())));
 
 
-        verify(
+        wireMockServer.verify(
                 putRequestedFor(
                         urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString() + "/mockCommitSubmit" )));
 

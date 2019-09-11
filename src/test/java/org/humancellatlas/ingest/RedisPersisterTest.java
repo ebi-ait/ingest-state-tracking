@@ -5,15 +5,13 @@ import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
 import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
-import org.humancellatlas.ingest.state.monitor.SubmissionStateListenerBuilder;
 import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
 import org.humancellatlas.ingest.state.persistence.Persister;
-import org.humancellatlas.ingest.state.persistence.RedisPersister;
 import org.humancellatlas.ingest.testutil.MetadataDocumentEventBarrage;
 import org.humancellatlas.ingest.testutil.MetadataDocumentTransitionLifecycle;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +20,7 @@ import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.net.URI;
 import java.util.*;
@@ -30,7 +28,7 @@ import java.util.*;
 /**
  * Created by rolando on 14/05/2018.
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest
 @TestPropertySource(properties = {"app.auto-persist.enable=false", "app.auto-load.enable=false"})
 @ActiveProfiles("redis-persistence")
@@ -46,7 +44,7 @@ public class RedisPersisterTest {
 
     private SubmissionEnvelopeReference envelopeRef;
 
-    @Before
+    @BeforeEach
     public void setup() {
         envelopeRef = new SubmissionEnvelopeReference("1234", UUID.randomUUID().toString(),
                                                       URI.create("http://localhost:8080/api/submissionEnvelopes/1234"));
