@@ -95,7 +95,7 @@ public class SubmissionStateUpdater {
             } catch (Throwable e) {
                 log.error("Error/Exception occurred trying to persist states", e);
             }
-        }, 5, (long) this.getConfig().getUpdaterPeriodMs(), TimeUnit.SECONDS);
+        }, 5, (long) this.getConfig().getUpdaterPeriodMs(), TimeUnit.MILLISECONDS);
     }
 
     public void stop() {
