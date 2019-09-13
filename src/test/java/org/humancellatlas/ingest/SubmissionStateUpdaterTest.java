@@ -3,7 +3,6 @@ package org.humancellatlas.ingest;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import org.humancellatlas.ingest.client.IngestApiClient;
 import org.humancellatlas.ingest.config.ConfigurationService;
@@ -181,7 +180,7 @@ public class SubmissionStateUpdaterTest {
         assertTrue(submissionStateUpdater.getPendingUpdates().size() == 1);
 
 
-        Thread.sleep((config.getUpdaterPeriodSeconds() * 1000) * 3); // wait for an update to happen, x 2 to be sure
+        Thread.sleep((config.getUpdaterPeriodMs() * 1000) * 3); // wait for an update to happen, x 2 to be sure
 
         assertEquals(
                 ingestApiClient.retrieveSubmissionEnvelope(submissionEnvelopeReference).getSubmissionState().toUpperCase(),

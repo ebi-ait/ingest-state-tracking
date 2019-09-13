@@ -22,8 +22,8 @@ public class ConfigurationService implements InitializingBean {
 
     @Value("${INGEST_API_ROOT:http://api.ingest.dev.data.humancellatlas.org}")
     private String ingestApiRootString;
-    @Value("${UPDATER_PERIOD_SECONDS:2}")
-    private String updaterPeriodSecondsString;
+    @Value("${UPDATER_PERIOD_MILLISECONDS:20}")
+    private String updaterPeriodMsString;
     @Value("${REDIS_HOST:localhost}")
     private String redisHostString;
     @Value("${REDIS_PORT:6379}")
@@ -32,7 +32,7 @@ public class ConfigurationService implements InitializingBean {
     private String numHandlerThreadsString;
 
     @Getter @Setter private URI ingestApiUri;
-    @Getter @Setter private int updaterPeriodSeconds;
+    @Getter @Setter private int updaterPeriodMs;
     @Getter @Setter private String redisHost;
     @Getter @Setter private int redisPort;
     @Getter @Setter private int numHandlerThreads;
@@ -41,7 +41,7 @@ public class ConfigurationService implements InitializingBean {
     private void init() {
         try {
             this.ingestApiUri = new URI(ingestApiRootString);
-            this.updaterPeriodSeconds = Integer.parseInt(updaterPeriodSecondsString);
+            this.updaterPeriodMs = Integer.parseInt(updaterPeriodMsString);
             this.redisHost = redisHostString;
             this.redisPort = Integer.parseInt(redisPortString);
             this.numHandlerThreads = Integer.parseInt(numHandlerThreadsString);

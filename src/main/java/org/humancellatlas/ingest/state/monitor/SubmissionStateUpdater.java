@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -96,7 +95,7 @@ public class SubmissionStateUpdater {
             } catch (Throwable e) {
                 log.error("Error/Exception occurred trying to persist states", e);
             }
-        }, 5, (long) this.getConfig().getUpdaterPeriodSeconds(), TimeUnit.SECONDS);
+        }, 5, (long) this.getConfig().getUpdaterPeriodMs(), TimeUnit.SECONDS);
     }
 
     public void stop() {

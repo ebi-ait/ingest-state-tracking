@@ -17,7 +17,7 @@ public class MockConfigurationService {
     public static final int INGEST_API_PORT = 8088;
     public static final URI INGEST_API_ROOT;
     public static final String INGEST_API_ROOT_STRING;
-    public static final int UPDATER_PERIOD_SECONDS = 5;
+    public static final int UPDATER_PERIOD_MILLISECONDS = 5;
 
     static {
         try {
@@ -31,7 +31,7 @@ public class MockConfigurationService {
     public static ConfigurationService create() {
         ConfigurationService configurationService = new ConfigurationService();
         configurationService.setIngestApiUri(INGEST_API_ROOT);
-        configurationService.setUpdaterPeriodSeconds(UPDATER_PERIOD_SECONDS);
+        configurationService.setUpdaterPeriodMs(UPDATER_PERIOD_MILLISECONDS);
         configurationService.setStateUpdateRels(mockStateUpdateRels());
 
         return configurationService;
