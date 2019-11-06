@@ -104,10 +104,8 @@ public class IngestApiClient implements InitializingBean {
         return new SubmissionEnvelope(submissionState);
     }
 
-    public List<SubmissionEnvelopeReference> envelopeReferencesFromEnvelopeIds(Collection<String> envelopeIds){
-        return envelopeIds.stream()
-                          .map(this::envelopeReferenceFromEnvelopeId)
-                          .collect(Collectors.toList());
+    public SubmissionEnvelopeReference envelopeReferencesFromEnvelopeId(String envelopeId){
+        return this.envelopeReferenceFromEnvelopeId(envelopeId);
     }
 
     public SubmissionEnvelopeReference referenceForSubmissionEnvelope(SubmissionEnvelopeMessage message) {

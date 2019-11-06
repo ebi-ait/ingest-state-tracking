@@ -24,5 +24,5 @@ public class MetadataDocumentMessage {
     private String documentUuid;
     private String callbackLink;
     private String validationState;
-    private Collection<String> envelopeIds;
+    private String envelopeId;
 }

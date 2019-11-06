@@ -10,8 +10,10 @@ public class Constants {
     public class Queues {
         public static final String BUNDLEABLE_PROCESS_SUBMITTED = "ingest.state-tracking.bundle.submitted.queue";
         public static final String BUNDLEABLE_PROCESS_COMPLETED = "ingest.state-tracking.bundle.completed.queue";
-        public static final String DOCUMENT_CREATED = "ingest.state-tracking.metadata.created.queue";
-        public static final String DOCUMENT_UPDATE = "ingest.state-tracking.metadata.update.queue";
+        //not used
+        //public static final String DOCUMENT_CREATED = "ingest.state-tracking.metadata.created.queue";
+        //probably also not used? commented queue config as well
+        //public static final String DOCUMENT_UPDATE = "ingest.state-tracking.metadata.update.queue";
         public static final String ENVELOPE_CREATED = "ingest.state-tracking.envelope.created.queue";
         public static final String ENVELOPE_UPDATE = "ingest.state-tracking.envelope.updated.queue";
     }
