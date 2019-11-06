@@ -138,11 +138,10 @@ public class IngestApiClientTest {
                                             .withBody(new ObjectMapper().writeValueAsString(envelopeJson))));
 
         MetadataDocument mockMetadataDocument = new MetadataDocument();
-        mockMetadataDocument.setReferencedEnvelopes(ingestApiClient.envelopeReferencesFromEnvelopeIds(Collections.singletonList("mock-envelope-id")));
+        mockMetadataDocument.setReferencedEnvelope(ingestApiClient.envelopeReferencesFromEnvelopeId("mock-envelope-id"));
 
-        assertTrue(mockMetadataDocument.getReferencedEnvelopes().size() == 1);
-        assertTrue(mockMetadataDocument.getReferencedEnvelopes().get(0).getId().equals("mock-envelope-id"));
-        assertTrue(mockMetadataDocument.getReferencedEnvelopes().get(0).getUuid().equals(mockEnvelopeUUID));
+        assertTrue(mockMetadataDocument.getReferencedEnvelope().getId().equals("mock-envelope-id"));
+        assertTrue(mockMetadataDocument.getReferencedEnvelope().getUuid().equals(mockEnvelopeUUID));
     }
 
     @Test
