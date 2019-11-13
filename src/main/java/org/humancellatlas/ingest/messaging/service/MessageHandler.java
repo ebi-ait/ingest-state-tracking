@@ -86,7 +86,7 @@ public class MessageHandler {
         MetadataDocumentReference documentReference = getIngestApiClient().referenceForMetadataDocument(metadataDocumentMessage);
         MetadataDocument metadataDocument = new MetadataDocument();
         try{
-            metadataDocument.setReferencedEnvelopes(this.getIngestApiClient().envelopeReferencesFromEnvelopeIds(metadataDocumentMessage.getEnvelopeIds()));
+            metadataDocument.setReferencedEnvelope(this.getIngestApiClient().envelopeReferencesFromEnvelopeId(metadataDocumentMessage.getEnvelopeId()));
             metadataDocument.setValidationState(metadataDocumentMessage.getValidationState());
         } catch (HttpClientErrorException e) {
             log.info(String.format("Failed to fetch metadata document. Response was: %s Message was: ", e.getResponseBodyAsString()));
@@ -99,19 +99,17 @@ public class MessageHandler {
         }
 
         MetadataDocumentState documentState = MetadataDocumentState.valueOf(metadataDocument.getValidationState().toUpperCase());
-        metadataDocument
-                .getReferencedEnvelopes()
-                .forEach(envelopeReference -> {
-                    SubmissionState envelopeState = SubmissionState.valueOf(ingestApiClient.retrieveSubmissionEnvelope(envelopeReference)
-                                                                                           .getSubmissionState()
-                                                                                           .toUpperCase());
-                    if(!envelopeState.after(SubmissionState.SUBMITTED)){
-                        if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
-                            submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
-                        }
-                        submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
-                    }
-                });
+        SubmissionEnvelopeReference envelopeReference = metadataDocument.getReferencedEnvelope();
+
+        SubmissionState envelopeState = SubmissionState.valueOf(ingestApiClient.retrieveSubmissionEnvelope(envelopeReference)
+                                                                               .getSubmissionState()
+                                                                               .toUpperCase());
+        if(!envelopeState.after(SubmissionState.SUBMITTED)){
+            if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
+                submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
+            }
+            submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
+        }
     }
 
     private void doHandleSubmissionEnvelopeCreated(SubmissionEnvelopeMessage submissionEnvelopeMessage) {

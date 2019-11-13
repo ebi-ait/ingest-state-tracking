@@ -36,9 +36,6 @@ public class QueueConfig implements RabbitListenerConfigurer  {
     Queue queueEnvelopeStateUpdate() { return new Queue(Constants.Queues.ENVELOPE_UPDATE, false); }
 
     @Bean
-    Queue queueDocumentUpdate() { return new Queue(Constants.Queues.DOCUMENT_UPDATE, false); }
-
-    @Bean
     Queue queueBundleableProcessSubmitted() { return new Queue(Constants.Queues.BUNDLEABLE_PROCESS_SUBMITTED, false); }
 
     @Bean
@@ -54,11 +51,6 @@ public class QueueConfig implements RabbitListenerConfigurer  {
     @Bean
     Binding bindiEnvelopestateUpdate(Queue queueEnvelopeStateUpdate, TopicExchange stateTrackingExchange) {
         return BindingBuilder.bind(queueEnvelopeStateUpdate).to(stateTrackingExchange).with(Constants.RoutingKeys.ENVELOPE_STATE_UPDATE);
-    }
-
-    @Bean
-    Binding bindingDocumentsUpdate(Queue queueDocumentUpdate, TopicExchange stateTrackingExchange) {
-        return BindingBuilder.bind(queueDocumentUpdate).to(stateTrackingExchange).with(Constants.RoutingKeys.METADATA_UPDATE);
     }
 
     @Bean

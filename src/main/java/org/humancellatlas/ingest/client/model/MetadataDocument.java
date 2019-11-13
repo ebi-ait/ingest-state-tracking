@@ -17,5 +17,5 @@ import java.util.List;
 @NoArgsConstructor
 public class MetadataDocument {
     private String validationState;
-    private List<SubmissionEnvelopeReference> referencedEnvelopes;
+    private SubmissionEnvelopeReference referencedEnvelope;
 }
