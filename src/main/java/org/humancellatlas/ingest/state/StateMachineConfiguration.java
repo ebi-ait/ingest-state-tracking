@@ -52,6 +52,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .state(SUBMITTED)
                 .junction(PROCESSING_STATE_EVAL_JUNCTION)
                 .state(PROCESSING)
+                .state(ARCHIVING)
                 .state(CLEANUP)
                 .end(COMPLETE);
     }
