@@ -76,7 +76,7 @@ public class SubmissionStateUpdater {
         if(pendingUpdates.entrySet().size() > 0) {
             Set<String> envelopesToUpdate = pendingUpdates.keySet();
 
-            log.info(String.format("Pesisting state updates. Pending updates: %s", pendingUpdates.entrySet().size()));
+            log.info(String.format("Persisting state updates. Pending updates: %s", pendingUpdates.entrySet().size()));
 
             for (String envelopeToUpdate : envelopesToUpdate) {
                 PendingSubmissionUpdate pendingSubmissionUpdate = pendingUpdates.remove(envelopeToUpdate);

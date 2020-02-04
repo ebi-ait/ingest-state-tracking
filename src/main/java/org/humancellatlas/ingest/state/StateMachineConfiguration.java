@@ -110,17 +110,23 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
             .withJunction()
                 .source(PROCESSING_STATE_EVAL_JUNCTION)
                 .first(PROCESSING, stillProcessingGuard())
-                .last(CLEANUP)
-                .and()
-            /* Processing -> cleanup -> complete*/
-            .withExternal()
-                .source(PROCESSING).target(CLEANUP)
-                .event(CLEANUP_STARTED)
+                .last(ARCHIVING)
                 .and()
             .withExternal()
                 .source(PROCESSING).target(SUBMITTED)
                 .event(PROCESSING_FAILED)
                 .and()
+            .withExternal()
+                .source(ARCHIVING).target(CLEANUP)
+                .event(ARCHIVING_COMPLETE)
+                .and()
+            /* Processing -> cleanup -> complete*/
+//             TODO remove as this is probably not being used
+//            .withExternal()
+//                .source(PROCESSING).target(CLEANUP)
+//                .event(CLEANUP_STARTED)
+//                .and()
+
             .withExternal()
                 .source(CLEANUP).target(COMPLETE)
                 .event(ALL_TASKS_COMPLETE);
