@@ -143,6 +143,7 @@ public class IngestStateTrackingApplicationTests {
         assertEquals(SubmissionState.ARCHIVING, state);
         submissionStateMonitor
                 .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ARCHIVING_COMPLETE);
+        assertEquals(SubmissionState.CLEANUP, state);
         log.debug("Sending ALL_TASKS_COMPLETE event");
         submissionStateMonitor
                 .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ALL_TASKS_COMPLETE);
@@ -236,6 +237,7 @@ public class IngestStateTrackingApplicationTests {
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.ARCHIVING, state);
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ARCHIVING_COMPLETE);
+        assertEquals(SubmissionState.CLEANUP, state);
         log.debug("Sending ALL_TASKS_COMPLETE event");
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ALL_TASKS_COMPLETE);
         state = submissionStateMonitor.findCurrentState(envelopeRef);
