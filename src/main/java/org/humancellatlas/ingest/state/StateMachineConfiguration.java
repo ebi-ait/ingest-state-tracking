@@ -1,25 +1,20 @@
 package org.humancellatlas.ingest.state;
 
 import lombok.AllArgsConstructor;
-import lombok.NonNull;
 import org.humancellatlas.ingest.messaging.Constants;
 import org.humancellatlas.ingest.state.monitor.util.BundleTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
-import org.springframework.statemachine.config.builders.StateMachineConfigurationConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 import org.springframework.statemachine.guard.Guard;
-import org.springframework.statemachine.persist.StateMachineRuntimePersister;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -52,79 +47,78 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .state(SUBMITTED)
                 .junction(PROCESSING_STATE_EVAL_JUNCTION)
                 .state(PROCESSING)
+                .state(ARCHIVING)
                 .state(CLEANUP)
                 .end(COMPLETE);
     }
 
-    public void configure(StateMachineTransitionConfigurer<SubmissionState, SubmissionEvent> transitions) throws Exception{
+    public void configure(StateMachineTransitionConfigurer<SubmissionState, SubmissionEvent> transitions) throws Exception {
         transitions
-            .withExternal()
+                .withExternal()
                 .source(PENDING).target(DRAFT)
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
-            /* draft, validating, valid or invalid? */
-            .withExternal()
+                /* draft, validating, valid or invalid? */
+                .withExternal()
                 .source(DRAFT).target(VALIDATION_STATE_EVAL_JUNCTION)
                 .action(addOrUpdateContent())
                 .event(DOCUMENT_PROCESSED)
                 .and()
-            .withExternal()
+                .withExternal()
                 .source(VALIDATING).target(VALIDATION_STATE_EVAL_JUNCTION)
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
-            .withExternal()
+                .withExternal()
                 .source(VALID).target(VALIDATION_STATE_EVAL_JUNCTION)
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
-            .withExternal()
+                .withExternal()
                 .source(INVALID).target(VALIDATION_STATE_EVAL_JUNCTION)
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
-            .withJunction()
+                .withJunction()
                 .source(VALIDATION_STATE_EVAL_JUNCTION)
                 .first(INVALID, documentsInvalidGuard())
                 .then(VALIDATING, documentsValidatingGuard())
                 .then(VALID, allValidGuard())
                 .last(DRAFT)
                 .and()
-            /* valid -> submitted */
-            .withExternal()
+                /* valid -> submitted */
+                .withExternal()
                 .source(VALID).target(SUBMITTED)
                 .event(SUBMISSION_REQUESTED)
                 .and()
-            /* still processing or complete? */
-            .withExternal()
+                /* still processing or complete? */
+                .withExternal()
                 .source(SUBMITTED).target(PROCESSING_STATE_EVAL_JUNCTION)
                 .event(BUNDLE_STATE_UPDATE)
                 .action(addOrUpdateBundleContent())
                 .and()
-            .withExternal()
+                .withExternal()
                 .source(PROCESSING).target(PROCESSING_STATE_EVAL_JUNCTION)
                 .event(BUNDLE_STATE_UPDATE)
                 .action(addOrUpdateBundleContent())
                 .and()
-            .withJunction()
+                .withJunction()
                 .source(PROCESSING_STATE_EVAL_JUNCTION)
                 .first(PROCESSING, stillProcessingGuard())
-                .last(CLEANUP)
+                .last(ARCHIVING)
                 .and()
-            /* Processing -> cleanup -> complete*/
-            .withExternal()
-                .source(PROCESSING).target(CLEANUP)
-                .event(CLEANUP_STARTED)
-                .and()
-            .withExternal()
+                .withExternal()
                 .source(PROCESSING).target(SUBMITTED)
                 .event(PROCESSING_FAILED)
                 .and()
-            .withExternal()
+                .withExternal()
+                .source(ARCHIVING).target(CLEANUP)
+                .event(ARCHIVING_COMPLETE)
+                .and()
+                .withExternal()
                 .source(CLEANUP).target(COMPLETE)
                 .event(ALL_TASKS_COMPLETE);
-
     }
 
     private Guard<SubmissionState, SubmissionEvent> documentsInvalidGuard() {
@@ -136,20 +130,18 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                     // extra content somehow?
                     log.error("An extended state key was fubared");
                     return false;
-                }
-                else {
+                } else {
                     String documentId = (String) key;
                     Object value = docMap.get(documentId);
                     if (value.getClass() != MetadataDocumentState.class) {
                         // extra content somehow?
                         log.error("An extended state value was fubared");
                         return false;
-                    }
-                    else {
+                    } else {
                         MetadataDocumentState documentState = (MetadataDocumentState) value;
                         log.debug(String.format("Testing content from extended state. Document tracker: { %s : %s }",
-                            documentId,
-                            documentState));
+                                documentId,
+                                documentState));
                         if (documentState.equals(MetadataDocumentState.INVALID)) {
                             return true;
                         }
@@ -171,20 +163,18 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                     // extra content somehow?
                     log.error("An extended state key was fubared");
                     return false;
-                }
-                else {
+                } else {
                     String documentId = (String) key;
                     Object value = docMap.get(documentId);
                     if (value.getClass() != MetadataDocumentState.class) {
                         // extra content somehow?
                         log.error("An extended state value was fubared");
                         return false;
-                    }
-                    else {
+                    } else {
                         MetadataDocumentState documentState = (MetadataDocumentState) value;
                         log.debug(String.format("Testing content from extended state. Document tracker: { %s : %s }",
-                            documentId,
-                            documentState));
+                                documentId,
+                                documentState));
                         if (documentState.equals(MetadataDocumentState.VALIDATING)) {
                             return true;
                         }
@@ -217,20 +207,20 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
 
             // add the document and it's state to the extended context
             log.debug(String.format("Adding content to extended state. Document tracker: { %s : %s }",
-                                    documentId,
-                                    documentState));
+                    documentId,
+                    documentState));
             Map<String, MetadataDocumentState> metadataDocumentTracker = getMetadataDocumentTrackerFromContext(context);
 
-            if(metadataDocumentTracker == null) {
+            if (metadataDocumentTracker == null) {
                 // add the metadata document state map
                 metadataDocumentTracker = new ConcurrentHashMap<>();
                 context.getExtendedState().getVariables().put(Constants.METADATA_DOCUMENT_TRACKER, metadataDocumentTracker);
             }
 
-            if(! documentState.equals(MetadataDocumentState.VALID)) {
+            if (!documentState.equals(MetadataDocumentState.VALID)) {
                 metadataDocumentTracker.put(documentId, documentState);
             } else {
-                if ( metadataDocumentTracker.containsKey(documentId)){
+                if (metadataDocumentTracker.containsKey(documentId)) {
                     metadataDocumentTracker.remove(documentId);
                 }
             }
@@ -240,9 +230,10 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
     private Guard<SubmissionState, SubmissionEvent> stillProcessingGuard() {
         return context -> {
             BundleTracker bundleTracker = getBundleTrackerFromContext(context);
-            return ! bundleTracker.bundlesCompleted();
+            return !bundleTracker.bundlesCompleted();
         };
     }
+
     private Action<SubmissionState, SubmissionEvent> addOrUpdateBundleContent() {
         return context -> {
             String bundleableProcessId = context.getMessageHeaders().get(DOCUMENT_ID, String.class);
@@ -250,7 +241,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
 
             BundleTracker bundleTracker = (BundleTracker) context.getExtendedState().getVariables().get(Constants.BUNDLE_TRACKER);
             // is this the first bundle notification event? if so, initialize the bundleTracker
-            if(bundleTracker == null) {
+            if (bundleTracker == null) {
                 String envelopeUuid = context.getMessageHeaders().get(ENVELOPE_UUID, String.class);
                 int numBundlesExpected = context.getMessageHeaders().get(BUNDLES_TOTAL_EXPECTED, Integer.class);
 
@@ -258,7 +249,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 context.getExtendedState().getVariables().put(Constants.BUNDLE_TRACKER, bundleTracker);
             }
 
-            if(bundleProcessState.equals(MetadataDocumentState.COMPLETE)
+            if (bundleProcessState.equals(MetadataDocumentState.COMPLETE)
                     && bundleTracker.getBundleableProcessStateMap().get(bundleableProcessId).equals(MetadataDocumentState.PROCESSING)) {
                 bundleTracker.completedBundle(bundleableProcessId);
             } else {

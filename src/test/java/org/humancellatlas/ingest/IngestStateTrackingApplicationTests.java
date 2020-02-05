@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.math.BigInteger;
 import java.net.URI;
@@ -127,22 +126,25 @@ public class IngestStateTrackingApplicationTests {
 
         log.debug("Sending BUNDLE_STATE_UPDATE event for a submitted assay");
         submissionStateMonitor.notifyOfBundleState("mock-assay-id",
-                                                   envelopeRef.getUuid(),
-                                                   1,
-                                                   MetadataDocumentState.PROCESSING);
+                envelopeRef.getUuid(),
+                1,
+                MetadataDocumentState.PROCESSING);
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.PROCESSING, state);
 
         log.debug("Sending BUNDLE_STATE_UPDATE event for a completed assay");
         submissionStateMonitor.notifyOfBundleState("mock-assay-id",
-                                                   envelopeRef.getUuid(),
-                                                   1,
-                                                   MetadataDocumentState.COMPLETE);
+                envelopeRef.getUuid(),
+                1,
+                MetadataDocumentState.COMPLETE);
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.ARCHIVING, state);
+        submissionStateMonitor
+                .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ARCHIVING_COMPLETE);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.CLEANUP, state);
-
         log.debug("Sending ALL_TASKS_COMPLETE event");
         submissionStateMonitor
                 .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ALL_TASKS_COMPLETE);
@@ -215,27 +217,29 @@ public class IngestStateTrackingApplicationTests {
         int expectedAssays = 5;
         String mockAssayDocumentId = "mock-assay-id";
 
-        for(int i = 0; i < expectedAssays; i ++) {
+        for (int i = 0; i < expectedAssays; i++) {
             submissionStateMonitor.notifyOfBundleState(mockAssayDocumentId + i,
-                                                       envelopeRef.getUuid(),
-                                                       expectedAssays,
-                                                       MetadataDocumentState.PROCESSING);
+                    envelopeRef.getUuid(),
+                    expectedAssays,
+                    MetadataDocumentState.PROCESSING);
         }
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.PROCESSING, state);
 
         // mock events for bundled/completed assays
-        for(int i = 0; i < expectedAssays; i ++) {
+        for (int i = 0; i < expectedAssays; i++) {
             submissionStateMonitor.notifyOfBundleState(mockAssayDocumentId + i,
-                                                       envelopeRef.getUuid(),
-                                                       expectedAssays,
-                                                       MetadataDocumentState.COMPLETE);
+                    envelopeRef.getUuid(),
+                    expectedAssays,
+                    MetadataDocumentState.COMPLETE);
         }
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.ARCHIVING, state);
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ARCHIVING_COMPLETE);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.CLEANUP, state);
-
         log.debug("Sending ALL_TASKS_COMPLETE event");
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ALL_TASKS_COMPLETE);
         state = submissionStateMonitor.findCurrentState(envelopeRef);
@@ -317,7 +321,7 @@ public class IngestStateTrackingApplicationTests {
     }
 
     @Test
-    public void testTransitionsBackToDraftWhenValidAndNewDocumentAdded(){
+    public void testTransitionsBackToDraftWhenValidAndNewDocumentAdded() {
         MetadataDocumentEventBarrage barrage = new MetadataDocumentEventBarrage();
 
         // generate transition lifecycles for, say, 15 samples...
@@ -436,7 +440,7 @@ public class IngestStateTrackingApplicationTests {
         };
 
         int numWorkers = 6;
-        for(int i =0; i < numWorkers; i ++) {
+        for (int i = 0; i < numWorkers; i++) {
             String resourceId = resourceIds[i];
             BigInteger resourceValue = new BigInteger(resourceId, 16); // assuming resource is hex
             int index = resourceValue.mod(BigInteger.valueOf(numWorkers)).intValue();
