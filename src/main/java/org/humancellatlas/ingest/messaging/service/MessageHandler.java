@@ -136,7 +136,7 @@ public class MessageHandler {
     private void doHandleDocumentCompletedMessage(DocumentCompletedMessage completedMessage, SubmissionEvent submissionEvent) {
         submissionStateMonitor.notifyOfDocumentState(completedMessage.getDocumentId(),
                                                    completedMessage.getEnvelopeUuid(),
-                                                   completedMessage.getTotalDocuments(),
+                                                   completedMessage.getTotal(),
                                                    MetadataDocumentState.COMPLETE,
                                                    submissionEvent);
     }

@@ -8,11 +8,11 @@ package org.humancellatlas.ingest.messaging;
  */
 public class Constants {
     public class Queues {
-        public static final String BUNDLEABLE_PROCESS_SUBMITTED = "ingest.state-tracking.bundle.submitted.queue";
-        public static final String BUNDLEABLE_PROCESS_COMPLETED = "ingest.state-tracking.bundle.completed.queue";
+        public static final String MANIFEST_SUBMITTED = "ingest.state-tracking.bundle.submitted.queue";
+        public static final String MANIFEST_COMPLETED = "ingest.state-tracking.bundle.completed.queue";
 
         public static final String EXPERIMENT_SUBMITTED = "ingest.terra.experiments.submitted.queue";
-        public static final String EXPERIMENT_COMPLETED = "ingest.terra.experiments.exported.queue";
+        public static final String EXPERIMENT_EXPORTED = "ingest.terra.experiments.exported.queue";
 
         public static final String ENVELOPE_CREATED = "ingest.state-tracking.envelope.created.queue";
         public static final String ENVELOPE_UPDATE = "ingest.state-tracking.envelope.updated.queue";
@@ -27,8 +27,8 @@ public class Constants {
         public static final String ENVELOPE_STATE_UPDATE = "ingest.state-tracking.envelope.state.update";
         public static final String ENVELOPE_CREATE = "ingest.state-tracking.envelope.create";
         public static final String METADATA_UPDATE = "ingest.state-tracking.document.update";
-        public static final String BUNDLEABLE_PROCESS_SUBMITTED_ROUTING_KEY = "ingest.bundle.*.submitted";
-        public static final String BUNDLEABLE_PROCESS_COMPLETED_ROUTING_KEY = "ingest.bundle.*.completed";
+        public static final String MANIFEST_SUBMITTED_ROUTING_KEY = "ingest.bundle.*.submitted";
+        public static final String MANIFEST_COMPLETED_ROUTING_KEY = "ingest.bundle.*.completed";
 
         public static final String EXPERIMENT_SUBMITTED_ROUTING_KEY = "ingest.terra.experiments.submitted";
         public static final String EXPERIMENT_EXPORTED_ROUTING_KEY = "ingest.terra.experiments.exported";

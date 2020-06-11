@@ -9,12 +9,8 @@ import lombok.Getter;
 public class DocumentCompletedMessage {
     DocumentCompletedMessage() {}
 
-    private String documentId;
     private String envelopeUuid;
-    private int documentIndex;
-    private int totalDocuments;
+    private String documentId;
+    private int index;
+    private int total;
 }
-
-// TODO Update manifest receiver complete message
-// bundleIndex -> documentIndex
-// totalBundles -> totalDocuments

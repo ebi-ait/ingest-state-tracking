@@ -38,12 +38,12 @@ public class MessageReceiver {
        getMessageHandler().handleSubmissionEnvelopeStateUpdateRequest(submissionEnvelopeMessage);
     }
 
-    @RabbitListener(queues = Constants.Queues.BUNDLEABLE_PROCESS_SUBMITTED)
+    @RabbitListener(queues = Constants.Queues.MANIFEST_SUBMITTED)
     public void receiveManifestProcessingMessage(DocumentProcessingMessage documentProcessingMessage) {
       getMessageHandler().handleDocumentProcessingMessageForSubmissionEvent(documentProcessingMessage, SubmissionEvent.PROCESSING_STATE_UPDATE);
     }
 
-    @RabbitListener(queues = Constants.Queues.BUNDLEABLE_PROCESS_COMPLETED)
+    @RabbitListener(queues = Constants.Queues.MANIFEST_COMPLETED)
     public void receiveManifestCompletedMessage(DocumentCompletedMessage documentCompletedMessage) {
         getMessageHandler().handleDocumentCompletedMessageForSubmissionEvent(documentCompletedMessage, SubmissionEvent.PROCESSING_STATE_UPDATE);
     }
@@ -53,7 +53,7 @@ public class MessageReceiver {
         getMessageHandler().handleDocumentProcessingMessageForSubmissionEvent(documentProcessingMessage, SubmissionEvent.EXPORTING_STATE_UPDATE);
     }
 
-    @RabbitListener(queues = Constants.Queues.EXPERIMENT_COMPLETED)
+    @RabbitListener(queues = Constants.Queues.EXPERIMENT_EXPORTED)
     public void receiveExperimentCompletedMessage(DocumentCompletedMessage documentCompletedMessage) {
         getMessageHandler().handleDocumentCompletedMessageForSubmissionEvent(documentCompletedMessage, SubmissionEvent.EXPORTING_STATE_UPDATE);
     }
