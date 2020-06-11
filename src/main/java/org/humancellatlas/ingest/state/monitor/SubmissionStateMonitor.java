@@ -6,12 +6,9 @@ import org.humancellatlas.ingest.state.MetadataDocumentInfo;
 import org.humancellatlas.ingest.state.MetadataDocumentState;
 import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
-import org.humancellatlas.ingest.state.persistence.Persister;
-import org.humancellatlas.ingest.state.persistence.RedisPersister;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
@@ -145,17 +142,17 @@ public class SubmissionStateMonitor {
         }
     }
 
-    public boolean notifyOfBundleState(String bundleableProcessDocumentId, String envelopeUuid, int totalBundlesExpected, MetadataDocumentState bundleState) {
+    public boolean notifyOfDocumentState(String documentId, String envelopeUuid,
+                                         int totalExpectedDocuments, MetadataDocumentState state, SubmissionEvent submissionEvent) {
         Optional<StateMachine<SubmissionState, SubmissionEvent>> stateMachine = findStateMachine(UUID.fromString(envelopeUuid));
 
         if (stateMachine.isPresent()) {
             StateMachine<SubmissionState, SubmissionEvent> machine = stateMachine.get();
 
-            Message<SubmissionEvent> message = MessageBuilder.withPayload(SubmissionEvent.BUNDLE_STATE_UPDATE)
-                                                             .setHeader(MetadataDocumentInfo.DOCUMENT_ID, bundleableProcessDocumentId)
-                                                             .setHeader(MetadataDocumentInfo.DOCUMENT_STATE, bundleState)
-                                                             .setHeader(MetadataDocumentInfo.BUNDLES_TOTAL_EXPECTED, totalBundlesExpected)
-                                                             .setHeader(MetadataDocumentInfo.ENVELOPE_UUID, envelopeUuid)
+            Message<SubmissionEvent> message = MessageBuilder.withPayload(submissionEvent)
+                                                             .setHeader(MetadataDocumentInfo.DOCUMENT_ID, documentId)
+                                                             .setHeader(MetadataDocumentInfo.DOCUMENT_STATE, state)
+                                                             .setHeader(MetadataDocumentInfo.EXPECTED_DOCUMENT_COUNT, totalExpectedDocuments)
                                                              .build();
 
             return machine.sendEvent(message);

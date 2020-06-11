@@ -20,6 +20,9 @@ public enum SubmissionState {
     SUBMITTED,
     PROCESSING,
     ARCHIVING,
+    ARCHIVED,
+    EXPORTING,
+    EXPORTED,
     CLEANUP,
     COMPLETE,
     DOCUMENTS_WAITING,
@@ -29,7 +32,8 @@ public enum SubmissionState {
     DOCUMENTS_VALID,
     DOCUMENTS_INVALID,
     VALIDATION_STATE_EVAL_JUNCTION,
-    PROCESSING_STATE_EVAL_JUNCTION;
+    PROCESSING_STATE_EVAL_JUNCTION,
+    EXPORTING_STATE_EVAL_JUNCTION;
 
     private static final List<Set<SubmissionState>> ORDERED_STATES = Arrays.asList(
             new HashSet<>(Arrays.asList(PENDING)),
@@ -37,6 +41,10 @@ public enum SubmissionState {
             new HashSet<>(Arrays.asList(VALIDATING, VALID, INVALID, VALIDATION_STATE_EVAL_JUNCTION)),
             new HashSet<>(Arrays.asList(SUBMITTED)),
             new HashSet<>(Arrays.asList(PROCESSING, PROCESSING_STATE_EVAL_JUNCTION)),
+            new HashSet<>(Arrays.asList(ARCHIVING)),
+            new HashSet<>(Arrays.asList(ARCHIVED)),
+            new HashSet<>(Arrays.asList(EXPORTING, EXPORTING_STATE_EVAL_JUNCTION)),
+            new HashSet<>(Arrays.asList(EXPORTED)),
             new HashSet<>(Arrays.asList(CLEANUP)),
             new HashSet<>(Arrays.asList(COMPLETE))
     );

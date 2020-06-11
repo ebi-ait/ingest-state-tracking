@@ -5,10 +5,9 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.humancellatlas.ingest.client.IngestApiClient;
 import org.humancellatlas.ingest.client.model.MetadataDocument;
-import org.humancellatlas.ingest.client.model.SubmissionEnvelope;
 import org.humancellatlas.ingest.config.ConfigurationService;
-import org.humancellatlas.ingest.messaging.model.BundleCompletedMessage;
-import org.humancellatlas.ingest.messaging.model.BundleSubmittedMessage;
+import org.humancellatlas.ingest.messaging.model.DocumentCompletedMessage;
+import org.humancellatlas.ingest.messaging.model.DocumentProcessingMessage;
 import org.humancellatlas.ingest.messaging.model.MetadataDocumentMessage;
 import org.humancellatlas.ingest.messaging.model.SubmissionEnvelopeMessage;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
@@ -31,8 +30,6 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Created by rolando on 05/07/2018.
@@ -73,13 +70,13 @@ public class MessageHandler {
         workers.submit(() -> doHandleSubmissionEnvelopeStateUpdateRequest(submissionEnvelopeMessage), submissionEnvelopeMessage.getDocumentId());
     }
 
-    public void handleBundleableProcessSubmittedMessage(BundleSubmittedMessage bundleSubmittedMessage) {
-        workers.submit(() -> doHandleBundleableProcessSubmittedMessage(bundleSubmittedMessage), bundleSubmittedMessage.getDocumentId());
+    public void handleDocumentProcessingMessageForSubmissionEvent(DocumentProcessingMessage documentProcessingMessage, SubmissionEvent submissionEvent) {
+        workers.submit(() -> doHandleDocumentProcessingMessage(documentProcessingMessage, submissionEvent), documentProcessingMessage.getDocumentId());
 
     }
 
-    public void handleBundleableProcessCompletedMessage(BundleCompletedMessage bundleCompletedMessage) {
-        workers.submit(() -> doHandleBundleableProcessCompletedMessage(bundleCompletedMessage), bundleCompletedMessage.getDocumentId());
+    public void handleDocumentCompletedMessageForSubmissionEvent(DocumentCompletedMessage documentCompletedMessage, SubmissionEvent submissionEvent) {
+        workers.submit(() -> doHandleDocumentCompletedMessage(documentCompletedMessage, submissionEvent), documentCompletedMessage.getDocumentId());
     }
 
     private void doHandleMetadataDocumentUpdate(MetadataDocumentMessage metadataDocumentMessage) {
@@ -128,18 +125,20 @@ public class MessageHandler {
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeReference, submissionEvent);
     }
 
-    private void doHandleBundleableProcessSubmittedMessage(BundleSubmittedMessage bundleSubmittedMessage) {
-        submissionStateMonitor.notifyOfBundleState(bundleSubmittedMessage.getDocumentId(),
-                                                   bundleSubmittedMessage.getEnvelopeUuid(),
-                                                   bundleSubmittedMessage.getTotal(),
-                                                   MetadataDocumentState.PROCESSING);
+    private void doHandleDocumentProcessingMessage(DocumentProcessingMessage processingMessage, SubmissionEvent submissionEvent) {
+        submissionStateMonitor.notifyOfDocumentState(processingMessage.getDocumentId(),
+                                                   processingMessage.getEnvelopeUuid(),
+                                                   processingMessage.getTotal(),
+                                                   MetadataDocumentState.PROCESSING,
+                                                   submissionEvent);
     }
 
-    private void doHandleBundleableProcessCompletedMessage(BundleCompletedMessage bundleCompletedMessage) {
-        submissionStateMonitor.notifyOfBundleState(bundleCompletedMessage.getDocumentId(),
-                                                   bundleCompletedMessage.getEnvelopeUuid(),
-                                                   bundleCompletedMessage.getTotalBundles(),
-                                                   MetadataDocumentState.COMPLETE);
+    private void doHandleDocumentCompletedMessage(DocumentCompletedMessage completedMessage, SubmissionEvent submissionEvent) {
+        submissionStateMonitor.notifyOfDocumentState(completedMessage.getDocumentId(),
+                                                   completedMessage.getEnvelopeUuid(),
+                                                   completedMessage.getTotalDocuments(),
+                                                   MetadataDocumentState.COMPLETE,
+                                                   submissionEvent);
     }
 
     private class Workers {

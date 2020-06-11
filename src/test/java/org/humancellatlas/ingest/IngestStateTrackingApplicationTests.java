@@ -124,27 +124,126 @@ public class IngestStateTrackingApplicationTests {
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.SUBMITTED, state);
 
-        log.debug("Sending BUNDLE_STATE_UPDATE event for a submitted assay");
-        submissionStateMonitor.notifyOfBundleState("mock-assay-id",
+        log.debug("Sending PROCESSING_STATE_UPDATE event for a submitted assay");
+        submissionStateMonitor.notifyOfDocumentState("mock-assay-id",
                 envelopeRef.getUuid(),
                 1,
-                MetadataDocumentState.PROCESSING);
+                MetadataDocumentState.PROCESSING, SubmissionEvent.PROCESSING_STATE_UPDATE);
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.PROCESSING, state);
 
-        log.debug("Sending BUNDLE_STATE_UPDATE event for a completed assay");
-        submissionStateMonitor.notifyOfBundleState("mock-assay-id",
+        log.debug("Sending PROCESSING_STATE_UPDATE event for a completed assay");
+        submissionStateMonitor.notifyOfDocumentState("mock-assay-id",
                 envelopeRef.getUuid(),
                 1,
-                MetadataDocumentState.COMPLETE);
+                MetadataDocumentState.COMPLETE, SubmissionEvent.PROCESSING_STATE_UPDATE);
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.ARCHIVING, state);
         submissionStateMonitor
                 .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ARCHIVING_COMPLETE);
         state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.ARCHIVED, state);
+
+        log.debug("Sending EXPORTING_STATE_UPDATE event for a submitted assay");
+        submissionStateMonitor.notifyOfDocumentState("mock-assay-id",
+                envelopeRef.getUuid(),
+                1,
+                MetadataDocumentState.PROCESSING, SubmissionEvent.EXPORTING_STATE_UPDATE);
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.EXPORTING, state);
+
+        log.debug("Sending EXPORTING_STATE_UPDATE event for a submitted assay");
+        submissionStateMonitor.notifyOfDocumentState("mock-assay-id",
+                envelopeRef.getUuid(),
+                1,
+                MetadataDocumentState.COMPLETE, SubmissionEvent.EXPORTING_STATE_UPDATE);
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.EXPORTED, state);
+
+        log.debug("Sending SUBMISSION_REQUESTED event");
+        submissionStateMonitor
+                .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CLEANUP_STARTED);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.CLEANUP, state);
+
+        log.debug("Sending ALL_TASKS_COMPLETE event");
+        submissionStateMonitor
+                .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ALL_TASKS_COMPLETE);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.COMPLETE, state);
+    }
+
+    @Test
+    public void testSuccessfulEventRunthroughWithoutArchiving() {
+        assertTrue(submissionStateMonitor.isMonitoring(envelopeRef));
+        SubmissionState state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.PENDING, state);
+
+        log.debug("Adding content");
+        assertTrue(submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.DRAFT));
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.DRAFT, state);
+
+        submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALIDATING);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.VALIDATING, state);
+
+        // wait for a bit to simulate validation happening
+        try {
+            TimeUnit.SECONDS.sleep(10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALID);
+        // wait for a bit to allow propagation of cascade events
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.VALID, state);
+
+        // assert 0 documents in extended state map
+        Map<String, MetadataDocumentState> metadataDocumentStateMap = (Map<String, MetadataDocumentState>) submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
+        assertTrue(metadataDocumentStateMap.entrySet().size() == 0);
+
+        log.debug("Sending SUBMISSION_REQUESTED event");
+        submissionStateMonitor
+                .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.SUBMITTED, state);
+
+        log.debug("Sending EXPORTING_STATE_UPDATE event for a submitted assay");
+        submissionStateMonitor.notifyOfDocumentState("mock-assay-id",
+                envelopeRef.getUuid(),
+                1,
+                MetadataDocumentState.PROCESSING, SubmissionEvent.EXPORTING_STATE_UPDATE);
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.EXPORTING, state);
+
+        log.debug("Sending EXPORTING_STATE_UPDATE event for a submitted assay");
+        submissionStateMonitor.notifyOfDocumentState("mock-assay-id",
+                envelopeRef.getUuid(),
+                1,
+                MetadataDocumentState.COMPLETE, SubmissionEvent.EXPORTING_STATE_UPDATE);
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.EXPORTED, state);
+
+        log.debug("Sending SUBMISSION_REQUESTED event");
+        submissionStateMonitor
+                .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CLEANUP_STARTED);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.CLEANUP, state);
+
         log.debug("Sending ALL_TASKS_COMPLETE event");
         submissionStateMonitor
                 .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ALL_TASKS_COMPLETE);
@@ -213,15 +312,15 @@ public class IngestStateTrackingApplicationTests {
         assertEquals(SubmissionState.SUBMITTED, state);
 
 
-        // send mock events about assays submitted for processing to bundles
+        // send mock events about assays submitted for processing manifests
         int expectedAssays = 5;
         String mockAssayDocumentId = "mock-assay-id";
 
         for (int i = 0; i < expectedAssays; i++) {
-            submissionStateMonitor.notifyOfBundleState(mockAssayDocumentId + i,
+            submissionStateMonitor.notifyOfDocumentState(mockAssayDocumentId + i,
                     envelopeRef.getUuid(),
                     expectedAssays,
-                    MetadataDocumentState.PROCESSING);
+                    MetadataDocumentState.PROCESSING, SubmissionEvent.PROCESSING_STATE_UPDATE);
         }
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
@@ -229,18 +328,45 @@ public class IngestStateTrackingApplicationTests {
 
         // mock events for bundled/completed assays
         for (int i = 0; i < expectedAssays; i++) {
-            submissionStateMonitor.notifyOfBundleState(mockAssayDocumentId + i,
+            submissionStateMonitor.notifyOfDocumentState(mockAssayDocumentId + i,
                     envelopeRef.getUuid(),
                     expectedAssays,
-                    MetadataDocumentState.COMPLETE);
+                    MetadataDocumentState.COMPLETE, SubmissionEvent.PROCESSING_STATE_UPDATE);
         }
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.ARCHIVING, state);
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ARCHIVING_COMPLETE);
         state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.ARCHIVED, state);
+
+        // send mock events about assays submitted for exporting experiments
+        for (int i = 0; i < expectedAssays; i++) {
+            submissionStateMonitor.notifyOfDocumentState(mockAssayDocumentId + i,
+                    envelopeRef.getUuid(),
+                    expectedAssays,
+                    MetadataDocumentState.PROCESSING, SubmissionEvent.EXPORTING_STATE_UPDATE);
+        }
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.EXPORTING, state);
+
+        // mock events for bundled/completed assays
+        for (int i = 0; i < expectedAssays; i++) {
+            submissionStateMonitor.notifyOfDocumentState(mockAssayDocumentId + i,
+                    envelopeRef.getUuid(),
+                    expectedAssays,
+                    MetadataDocumentState.COMPLETE, SubmissionEvent.EXPORTING_STATE_UPDATE);
+        }
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.EXPORTED, state);
+
+        log.debug("Sending CLEANUP_STARTED event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.CLEANUP_STARTED);
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.CLEANUP, state);
-        log.debug("Sending ALL_TASKS_COMPLETE event");
+
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.ALL_TASKS_COMPLETE);
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.COMPLETE, state);

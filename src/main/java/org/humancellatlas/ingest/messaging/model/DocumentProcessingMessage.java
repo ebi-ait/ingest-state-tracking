@@ -6,8 +6,8 @@ import lombok.Getter;
  * Created by rolando on 20/03/2018.
  */
 @Getter
-public class BundleSubmittedMessage {
-    BundleSubmittedMessage(){}
+public class DocumentProcessingMessage {
+    DocumentProcessingMessage(){}
 
     private String documentId;
     private String documentUuid;

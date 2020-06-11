@@ -12,6 +12,6 @@ public class MetadataDocumentInfo {
     public static final String DOCUMENT_STATE = "DOCUMENT_STATE";
 
     /* headers related to assays or bundleable documents */
-    public static final String BUNDLES_TOTAL_EXPECTED = "BUNDLES_TOTAL_EXPECTED";
+    public static final String EXPECTED_DOCUMENT_COUNT = "EXPECTED_DOCUMENT_COUNT";
 
 }
