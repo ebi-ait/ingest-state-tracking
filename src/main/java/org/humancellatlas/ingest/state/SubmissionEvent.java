@@ -14,6 +14,7 @@ public enum SubmissionEvent {
     PROCESSING_STARTED,
     PROCESSING_FAILED,
     ARCHIVING_COMPLETE,
+    EXPORTING_REQUESTED,
     CLEANUP_STARTED,
     ALL_TASKS_COMPLETE,
     EXPORTING_STATE_UPDATE,
@@ -27,6 +28,8 @@ public enum SubmissionEvent {
                 return PROCESSING_STARTED;
             case ARCHIVED:
                 return ARCHIVING_COMPLETE;
+            case EXPORTING:
+                return EXPORTING_REQUESTED;
             case CLEANUP:
                 return CLEANUP_STARTED;
             case COMPLETE:

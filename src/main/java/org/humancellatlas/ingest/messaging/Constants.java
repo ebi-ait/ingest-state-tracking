@@ -27,11 +27,11 @@ public class Constants {
         public static final String ENVELOPE_STATE_UPDATE = "ingest.state-tracking.envelope.state.update";
         public static final String ENVELOPE_CREATE = "ingest.state-tracking.envelope.create";
         public static final String METADATA_UPDATE = "ingest.state-tracking.document.update";
-        public static final String MANIFEST_SUBMITTED_ROUTING_KEY = "ingest.bundle.*.submitted";
-        public static final String MANIFEST_COMPLETED_ROUTING_KEY = "ingest.bundle.*.completed";
+        public static final String MANIFEST_SUBMITTED_ROUTING_KEY = "ingest.assay.manifest.submitted";
+        public static final String MANIFEST_COMPLETED_ROUTING_KEY = "ingest.assay.manifest.completed";
 
-        public static final String EXPERIMENT_SUBMITTED_ROUTING_KEY = "ingest.terra.experiments.submitted";
-        public static final String EXPERIMENT_EXPORTED_ROUTING_KEY = "ingest.terra.experiments.exported";
+        public static final String EXPERIMENT_SUBMITTED_ROUTING_KEY = "ingest.*.experiment.submitted";
+        public static final String EXPERIMENT_EXPORTED_ROUTING_KEY = "ingest.*.experiment.exported";
 
     }
 
