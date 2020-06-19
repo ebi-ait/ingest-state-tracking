@@ -14,9 +14,11 @@ public enum SubmissionEvent {
     PROCESSING_STARTED,
     PROCESSING_FAILED,
     ARCHIVING_COMPLETE,
+    EXPORTING_REQUESTED,
     CLEANUP_STARTED,
     ALL_TASKS_COMPLETE,
-    BUNDLE_STATE_UPDATE;
+    EXPORTING_STATE_UPDATE,
+    PROCESSING_STATE_UPDATE;
 
     public static SubmissionEvent fromRequestedSubmissionState(SubmissionState state) {
         switch (state) {
@@ -24,6 +26,10 @@ public enum SubmissionEvent {
                 return SUBMISSION_REQUESTED;
             case PROCESSING:
                 return PROCESSING_STARTED;
+            case ARCHIVED:
+                return ARCHIVING_COMPLETE;
+            case EXPORTING:
+                return EXPORTING_REQUESTED;
             case CLEANUP:
                 return CLEANUP_STARTED;
             case COMPLETE:

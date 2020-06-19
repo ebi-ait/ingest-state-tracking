@@ -36,10 +36,16 @@ public class QueueConfig implements RabbitListenerConfigurer  {
     Queue queueEnvelopeStateUpdate() { return new Queue(Constants.Queues.ENVELOPE_UPDATE, false); }
 
     @Bean
-    Queue queueBundleableProcessSubmitted() { return new Queue(Constants.Queues.BUNDLEABLE_PROCESS_SUBMITTED, false); }
+    Queue queueManifestSubmitted() { return new Queue(Constants.Queues.MANIFEST_SUBMITTED, false); }
 
     @Bean
-    Queue queueBundleableProcessCompleted() { return new Queue(Constants.Queues.BUNDLEABLE_PROCESS_COMPLETED, false); }
+    Queue queueManifestCompleted() { return new Queue(Constants.Queues.MANIFEST_COMPLETED, false); }
+
+    @Bean
+    Queue queueExperimentSubmitted() { return new Queue(Constants.Queues.EXPERIMENT_SUBMITTED, false); }
+
+    @Bean
+    Queue queueExperimentCompleted() { return new Queue(Constants.Queues.EXPERIMENT_EXPORTED, false); }
 
     /* queue bindings */
 
@@ -54,13 +60,23 @@ public class QueueConfig implements RabbitListenerConfigurer  {
     }
 
     @Bean
-    Binding bindingBundleableProcessSubmitted(Queue queueBundleableProcessSubmitted, TopicExchange assayExchange) {
-        return BindingBuilder.bind(queueBundleableProcessSubmitted).to(assayExchange).with(Constants.RoutingKeys.BUNDLEABLE_PROCESS_SUBMITTED_ROUTING_KEY);
+    Binding bindingBundleableProcessSubmitted(Queue queueManifestSubmitted, TopicExchange assayExchange) {
+        return BindingBuilder.bind(queueManifestSubmitted).to(assayExchange).with(Constants.RoutingKeys.MANIFEST_SUBMITTED_ROUTING_KEY);
     }
 
     @Bean
-    Binding bindingBundleableProcessCompleted(Queue queueBundleableProcessCompleted, TopicExchange assayExchange) {
-        return BindingBuilder.bind(queueBundleableProcessCompleted).to(assayExchange).with(Constants.RoutingKeys.BUNDLEABLE_PROCESS_COMPLETED_ROUTING_KEY);
+    Binding bindingBundleableProcessCompleted(Queue queueManifestCompleted, TopicExchange assayExchange) {
+        return BindingBuilder.bind(queueManifestCompleted).to(assayExchange).with(Constants.RoutingKeys.MANIFEST_COMPLETED_ROUTING_KEY);
+    }
+
+    @Bean
+    Binding bindingExperimentSubmitted(Queue queueExperimentSubmitted, TopicExchange assayExchange) {
+        return BindingBuilder.bind(queueExperimentSubmitted).to(assayExchange).with(Constants.RoutingKeys.EXPERIMENT_SUBMITTED_ROUTING_KEY);
+    }
+
+    @Bean
+    Binding bindingExperimentExported(Queue queueExperimentCompleted, TopicExchange assayExchange) {
+        return BindingBuilder.bind(queueExperimentCompleted).to(assayExchange).with(Constants.RoutingKeys.EXPERIMENT_EXPORTED_ROUTING_KEY);
     }
 
     /* rabbit message config */

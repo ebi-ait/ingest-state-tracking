@@ -6,11 +6,11 @@ import lombok.Getter;
  * Created by rolando on 21/03/2018.
  */
 @Getter
-public class BundleCompletedMessage {
-    BundleCompletedMessage() {}
+public class DocumentCompletedMessage {
+    DocumentCompletedMessage() {}
 
-    private String documentId;
     private String envelopeUuid;
-    private int bundleIndex;
-    private int totalBundles;
+    private String documentId;
+    private int index;
+    private int total;
 }

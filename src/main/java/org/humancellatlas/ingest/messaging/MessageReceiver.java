@@ -3,11 +3,11 @@ package org.humancellatlas.ingest.messaging;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
-import org.humancellatlas.ingest.messaging.model.BundleCompletedMessage;
-import org.humancellatlas.ingest.messaging.model.BundleSubmittedMessage;
-import org.humancellatlas.ingest.messaging.model.MetadataDocumentMessage;
+import org.humancellatlas.ingest.messaging.model.DocumentCompletedMessage;
+import org.humancellatlas.ingest.messaging.model.DocumentProcessingMessage;
 import org.humancellatlas.ingest.messaging.model.SubmissionEnvelopeMessage;
 import org.humancellatlas.ingest.messaging.service.MessageHandler;
+import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -38,13 +38,23 @@ public class MessageReceiver {
        getMessageHandler().handleSubmissionEnvelopeStateUpdateRequest(submissionEnvelopeMessage);
     }
 
-    @RabbitListener(queues = Constants.Queues.BUNDLEABLE_PROCESS_SUBMITTED)
-    public void receiveBundleableProcessSubmittedMessage(BundleSubmittedMessage bundleSubmittedMessage) {
-      getMessageHandler().handleBundleableProcessSubmittedMessage(bundleSubmittedMessage);
+    @RabbitListener(queues = Constants.Queues.MANIFEST_SUBMITTED)
+    public void receiveManifestProcessingMessage(DocumentProcessingMessage documentProcessingMessage) {
+      getMessageHandler().handleDocumentProcessingMessageForSubmissionEvent(documentProcessingMessage, SubmissionEvent.PROCESSING_STATE_UPDATE);
     }
 
-    @RabbitListener(queues = Constants.Queues.BUNDLEABLE_PROCESS_COMPLETED)
-    public void receiveBundleableProcessCompletedMessage(BundleCompletedMessage bundleCompletedMessage) {
-        getMessageHandler().handleBundleableProcessCompletedMessage(bundleCompletedMessage);
+    @RabbitListener(queues = Constants.Queues.MANIFEST_COMPLETED)
+    public void receiveManifestCompletedMessage(DocumentCompletedMessage documentCompletedMessage) {
+        getMessageHandler().handleDocumentCompletedMessageForSubmissionEvent(documentCompletedMessage, SubmissionEvent.PROCESSING_STATE_UPDATE);
+    }
+
+    @RabbitListener(queues = Constants.Queues.EXPERIMENT_SUBMITTED)
+    public void receiveExperimentProcessingMessage(DocumentProcessingMessage documentProcessingMessage) {
+        getMessageHandler().handleDocumentProcessingMessageForSubmissionEvent(documentProcessingMessage, SubmissionEvent.EXPORTING_STATE_UPDATE);
+    }
+
+    @RabbitListener(queues = Constants.Queues.EXPERIMENT_EXPORTED)
+    public void receiveExperimentCompletedMessage(DocumentCompletedMessage documentCompletedMessage) {
+        getMessageHandler().handleDocumentCompletedMessageForSubmissionEvent(documentCompletedMessage, SubmissionEvent.EXPORTING_STATE_UPDATE);
     }
 }
