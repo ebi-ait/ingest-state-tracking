@@ -175,65 +175,21 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
         return context -> {
             Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
 
-            for (Object key : docMap.keySet()) {
-                if (key.getClass() != String.class) {
-                    // extra content somehow?
-                    log.error("An extended state key was fubared");
-                    return false;
-                } else {
-                    String documentId = (String) key;
-                    Object value = docMap.get(documentId);
-                    if (value.getClass() != MetadataDocumentState.class) {
-                        // extra content somehow?
-                        log.error("An extended state value was fubared");
-                        return false;
-                    } else {
-                        MetadataDocumentState documentState = (MetadataDocumentState) value;
-                        log.debug(String.format("Testing content from extended state. Document tracker: { %s : %s }",
-                                documentId,
-                                documentState));
-                        if (documentState.equals(MetadataDocumentState.INVALID)) {
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            // check if all documents attached to the current state engine extended context are valid
-            return false;
+            return anyDocumentInState(docMap, MetadataDocumentState.INVALID);
         };
+    }
+
+    private static boolean anyDocumentInState(Map<String, MetadataDocumentState> docMap, MetadataDocumentState state) {
+        return docMap.values()
+                .stream()
+                .anyMatch(st -> st.equals(state));
     }
 
     private Guard<SubmissionState, SubmissionEvent> documentsValidatingGuard() {
         return context -> {
             Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
 
-            for (Object key : docMap.keySet()) {
-                if (key.getClass() != String.class) {
-                    // extra content somehow?
-                    log.error("An extended state key was fubared");
-                    return false;
-                } else {
-                    String documentId = (String) key;
-                    Object value = docMap.get(documentId);
-                    if (value.getClass() != MetadataDocumentState.class) {
-                        // extra content somehow?
-                        log.error("An extended state value was fubared");
-                        return false;
-                    } else {
-                        MetadataDocumentState documentState = (MetadataDocumentState) value;
-                        log.debug(String.format("Testing content from extended state. Document tracker: { %s : %s }",
-                                documentId,
-                                documentState));
-                        if (documentState.equals(MetadataDocumentState.VALIDATING)) {
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            // check if all documents attached to the current state engine extended context are valid
-            return false;
+            return anyDocumentInState(docMap, MetadataDocumentState.VALIDATING);
         };
     }
 
