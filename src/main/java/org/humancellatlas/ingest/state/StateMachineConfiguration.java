@@ -159,6 +159,13 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .last(EXPORTED)
                 .and()
 
+                /* exported -> draft */
+                .withExternal()
+                .source(EXPORTED).target(DRAFT)
+                .event(DOCUMENT_PROCESSED)
+                .action(addOrUpdateContent())
+                .and()
+
                 /* exported -> cleanup */
                 .withExternal()
                 .source(EXPORTED).target(CLEANUP)
