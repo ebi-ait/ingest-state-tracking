@@ -102,6 +102,13 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .event(SUBMISSION_REQUESTED)
                 .and()
 
+                /* submitted -> draft */
+                .withExternal()
+                .source(SUBMITTED).target(DRAFT)
+                .event(DOCUMENT_PROCESSED)
+                .action(addOrUpdateContent())
+                .and()
+
                 /* submitted -> processing */
                 .withExternal()
                 .source(SUBMITTED).target(PROCESSING_STATE_EVAL_JUNCTION)

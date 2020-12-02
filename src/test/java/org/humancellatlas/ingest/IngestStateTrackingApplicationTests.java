@@ -529,7 +529,75 @@ public class IngestStateTrackingApplicationTests {
         barrage.commence(submissionStateMonitor);
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.VALID, state);
+    }
+
+    @Test
+    public void testDoesNotTransitionBackToValidAfterExported() {
+        MetadataDocumentEventBarrage barrage = new MetadataDocumentEventBarrage();
+
+        // generate transition lifecycles for, say, 15 samples...
+        for (int i = 0; i < 10; i++) {
+            MetadataDocumentReference documentReference = generateMetadataDocumentReference();
+            MetadataDocumentTransitionLifecycle sampleTransitionLifecycle = new MetadataDocumentTransitionLifecycle
+                    .Builder(documentReference, envelopeRef)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
+                    .addStateTransition(MetadataDocumentState.VALIDATING)
+                    .addStateTransition(MetadataDocumentState.VALID)
+                    .build();
+
+            barrage.addToBarrage(sampleTransitionLifecycle);
+        }
+
+        barrage.commence(submissionStateMonitor);
+
+        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.VALID));
+
+        SubmissionState state;
+
+        log.debug("Sending SUBMISSION_REQUESTED event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.SUBMITTED, state);
+
+        log.debug("Sending EXPORTING_STATE_UPDATE event for a submitted assay");
+        submissionStateMonitor.notifyOfDocumentState("mock-assay-id",
+                envelopeRef.getUuid(),
+                1,
+                MetadataDocumentState.PROCESSING, SubmissionEvent.EXPORTING_STATE_UPDATE);
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.EXPORTING, state);
+
+        log.debug("Sending EXPORTING_STATE_UPDATE event for a completed assay");
+        submissionStateMonitor.notifyOfDocumentState("mock-assay-id",
+                envelopeRef.getUuid(),
+                1,
+                MetadataDocumentState.COMPLETE, SubmissionEvent.EXPORTING_STATE_UPDATE);
+
+        barrage = new MetadataDocumentEventBarrage();
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.EXPORTED, state);
+
+        // generate transition lifecycles for, say, 15 samples...
+        for (int i = 0; i < 10; i++) {
+            MetadataDocumentReference documentReference = generateMetadataDocumentReference();
+            MetadataDocumentTransitionLifecycle sampleTransitionLifecycle = new MetadataDocumentTransitionLifecycle
+                    .Builder(documentReference, envelopeRef)
+                    .addStateTransition(MetadataDocumentState.DRAFT)
+                    .addStateTransition(MetadataDocumentState.VALIDATING)
+                    .addStateTransition(MetadataDocumentState.VALID)
+                    .build();
+
+            barrage.addToBarrage(sampleTransitionLifecycle);
+        }
+
+        barrage.commence(submissionStateMonitor);
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.VALID, state);
     }
 
     @Test
