@@ -101,7 +101,7 @@ public class MessageHandler {
         SubmissionState envelopeState = SubmissionState.valueOf(ingestApiClient.retrieveSubmissionEnvelope(envelopeReference)
                                                                                .getSubmissionState()
                                                                                .toUpperCase());
-        if(!envelopeState.after(SubmissionState.SUBMITTED)){
+        if(!envelopeState.after(SubmissionState.EXPORTED)){
             if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
                 submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
             }
