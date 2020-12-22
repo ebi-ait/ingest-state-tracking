@@ -102,6 +102,13 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .event(SUBMISSION_REQUESTED)
                 .and()
 
+                /* submitted -> draft */
+                .withExternal()
+                .source(SUBMITTED).target(DRAFT)
+                .event(DOCUMENT_PROCESSED)
+                .action(addOrUpdateContent())
+                .and()
+
                 /* submitted -> processing */
                 .withExternal()
                 .source(SUBMITTED).target(PROCESSING_STATE_EVAL_JUNCTION)
@@ -157,6 +164,13 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .source(EXPORTING_STATE_EVAL_JUNCTION)
                 .first(EXPORTING, stillProcessingGuard(Constants.EXPERIMENT_TRACKER))
                 .last(EXPORTED)
+                .and()
+
+                /* exported -> draft */
+                .withExternal()
+                .source(EXPORTED).target(DRAFT)
+                .event(DOCUMENT_PROCESSED)
+                .action(addOrUpdateContent())
                 .and()
 
                 /* exported -> cleanup */
