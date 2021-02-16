@@ -1,0 +1,101 @@
+version: '3'
+services:
+  state-tracker:
+    build: .
+    ports:
+      - "8999:8999"
+    environment:
+      - REDIS_HOST=db
+      - REDIS_PORT=6379
+      - RABBIT_HOST=mq
+      - INGEST_API_ROOT=http://core:8080
+      - RABBIT_PORT=5672
+    links:
+      - "redis:db"
+      - "rabbitmq:mq"
+    depends_on:
+      - redis
+      - rabbitmq
+  core:
+#    image: quay.io/ebi-ait/ingest-core:latest
+    build: /Users/aaclan/dev/ait/repos/ingest-core/
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGO_URI=mongodb://db:27017/admin
+      - RABBIT_HOST=mq
+      - RABBIT_PORT=5672
+      - SCHEMA_BASE_URI=http://schema.humancellatlas.org/
+      - AUTH_ISSUER=https://login.elixir-czech.org/oidc/
+      - STATE_TRACKER_HOST=state-tracker
+      - STATE_TRACKER_PORT=8999
+    links:
+      - "mongo:db"
+      - "rabbitmq:mq"
+      - "state-tracker:state-tracker"
+    depends_on:
+      - mongo
+      - rabbitmq
+      - state-tracker
+  mongo:
+    image: mongo:4.2
+    ports:
+      - "27017:27017"
+  redis:
+    image: redis:4.0.9-alpine
+    ports:
+      - "6379:6379"
+  rabbitmq:
+    image: rabbitmq:3.7.7-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+  broker:
+    image: quay.io/ebi-ait/ingest-broker:f0fe879
+    ports:
+      - "5000:5000"
+    environment:
+      - INGEST_API=http://core:8080
+      - SPREADSHEET_STORAGE_DIR=/data/spreadsheets
+    links:
+      - "core:core"
+    volumes:
+      - ./_local/data:/data/spreadsheets
+    depends_on:
+      - core
+  validator:
+    image: quay.io/ebi-ait/ingest-validator:0f03549
+    environment:
+      - INGEST_SCHEME=http
+      - INGEST_HOST=core
+      - INGEST_PORT=8080
+      - RABBIT_HOST=mq
+      - RABBIT_PORT=5672
+      - OLS_HOST=ontology.dev.archive.data.humancellatlas.org
+      - RABBIT_URL=amqp://mq:5672
+    links:
+      - "mongo:db"
+      - "rabbitmq:mq"
+      - "core:core"
+    depends_on:
+      - core
+  ui:
+    image: quay.io/ebi-ait/ingest-ui:9d6b208
+    ports:
+      - "4200:4200"
+    environment:
+      - INGEST_API_URL=http://localhost:8080
+      - BROKER_API_URL=http://localhost:5000
+      - SCHEMA_API_URL=http://schema.humancellatlas.org/
+      - DOMAIN_WHITELIST=localhost:8080,localhost:5000
+      - AAI_CLIENT_ID=e2041c2d-9449-4468-856e-e84711cebd21
+      - AAI_AUTHORITY=https://login.elixir-czech.org/oidc/
+      - OLS_URL=https://ontology.dev.archive.data.humancellatlas.org
+    links:
+      - "core:core"
+      - "broker:broker"
+    depends_on:
+      - core
+      - broker
+networks:
+  default:
