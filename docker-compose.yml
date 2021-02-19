@@ -17,8 +17,7 @@ services:
       - redis
       - rabbitmq
   core:
-#    image: quay.io/ebi-ait/ingest-core:latest
-    build: /Users/aaclan/dev/ait/repos/ingest-core/
+    image: quay.io/ebi-ait/ingest-core:f415db86
     ports:
       - "8080:8080"
     environment:
