@@ -152,7 +152,7 @@ public class IngestApiClientTest {
 
         SubmissionEnvelopeReference submissionEnvelopeReference = new SubmissionEnvelopeReference(
                 mockEnvelopeId,
-                mockEnvelopeUUID,
+                mockEnvelopeUUID,"",
                 new URI(mockEnvelopeCallbackLocation));
 
         class SubmissionEnvelopeJson {
@@ -193,7 +193,7 @@ public class IngestApiClientTest {
 
         SubmissionEnvelopeReference submissionEnvelopeReference = new SubmissionEnvelopeReference(
                 mockEnvelopeId,
-                mockEnvelopeUUID,
+                mockEnvelopeUUID, "",
                 new URI(mockEnvelopeCallbackLocation));
 
         class EnvelopeJson {

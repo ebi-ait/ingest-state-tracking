@@ -48,7 +48,7 @@ public class IngestStateTrackingApplicationTests {
 
     @BeforeEach
     public void setup() {
-        envelopeRef = new SubmissionEnvelopeReference("1234", UUID.randomUUID().toString(),
+        envelopeRef = new SubmissionEnvelopeReference("1234", UUID.randomUUID().toString(),"",
                 URI.create("http://localhost:8080/api/submissionEnvelopes/1234"));
         documentRef = new MetadataDocumentReference("5678", UUID.randomUUID().toString(),
                 URI.create("http://localhost:8080/api/metadataDocuments/5678"));
@@ -617,7 +617,7 @@ public class IngestStateTrackingApplicationTests {
 
     private SubmissionEnvelopeReference generateSubmissionEnvelopeReference() {
         int id = new Random().nextInt();
-        return new SubmissionEnvelopeReference(Integer.toString(id), UUID.randomUUID().toString(),
+        return new SubmissionEnvelopeReference(Integer.toString(id), UUID.randomUUID().toString(), "",
                 URI.create("http://localhost:8080/api/submissionEnvelopes/" + id));
     }
 

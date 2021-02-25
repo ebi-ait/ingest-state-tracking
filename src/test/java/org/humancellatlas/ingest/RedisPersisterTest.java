@@ -47,7 +47,7 @@ public class RedisPersisterTest {
     @BeforeEach
     public void setup() {
         envelopeRef = new SubmissionEnvelopeReference("1234", UUID.randomUUID().toString(),
-                                                      URI.create("http://localhost:8080/api/submissionEnvelopes/1234"));
+                                                     "", URI.create("http://localhost:8080/api/submissionEnvelopes/1234"));
 
         submissionStateMonitor.monitorSubmissionEnvelope(envelopeRef, false);
 
