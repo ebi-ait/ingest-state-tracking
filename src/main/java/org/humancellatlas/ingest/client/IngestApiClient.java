@@ -168,8 +168,8 @@ public class IngestApiClient implements InitializingBean {
         String envelopeUuid = envelopeJson.at(JsonPointer.valueOf("/uuid/uuid")).asText();
         String envelopeId = extractIdFromSubmissionEnvelopeURI(envelopeUri);
         URI envelopeCallbackLocation = extractCallbackUriFromSubmissionEnvelopeUri(envelopeUri);
-
-        return new SubmissionEnvelopeReference(envelopeId, envelopeUuid, "", envelopeCallbackLocation);
+        String state = envelopeJson.get("submissionState").asText();
+        return new SubmissionEnvelopeReference(envelopeId, envelopeUuid, state, envelopeCallbackLocation);
     }
 
     private URI uriFor(String uriString) {
