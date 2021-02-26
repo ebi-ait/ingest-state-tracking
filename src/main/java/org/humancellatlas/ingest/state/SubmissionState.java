@@ -101,7 +101,7 @@ public enum SubmissionState {
                 return SubmissionState.EXPORTED;
             case "CLEANUP":
                 return SubmissionState.CLEANUP;
-            case "COMPLETED":
+            case "COMPLETE":
                 return SubmissionState.COMPLETE;
             default:
                 throw new UnrecognisedSubmissionStateException(String.format("The submission state %s is not recognised.", submissionState));

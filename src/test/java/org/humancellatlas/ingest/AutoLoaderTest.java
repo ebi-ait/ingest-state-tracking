@@ -90,7 +90,7 @@ public class AutoLoaderTest {
 
     @Test
     public void testAutoLoadShouldUpdateStateWhenCorrectStateIsAFinishedState(){
-        List<String> finishedstates = Arrays.asList("Valid", "Submitted", "Archived", "Exported", "Cleanup", "Completed");
+        List<String> finishedstates = Arrays.asList("Valid", "Submitted", "Archived", "Exported", "Cleanup", "Complete");
 
         finishedstates.forEach(state -> {
             // given
