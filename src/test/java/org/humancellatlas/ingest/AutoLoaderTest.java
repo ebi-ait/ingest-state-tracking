@@ -30,8 +30,6 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.humancellatlas.ingest.state.SubmissionState.*;
-import static org.humancellatlas.ingest.state.SubmissionState.COMPLETE;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(SpringExtension.class)
