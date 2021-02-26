@@ -5,6 +5,7 @@ import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.*;
 import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
 import org.humancellatlas.ingest.state.persistence.AutoLoader;
+import org.humancellatlas.ingest.state.persistence.AutoLoaderFailureException;
 import org.humancellatlas.ingest.state.persistence.Persister;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,12 +22,14 @@ import org.springframework.statemachine.data.StateMachineRepository;
 import org.springframework.statemachine.data.redis.RedisRepositoryStateMachine;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 
 import java.net.URI;
 import java.util.*;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.humancellatlas.ingest.state.SubmissionState.*;
 import static org.humancellatlas.ingest.state.SubmissionState.COMPLETE;
 import static org.mockito.Mockito.*;
@@ -89,9 +92,9 @@ public class AutoLoaderTest {
 
     @Test
     public void testAutoLoadShouldUpdateStateWhenCorrectStateIsAFinishedState(){
-        List<String> finishedStates = Arrays.asList("Valid", "Submitted", "Archived", "Exported", "Cleanup", "Completed");
+        List<String> finishedstates = Arrays.asList("Valid", "Submitted", "Archived", "Exported", "Cleanup", "Completed");
 
-        finishedStates.forEach(state -> {
+        finishedstates.forEach(state -> {
             // given
             SubmissionEnvelopeReference submission = new SubmissionEnvelopeReference("id", submissionUuid.toString(), state, URI.create("/callback") );
             when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid)).thenReturn(submission);
@@ -108,9 +111,9 @@ public class AutoLoaderTest {
     @Test
     public void testAutoLoadShouldNotUpdateStateWhenCorrectStateIsNotAFinishedState(){
 
-        List<String> finishedStates = Arrays.asList("Draft", "Validating", "Invalid", "Processing", "Exporting", "Archiving");
+        List<String> ongoingStates = Arrays.asList("Draft", "Validating", "Invalid", "Processing", "Exporting", "Archiving");
 
-        finishedStates.forEach(state -> {
+        ongoingStates.forEach(state -> {
             // given
             SubmissionEnvelopeReference submission = new SubmissionEnvelopeReference("id", submissionUuid.toString(), state, URI.create("/callback") );
             when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid)).thenReturn(submission);
@@ -126,7 +129,7 @@ public class AutoLoaderTest {
     }
 
     @Test
-    public void testAutoLoadShouldDeleteStateMachine(){
+    public void testAutoLoadShouldDeleteStateMachineWhenEnvelopeIsNotFoundInCore(){
         // given
         when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid))
                 .thenThrow(HttpClientErrorException.create(HttpStatus.NOT_FOUND, "not found", null, null, null));
@@ -142,5 +145,21 @@ public class AutoLoaderTest {
         verify(stateMachineRepository).delete(redisStateMachine);
     }
 
+    @Test
+    public void testAutoLoadShouldThrowExceptionWhenCoreRequestFailed(){
+        // given
+        when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid))
+                .thenThrow(new RestClientException("error"));
+
+        RedisRepositoryStateMachine redisStateMachine = mock(RedisRepositoryStateMachine.class);
+        when(stateMachineRepository.findById(anyString())).thenReturn(Optional.of(redisStateMachine));
+
+        // when/then
+        assertThatThrownBy(() -> {
+            autoLoader.autoLoad();
+        }).isExactlyInstanceOf(AutoLoaderFailureException.class).hasMessageContaining("error");
+
+        verify(submissionStateMonitor, never()).monitorSubmissionEnvelope(any());
+    }
 
 }
