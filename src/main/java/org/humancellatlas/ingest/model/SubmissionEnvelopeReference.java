@@ -15,10 +15,22 @@ import java.util.UUID;
  * @date 26/11/2017
  */
 @Getter
-@RequiredArgsConstructor
 public class SubmissionEnvelopeReference {
     private final String id;
     private final String uuid;
-    private final SubmissionState state;
+    private SubmissionState state;
     private final URI callbackLocation;
+
+    public SubmissionEnvelopeReference(String id, String uuid, SubmissionState state, URI callbackLocation) {
+        this.id = id;
+        this.uuid = uuid;
+        this.state = state;
+        this.callbackLocation = callbackLocation;
+    }
+
+    public SubmissionEnvelopeReference(String id, String uuid, URI callbackLocation) {
+        this.id = id;
+        this.uuid = uuid;
+        this.callbackLocation = callbackLocation;
+    }
 }
