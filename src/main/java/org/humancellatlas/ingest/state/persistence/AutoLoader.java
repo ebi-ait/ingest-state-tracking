@@ -110,13 +110,14 @@ public class AutoLoader implements InitializingBean {
         SubmissionState correctState = envelope.getState();
 
         // Note that some "ongoing" states like Draft/Validating/Invalid/Processing/Exporting can have extended states which
-        // tracks some metadata in a submission. It would be more complicated to sync these extended states from core.
+        // tracks some metadata in a submission. Please check StateMachineConfiguration class to check what these extended states are.
+        // It would be more complicated to sync these extended states from core.
         // Syncing the state to a finished state like Valid, Submitted, Archived, Exported, Cleanup, Complete should be safe.
         // It might be best to redesign how we use the state machines and not have a separate state tracker.
 
-        List<SubmissionState> finishedStates = Arrays.asList(VALID, SUBMITTED, ARCHIVED, EXPORTED, CLEANUP, COMPLETE);
+        List<SubmissionState> statesWithoutExtendedStates = Arrays.asList(VALID, SUBMITTED, ARCHIVED, EXPORTED, CLEANUP, COMPLETE);
 
-        if (!currentState.equals(correctState) && finishedStates.contains(correctState)) {
+        if (!currentState.equals(correctState) && statesWithoutExtendedStates.contains(correctState)) {
             stateMachine.getStateMachineAccessor().doWithAllRegions(
                     access -> access.resetStateMachine(
                             new DefaultStateMachineContext<>(correctState, null, null, null, null, stateMachine.getId())
