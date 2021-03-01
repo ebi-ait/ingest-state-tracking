@@ -111,7 +111,7 @@ public class IngestApiClient implements InitializingBean {
 
     public SubmissionEnvelopeReference referenceForSubmissionEnvelope(SubmissionEnvelopeMessage message) {
         return new SubmissionEnvelopeReference(message.getDocumentId(),
-                message.getDocumentUuid(), "",
+                message.getDocumentUuid(), null,
                 URI.create(message.getCallbackLink()));
     }
 
