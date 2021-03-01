@@ -138,7 +138,7 @@ public class AutoLoader implements InitializingBean {
     }
 
     private void handleException(String description, String action, Throwable e) {
-        e.printStackTrace();
+        log.error("A failure in loading state machines has occurred.", e);
         throw new AutoLoaderFailureException(description, action, e);
     }
 
