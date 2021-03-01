@@ -20,7 +20,7 @@ import java.util.Map;
 public class ConfigurationService implements InitializingBean {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    @Value("${INGEST_API_ROOT:http://api.ingest.dev.data.humancellatlas.org}")
+    @Value("${INGEST_API_ROOT}")
     private String ingestApiRootString;
     @Value("${UPDATER_PERIOD_SECONDS:2}")
     private String updaterPeriodSecondsString;
