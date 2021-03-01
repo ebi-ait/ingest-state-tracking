@@ -128,8 +128,10 @@ public class IngestApiClient implements InitializingBean {
 
         URI envelopeUri = URI.create(envelopeJson.at(JsonPointer.valueOf("/_links/self/href")).asText());
 
+        String state = envelopeJson.get("submissionState").asText();
+
         return new SubmissionEnvelopeReference(extractIdFromSubmissionEnvelopeURI(envelopeUri),
-                envelopeUuid.toString(), envelopeJson.get("submissionState").asText(),
+                envelopeUuid.toString(), SubmissionState.fromString(state),
                 extractCallbackUriFromSubmissionEnvelopeUri(envelopeUri));
     }
 
@@ -153,6 +155,8 @@ public class IngestApiClient implements InitializingBean {
      */
     private SubmissionEnvelopeReference envelopeReferenceFromEnvelopeId(String envelopeId) {
         Optional<SubmissionEnvelopeReference> envelopeReferenceOptional = Optional.ofNullable(envelopeReferenceCache.get(envelopeId));
+
+
         if (envelopeReferenceOptional.isPresent()) {
             return envelopeReferenceOptional.get();
         } else {
@@ -169,7 +173,7 @@ public class IngestApiClient implements InitializingBean {
         String envelopeId = extractIdFromSubmissionEnvelopeURI(envelopeUri);
         URI envelopeCallbackLocation = extractCallbackUriFromSubmissionEnvelopeUri(envelopeUri);
         String state = envelopeJson.get("submissionState").asText();
-        return new SubmissionEnvelopeReference(envelopeId, envelopeUuid, state, envelopeCallbackLocation);
+        return new SubmissionEnvelopeReference(envelopeId, envelopeUuid, SubmissionState.fromString(state), envelopeCallbackLocation);
     }
 
     private URI uriFor(String uriString) {

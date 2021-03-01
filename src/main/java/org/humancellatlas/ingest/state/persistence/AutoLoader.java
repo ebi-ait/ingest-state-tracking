@@ -80,6 +80,10 @@ public class AutoLoader implements InitializingBean {
         try {
             SubmissionEnvelopeReference envelope = ingestApiClient.referenceForSubmissionEnvelope(envelopeUuid);
             return Optional.of(envelope);
+        } catch (UnrecognisedSubmissionStateException e) {
+            String desc = String.format("A submission state value is not recognised in the state tracker: %s", e.getMessage());
+            String action = "Consider defining a new SubmissionState enum value";
+            handleException(desc, action, e);
         } catch (HttpClientErrorException.NotFound e) {
             log.info(String.format("Submission %s was not found.", envelopeUuid.toString()));
             return Optional.empty();
@@ -103,7 +107,7 @@ public class AutoLoader implements InitializingBean {
 
     private StateMachine<SubmissionState, SubmissionEvent> updateState(StateMachine<SubmissionState, SubmissionEvent> stateMachine, SubmissionEnvelopeReference envelope) throws UnrecognisedSubmissionStateException {
         SubmissionState currentState = stateMachine.getState().getId();
-        SubmissionState correctState = convertState(envelope.getState());
+        SubmissionState correctState = envelope.getState();
 
         // Note that some "ongoing" states like Draft/Validating/Invalid/Processing/Exporting can have extended states which
         // tracks some metadata in a submission. It would be more complicated to sync these extended states from core.
@@ -130,18 +134,6 @@ public class AutoLoader implements InitializingBean {
         Optional<RedisRepositoryStateMachine> redisStateMachine = stateMachineRepository.findById(stateMachine.getId());
         stateMachineRepository.delete(redisStateMachine.get());
         log.info(String.format("Deleted statemachine, id: %s, state:%s", stateMachine.getId(), stateMachine.getState().toString()));
-    }
-
-    private SubmissionState convertState(String state) {
-        try {
-            SubmissionState correctState = SubmissionState.fromString(state);
-            return correctState;
-        } catch (UnrecognisedSubmissionStateException e) {
-            String desc = String.format("A submission state value is not recognised in the state tracker: %s", e.getMessage());
-            String action = "Consider defining a new SubmissionState enum value";
-            handleException(desc, action, e);
-        }
-        return null;
     }
 
     private void handleException(String description, String action, Throwable e) {

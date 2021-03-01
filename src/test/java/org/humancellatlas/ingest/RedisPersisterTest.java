@@ -47,7 +47,7 @@ public class RedisPersisterTest {
     @BeforeEach
     public void setup() {
         envelopeRef = new SubmissionEnvelopeReference("1234", UUID.randomUUID().toString(),
-                                                     "", URI.create("http://localhost:8080/api/submissionEnvelopes/1234"));
+                null, URI.create("http://localhost:8080/api/submissionEnvelopes/1234"));
 
         submissionStateMonitor.monitorSubmissionEnvelope(envelopeRef, false);
 
@@ -120,6 +120,6 @@ public class RedisPersisterTest {
     private MetadataDocumentReference generateMetadataDocumentReference() {
         int id = new Random().nextInt();
         return new MetadataDocumentReference(Integer.toString(id), UUID.randomUUID().toString(),
-                                             URI.create("http://localhost:8080/api/metadataDocuments/" + id));
+                URI.create("http://localhost:8080/api/metadataDocuments/" + id));
     }
 }

@@ -77,7 +77,7 @@ public class AutoLoaderTest {
     @Test
     public void testAutoLoadShouldRetrieveAndMonitor(){
         // given
-        SubmissionEnvelopeReference submission = new SubmissionEnvelopeReference("id", submissionUuid.toString(), "Draft", URI.create("/callback") );
+        SubmissionEnvelopeReference submission = new SubmissionEnvelopeReference("id", submissionUuid.toString(), SubmissionState.fromString("Draft"), URI.create("/callback") );
         when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid)).thenReturn(submission);
 
         // when
@@ -94,7 +94,7 @@ public class AutoLoaderTest {
 
         finishedstates.forEach(state -> {
             // given
-            SubmissionEnvelopeReference submission = new SubmissionEnvelopeReference("id", submissionUuid.toString(), state, URI.create("/callback") );
+            SubmissionEnvelopeReference submission = new SubmissionEnvelopeReference("id", submissionUuid.toString(), SubmissionState.fromString(state), URI.create("/callback") );
             when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid)).thenReturn(submission);
 
             // when
@@ -113,7 +113,7 @@ public class AutoLoaderTest {
 
         ongoingStates.forEach(state -> {
             // given
-            SubmissionEnvelopeReference submission = new SubmissionEnvelopeReference("id", submissionUuid.toString(), state, URI.create("/callback") );
+            SubmissionEnvelopeReference submission = new SubmissionEnvelopeReference("id", submissionUuid.toString(), SubmissionState.fromString(state), URI.create("/callback") );
             when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid)).thenReturn(submission);
 
             // when

@@ -19,6 +19,6 @@ import java.util.UUID;
 public class SubmissionEnvelopeReference {
     private final String id;
     private final String uuid;
-    private final String state;
+    private final SubmissionState state;
     private final URI callbackLocation;
 }
