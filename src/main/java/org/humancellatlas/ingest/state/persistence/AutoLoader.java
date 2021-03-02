@@ -104,9 +104,9 @@ public class AutoLoader implements InitializingBean {
 
         if (!currentState.equals(correctState) && !STATES_WITH_EXTENDED_STATE.contains(correctState)) {
             stateMachine.getStateMachineAccessor().doWithAllRegions(
-                    access -> access.resetStateMachine(
-                            new DefaultStateMachineContext<>(correctState, null, null, null, null, stateMachine.getId())
-                    )
+                access -> access.resetStateMachine(
+                        new DefaultStateMachineContext<>(correctState, null, null, null, null, stateMachine.getId())
+                )
             );
 
             String envelopeUuid = envelope.getUuid();
