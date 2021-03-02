@@ -81,7 +81,7 @@ public class AutoLoaderTest {
         when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid)).thenReturn(submission);
 
         // when
-        autoLoader.autoLoad();
+        autoLoader.loadStateMachines();
 
         // then
         verify(submissionStateMonitor).monitorSubmissionEnvelope(submission, stateMachine);
@@ -98,7 +98,7 @@ public class AutoLoaderTest {
             when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid)).thenReturn(submission);
 
             // when
-            autoLoader.autoLoad();
+            autoLoader.loadStateMachines();
 
             // then
             verify(submissionStateMonitor).monitorSubmissionEnvelope(submission, stateMachine);
@@ -117,7 +117,7 @@ public class AutoLoaderTest {
             when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid)).thenReturn(submission);
 
             // when
-            autoLoader.autoLoad();
+            autoLoader.loadStateMachines();
 
             // then
             verify(submissionStateMonitor).monitorSubmissionEnvelope(submission, stateMachine);
@@ -136,7 +136,7 @@ public class AutoLoaderTest {
         when(stateMachineRepository.findById(anyString())).thenReturn(Optional.of(redisStateMachine));
 
         // when
-        autoLoader.autoLoad();
+        autoLoader.loadStateMachines();
 
         // then
         verify(submissionStateMonitor,  never()).monitorSubmissionEnvelope(any());
@@ -154,7 +154,7 @@ public class AutoLoaderTest {
 
         // when/then
         assertThatThrownBy(() -> {
-            autoLoader.autoLoad();
+            autoLoader.loadStateMachines();
         }).isExactlyInstanceOf(AutoLoaderFailureException.class).hasMessageContaining("error");
 
         verify(submissionStateMonitor, never()).monitorSubmissionEnvelope(any());

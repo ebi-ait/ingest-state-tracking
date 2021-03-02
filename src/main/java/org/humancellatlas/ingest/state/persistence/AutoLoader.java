@@ -46,7 +46,7 @@ public class AutoLoader implements InitializingBean {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    public void autoLoad() {
+    public void loadStateMachines() {
         persister.retrieveStateMachines().forEach(stateMachine -> {
 
             try {
@@ -54,16 +54,14 @@ public class AutoLoader implements InitializingBean {
 
                 Optional<SubmissionEnvelopeReference> envelope = getEnvelope(envelopeUuid);
 
-                sync(stateMachine, envelope);
-
-                if (envelope.isPresent()) {
+                if (envelope.isEmpty()) {
+                    deleteStateMachine(stateMachine);
+                } else {
+                    updateState(stateMachine, envelope.get());
                     submissionStateMonitor.monitorSubmissionEnvelope(envelope.get(), stateMachine);
-
                     String state = stateMachine.getState().getId().toString();
-
                     log.info(String.format("Restored %s with current state: %s", envelopeUuid.toString(), state));
                 }
-
 
             } catch (RuntimeException e) {
                 String desc = String.format("An unexpected error has occurred in loading the state machine for submission %s: %s",
@@ -94,15 +92,6 @@ public class AutoLoader implements InitializingBean {
             handleException(desc, action, e);
         }
         return Optional.empty();
-    }
-
-    private Optional<StateMachine<SubmissionState, SubmissionEvent>> sync(StateMachine<SubmissionState, SubmissionEvent> stateMachine, Optional<SubmissionEnvelopeReference> envelope) {
-        if (envelope.isEmpty()) {
-            deleteStateMachine(stateMachine);
-            return Optional.empty();
-        } else {
-            return Optional.of(updateState(stateMachine, envelope.get()));
-        }
     }
 
     private StateMachine<SubmissionState, SubmissionEvent> updateState(StateMachine<SubmissionState, SubmissionEvent> stateMachine, SubmissionEnvelopeReference envelope) throws UnrecognisedSubmissionStateException {
@@ -144,6 +133,6 @@ public class AutoLoader implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        autoLoad();
+        loadStateMachines();
     }
 }
