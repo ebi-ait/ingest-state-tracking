@@ -79,8 +79,12 @@ public enum SubmissionState {
         try {
             return SubmissionState.valueOf(submissionState.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new UnrecognisedSubmissionStateException(String.format("The submission state %s is not recognised.", submissionState));
+            throw new UnrecognisedSubmissionStateException(String.format("The submission state %s is not recognised.", submissionState), e);
         }
     }
 
+    // A state is considered to have an extended state if there is an extended state variable being checked before it can be transitioned into that state and the next state
+    // To determine this, you need to look out for calls to context.getExtendedState().getVariables()) in the StateMachineConfiguration class
+    // Without that extended state, the state may not be able to successfully go to the next state
+    public static List<SubmissionState> STATES_WITH_EXTENDED_STATE = Arrays.asList(DRAFT, VALIDATING, INVALID, PROCESSING, EXPORTING, ARCHIVING);
 }

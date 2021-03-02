@@ -90,9 +90,9 @@ public class AutoLoaderTest {
 
     @Test
     public void testAutoLoadShouldUpdateStateWhenCorrectStateIsAStateWithoutExtendedStates(){
-        List<String> statesWithoutExtendedStates = Arrays.asList("Valid", "Submitted", "Archived", "Exported", "Cleanup", "Complete");
+        List<String> allowedStates = Arrays.asList("Valid", "Submitted", "Archived", "Exported", "Cleanup", "Complete");
 
-        statesWithoutExtendedStates.forEach(state -> {
+        allowedStates.forEach(state -> {
             // given
             SubmissionEnvelopeReference submission = new SubmissionEnvelopeReference("id", submissionUuid.toString(), SubmissionState.fromString(state), URI.create("/callback") );
             when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid)).thenReturn(submission);
@@ -109,11 +109,9 @@ public class AutoLoaderTest {
     @Test
     public void testAutoLoadShouldNotUpdateStateWhenCorrectStateIsAStateWithExtendedStates(){
 
-        List<String> statesWithExtendedStates = Arrays.asList("Draft", "Validating", "Invalid", "Processing", "Exporting", "Archiving");
-
-        statesWithExtendedStates.forEach(state -> {
+        SubmissionState.STATES_WITH_EXTENDED_STATE.forEach(state -> {
             // given
-            SubmissionEnvelopeReference submission = new SubmissionEnvelopeReference("id", submissionUuid.toString(), SubmissionState.fromString(state), URI.create("/callback") );
+            SubmissionEnvelopeReference submission = new SubmissionEnvelopeReference("id", submissionUuid.toString(), state, URI.create("/callback") );
             when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid)).thenReturn(submission);
 
             // when
