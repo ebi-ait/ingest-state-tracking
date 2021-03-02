@@ -59,8 +59,6 @@ public class AutoLoaderTest {
 
     @BeforeEach
     public void setup() {
-
-        List<StateMachine<SubmissionState, SubmissionEvent>> stateMachines = new ArrayList<>();
         stateMachine = stateMachineFactory.getStateMachine(submissionUuid.toString());
         Message<SubmissionEvent> message = MessageBuilder.withPayload(SubmissionEvent.DOCUMENT_PROCESSED)
                 .setHeader(MetadataDocumentInfo.DOCUMENT_ID, "id")
@@ -68,20 +66,16 @@ public class AutoLoaderTest {
                 .build();
         stateMachine.start();
         stateMachine.sendEvent(message);
-        stateMachines.add(stateMachine);
-
-        when(persister.retrieveStateMachines()).thenReturn(stateMachines);
-
     }
 
     @Test
-    public void testAutoLoadShouldRetrieveAndMonitor(){
+    public void testLoadStateMachineShouldRetrieveAndMonitor(){
         // given
         SubmissionEnvelopeReference submission = new SubmissionEnvelopeReference("id", submissionUuid.toString(), SubmissionState.fromString("Draft"), URI.create("/callback") );
         when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid)).thenReturn(submission);
 
         // when
-        autoLoader.loadStateMachines();
+        autoLoader.loadStateMachine(stateMachine);
 
         // then
         verify(submissionStateMonitor).monitorSubmissionEnvelope(submission, stateMachine);
@@ -89,7 +83,7 @@ public class AutoLoaderTest {
     }
 
     @Test
-    public void testAutoLoadShouldUpdateStateWhenCorrectStateIsAStateWithoutExtendedStates(){
+    public void testLoadStateMachineShouldUpdateStateWhenCorrectStateIsAStateWithoutExtendedStates(){
         List<String> allowedStates = Arrays.asList("Valid", "Submitted", "Archived", "Exported", "Cleanup", "Complete");
 
         allowedStates.forEach(state -> {
@@ -98,7 +92,7 @@ public class AutoLoaderTest {
             when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid)).thenReturn(submission);
 
             // when
-            autoLoader.loadStateMachines();
+            autoLoader.loadStateMachine(stateMachine);
 
             // then
             verify(submissionStateMonitor).monitorSubmissionEnvelope(submission, stateMachine);
@@ -107,7 +101,7 @@ public class AutoLoaderTest {
     }
 
     @Test
-    public void testAutoLoadShouldNotUpdateStateWhenCorrectStateIsAStateWithExtendedStates(){
+    public void testLoadStateMachineShouldNotUpdateStateWhenCorrectStateIsAStateWithExtendedStates(){
 
         SubmissionState.STATES_WITH_EXTENDED_STATE.forEach(state -> {
             // given
@@ -115,7 +109,7 @@ public class AutoLoaderTest {
             when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid)).thenReturn(submission);
 
             // when
-            autoLoader.loadStateMachines();
+            autoLoader.loadStateMachine(stateMachine);
 
             // then
             verify(submissionStateMonitor).monitorSubmissionEnvelope(submission, stateMachine);
@@ -125,7 +119,7 @@ public class AutoLoaderTest {
     }
 
     @Test
-    public void testAutoLoadShouldDeleteStateMachineWhenEnvelopeIsNotFoundInCore(){
+    public void testLoadStateMachineShouldDeleteStateMachineWhenEnvelopeIsNotFoundInCore(){
         // given
         when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid))
                 .thenThrow(HttpClientErrorException.create(HttpStatus.NOT_FOUND, "not found", null, null, null));
@@ -134,7 +128,7 @@ public class AutoLoaderTest {
         when(stateMachineRepository.findById(anyString())).thenReturn(Optional.of(redisStateMachine));
 
         // when
-        autoLoader.loadStateMachines();
+        autoLoader.loadStateMachine(stateMachine);
 
         // then
         verify(submissionStateMonitor,  never()).monitorSubmissionEnvelope(any());
@@ -142,7 +136,7 @@ public class AutoLoaderTest {
     }
 
     @Test
-    public void testAutoLoadShouldThrowExceptionWhenCoreRequestFailed(){
+    public void testLoadStateMachineShouldThrowExceptionWhenCoreRequestFailed(){
         // given
         when(ingestApiClient.referenceForSubmissionEnvelope(submissionUuid))
                 .thenThrow(new RestClientException("error"));
@@ -152,7 +146,7 @@ public class AutoLoaderTest {
 
         // when/then
         assertThatThrownBy(() -> {
-            autoLoader.loadStateMachines();
+            autoLoader.loadStateMachine(stateMachine);
         }).isExactlyInstanceOf(AutoLoaderFailureException.class).hasMessageContaining("error");
 
         verify(submissionStateMonitor, never()).monitorSubmissionEnvelope(any());

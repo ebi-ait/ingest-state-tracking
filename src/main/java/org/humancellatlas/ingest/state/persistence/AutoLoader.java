@@ -46,30 +46,33 @@ public class AutoLoader implements InitializingBean {
 
     public void loadStateMachines() {
         persister.retrieveStateMachines().forEach(stateMachine -> {
-
-            try {
-                UUID envelopeUuid = UUID.fromString(stateMachine.getId());
-
-                Optional<SubmissionEnvelopeReference> envelope = getEnvelope(envelopeUuid);
-
-                if (envelope.isEmpty()) {
-                    deleteStateMachine(stateMachine);
-                } else {
-                    updateStateMachineToEnvelopeState(stateMachine, envelope.get());
-                    submissionStateMonitor.monitorSubmissionEnvelope(envelope.get(), stateMachine);
-                    String state = stateMachine.getState().getId().toString();
-                    log.info(String.format("Restored %s with current state: %s", envelopeUuid.toString(), state));
-                }
-
-            } catch (RuntimeException e) {
-                String desc = String.format("An unexpected error has occurred in loading the state machine for submission %s: %s",
-                        stateMachine.getId(), e.getMessage());
-
-                String action = "Please check the stack trace.";
-
-                handleException(desc, action, e);
-            }
+            loadStateMachine(stateMachine);
         });
+    }
+
+    public void loadStateMachine(StateMachine<SubmissionState, SubmissionEvent> stateMachine) {
+        try {
+            UUID envelopeUuid = UUID.fromString(stateMachine.getId());
+
+            Optional<SubmissionEnvelopeReference> envelope = getEnvelope(envelopeUuid);
+
+            if (envelope.isEmpty()) {
+                deleteStateMachine(stateMachine);
+            } else {
+                updateStateMachineToEnvelopeState(stateMachine, envelope.get());
+                submissionStateMonitor.monitorSubmissionEnvelope(envelope.get(), stateMachine);
+                String state = stateMachine.getState().getId().toString();
+                log.info(String.format("Restored %s with current state: %s", envelopeUuid.toString(), state));
+            }
+
+        } catch (RuntimeException e) {
+            String desc = String.format("An unexpected error has occurred in loading the state machine for submission %s: %s",
+                    stateMachine.getId(), e.getMessage());
+
+            String action = "Please check the stack trace.";
+
+            handleException(desc, action, e);
+        }
     }
 
     private Optional<SubmissionEnvelopeReference> getEnvelope(UUID envelopeUuid) {
