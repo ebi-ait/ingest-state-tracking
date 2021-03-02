@@ -76,35 +76,11 @@ public enum SubmissionState {
     }
 
     public static SubmissionState fromString(String submissionState) throws UnrecognisedSubmissionStateException {
-        switch (submissionState.toUpperCase()) {
-            case "PENDING":
-                return SubmissionState.PENDING;
-            case "DRAFT":
-                return SubmissionState.DRAFT;
-            case "VALIDATING":
-                return SubmissionState.VALIDATING;
-            case "VALID":
-                return SubmissionState.VALID;
-            case "INVALID":
-                return SubmissionState.INVALID;
-            case "SUBMITTED":
-                return SubmissionState.SUBMITTED;
-            case "PROCESSING":
-                return SubmissionState.PROCESSING;
-            case "ARCHIVING":
-                return SubmissionState.ARCHIVING;
-            case "EXPORTING":
-                return SubmissionState.EXPORTING;
-            case "ARCHIVED":
-                return SubmissionState.ARCHIVED;
-            case "EXPORTED":
-                return SubmissionState.EXPORTED;
-            case "CLEANUP":
-                return SubmissionState.CLEANUP;
-            case "COMPLETE":
-                return SubmissionState.COMPLETE;
-            default:
-                throw new UnrecognisedSubmissionStateException(String.format("The submission state %s is not recognised.", submissionState));
+        try {
+            return SubmissionState.valueOf(submissionState.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new UnrecognisedSubmissionStateException(String.format("The submission state %s is not recognised.", submissionState));
         }
     }
+
 }
