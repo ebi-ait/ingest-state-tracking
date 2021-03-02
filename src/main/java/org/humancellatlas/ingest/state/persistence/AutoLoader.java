@@ -55,7 +55,7 @@ public class AutoLoader implements InitializingBean {
                 if (envelope.isEmpty()) {
                     deleteStateMachine(stateMachine);
                 } else {
-                    updateState(stateMachine, envelope.get());
+                    updateStateMachineToEnvelopeState(stateMachine, envelope.get());
                     submissionStateMonitor.monitorSubmissionEnvelope(envelope.get(), stateMachine);
                     String state = stateMachine.getState().getId().toString();
                     log.info(String.format("Restored %s with current state: %s", envelopeUuid.toString(), state));
@@ -92,7 +92,7 @@ public class AutoLoader implements InitializingBean {
         return Optional.empty();
     }
 
-    private StateMachine<SubmissionState, SubmissionEvent> updateState(StateMachine<SubmissionState, SubmissionEvent> stateMachine, SubmissionEnvelopeReference envelope) throws UnrecognisedSubmissionStateException {
+    private StateMachine<SubmissionState, SubmissionEvent> updateStateMachineToEnvelopeState(StateMachine<SubmissionState, SubmissionEvent> stateMachine, SubmissionEnvelopeReference envelope) throws UnrecognisedSubmissionStateException {
         SubmissionState currentState = stateMachine.getState().getId();
         SubmissionState correctState = envelope.getState();
 
