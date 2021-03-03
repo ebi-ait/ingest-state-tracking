@@ -28,7 +28,7 @@ import static org.humancellatlas.ingest.state.SubmissionState.*;
 
 /**
  * Created by rolando on 15/05/2018.
- *
+ * <p>
  * Finds all persisted state machines and loads them into the submission state monitor
  */
 @Service
@@ -105,11 +105,11 @@ public class AutoLoader implements InitializingBean {
         // It would be more complicated to sync these extended states from core.
         // It might be best to redesign how we use the state machines and not have a separate state tracker component outside core.
 
-        if (!currentState.equals(correctState) && !STATES_WITH_EXTENDED_STATE.contains(correctState)) {
+        if (!currentState.equals(correctState) && !SubmissionState.isExtendedState(correctState)) {
             stateMachine.getStateMachineAccessor().doWithAllRegions(
-                access -> access.resetStateMachine(
-                        new DefaultStateMachineContext<>(correctState, null, null, null, null, stateMachine.getId())
-                )
+                    access -> access.resetStateMachine(
+                            new DefaultStateMachineContext<>(correctState, null, null, null, null, stateMachine.getId())
+                    )
             );
 
             String envelopeUuid = envelope.getUuid();

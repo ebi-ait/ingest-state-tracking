@@ -87,4 +87,8 @@ public enum SubmissionState {
     // To determine this, you need to look out for calls to context.getExtendedState().getVariables()) in the StateMachineConfiguration class
     // Without that extended state, the state may not be able to successfully go to the next state
     public static List<SubmissionState> STATES_WITH_EXTENDED_STATE = Arrays.asList(DRAFT, VALIDATING, INVALID, PROCESSING, EXPORTING, ARCHIVING);
+
+    public static boolean isExtendedState(SubmissionState submissionState){
+        return STATES_WITH_EXTENDED_STATE.contains(submissionState);
+    }
 }
