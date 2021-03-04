@@ -81,7 +81,7 @@ public class SubmissionStateUpdaterTest {
 
         SubmissionEnvelopeReference submissionEnvelopeReference = new SubmissionEnvelopeReference(
                 mockEnvelopeId,
-                mockEnvelopeUUID,
+                mockEnvelopeUUID, SubmissionState.PENDING,
                 new URI(mockEnvelopeCallbackLocation));
 
         submissionStateUpdater.requestStateUpdateForEnvelope(submissionEnvelopeReference, SubmissionState.SUBMITTED);
@@ -100,7 +100,7 @@ public class SubmissionStateUpdaterTest {
 
         SubmissionEnvelopeReference submissionEnvelopeReference = new SubmissionEnvelopeReference(
                 mockEnvelopeId,
-                mockEnvelopeUUID,
+                mockEnvelopeUUID,SubmissionState.PENDING,
                 new URI(mockEnvelopeCallbackLocation));
 
         class EnvelopeInitialJson {

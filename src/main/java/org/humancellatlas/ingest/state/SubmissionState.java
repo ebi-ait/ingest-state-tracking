@@ -1,5 +1,7 @@
 package org.humancellatlas.ingest.state;
 
+import org.humancellatlas.ingest.exception.UnrecognisedSubmissionStateException;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -50,7 +52,6 @@ public enum SubmissionState {
     );
 
     /**
-     *
      * is this SubmissionState chronologically after that submissionState?
      *
      * @param submissionState
@@ -60,17 +61,34 @@ public enum SubmissionState {
         int thisStateOrdering = 0;
         int thatStateOrdering = 0;
 
-        for(int i = 0; i < ORDERED_STATES.size(); i ++) {
+        for (int i = 0; i < ORDERED_STATES.size(); i++) {
             Set<SubmissionState> stateSet = ORDERED_STATES.get(i);
-            if(stateSet.contains(this)) {
+            if (stateSet.contains(this)) {
                 thisStateOrdering = i;
             }
 
-            if(stateSet.contains(submissionState)) {
+            if (stateSet.contains(submissionState)) {
                 thatStateOrdering = i;
             }
         }
 
         return thisStateOrdering > thatStateOrdering;
+    }
+
+    public static SubmissionState fromString(String submissionState) throws UnrecognisedSubmissionStateException {
+        try {
+            return SubmissionState.valueOf(submissionState.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new UnrecognisedSubmissionStateException(String.format("The submission state %s is not recognised.", submissionState), e);
+        }
+    }
+
+    // A state is considered to have an extended state if there is an extended state variable being checked before it can be transitioned into that state and the next state
+    // To determine this, you need to look out for calls to context.getExtendedState().getVariables()) in the StateMachineConfiguration class
+    // Without that extended state, the state may not be able to successfully go to the next state
+    public static List<SubmissionState> STATES_WITH_EXTENDED_STATE = Arrays.asList(DRAFT, VALIDATING, INVALID, PROCESSING, EXPORTING, ARCHIVING);
+
+    public static boolean isExtendedState(SubmissionState submissionState){
+        return STATES_WITH_EXTENDED_STATE.contains(submissionState);
     }
 }

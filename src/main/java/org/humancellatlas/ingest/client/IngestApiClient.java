@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 @DependsOn("configuration")
 public class IngestApiClient implements InitializingBean {
     private ConfigurationService config;
-    
+
     @Getter
     private RestTemplate restTemplate;
 
@@ -56,8 +56,9 @@ public class IngestApiClient implements InitializingBean {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    public IngestApiClient() {}
-    
+    public IngestApiClient() {
+    }
+
     @Autowired
     public IngestApiClient(@Autowired ConfigurationService config) {
         this.config = config;
@@ -66,7 +67,7 @@ public class IngestApiClient implements InitializingBean {
     public void init() {
         this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
         this.submissionEnvelopesPath = "/submissionEnvelopes";
-        this.metadataTypesLinkMap.put("sample",  config.getIngestApiUri() + "/samples");
+        this.metadataTypesLinkMap.put("sample", config.getIngestApiUri() + "/samples");
         this.envelopeReferenceCache = new EnvelopeReferenceCache(100);
     }
 
@@ -77,13 +78,13 @@ public class IngestApiClient implements InitializingBean {
         try {
             // get the link for the state update API
             String stateUpdateUri = halTraverserOn(envelopeURI).follow(config.getStateUpdateRels().get(submissionState))
-                                                               .asLink()
-                                                               .getHref();
+                    .asLink()
+                    .getHref();
             return this.restTemplate.exchange(stateUpdateUri,
-                                              HttpMethod.PUT,
-                                              halRequestEntityFor(Collections.emptyMap()),
-                                              SubmissionEnvelope.class)
-                                    .getBody();
+                    HttpMethod.PUT,
+                    halRequestEntityFor(Collections.emptyMap()),
+                    SubmissionEnvelope.class)
+                    .getBody();
         } catch (HttpClientErrorException e) {
             log.trace("Failed to patch the state of a submission envelope with ID %s and callback link %s. Status code %s", envelopeReference.getId(), envelopeReference.getCallbackLocation(), Integer.toString(e.getRawStatusCode()));
             throw e;
@@ -95,47 +96,49 @@ public class IngestApiClient implements InitializingBean {
 
         URI envelopeURI = uriFor(envelopeURIString);
         JsonNode documentJson = getRestTemplate().exchange(envelopeURI,
-                                                           HttpMethod.GET,
-                                                           halRequestEntityFor(Collections.emptyMap()),
-                                                           JsonNode.class)
-                                                 .getBody();
+                HttpMethod.GET,
+                halRequestEntityFor(Collections.emptyMap()),
+                JsonNode.class)
+                .getBody();
 
         String submissionState = documentJson.at(JsonPointer.valueOf("/submissionState")).asText();
         return new SubmissionEnvelope(submissionState);
     }
 
-    public SubmissionEnvelopeReference envelopeReferencesFromEnvelopeId(String envelopeId){
+    public SubmissionEnvelopeReference envelopeReferencesFromEnvelopeId(String envelopeId) {
         return this.envelopeReferenceFromEnvelopeId(envelopeId);
     }
 
     public SubmissionEnvelopeReference referenceForSubmissionEnvelope(SubmissionEnvelopeMessage message) {
         return new SubmissionEnvelopeReference(message.getDocumentId(),
-                                               message.getDocumentUuid(),
-                                               URI.create(message.getCallbackLink()));
+                message.getDocumentUuid(),
+                URI.create(message.getCallbackLink()));
     }
 
     public SubmissionEnvelopeReference referenceForSubmissionEnvelope(UUID envelopeUuid) {
         URI findSubmissionByUuid = uriFor(halTraverserOn(config.getIngestApiUri()).follow("submissionEnvelopes")
-                                                                                  .follow("search")
-                                                                                  .follow("findByUuid").asLink().getHref());
+                .follow("search")
+                .follow("findByUuid").asLink().getHref());
         URI submissionByUuid = UriComponentsBuilder.fromUri(findSubmissionByUuid)
-                                                   .queryParam("uuid", envelopeUuid.toString())
-                                                   .build().toUri();
+                .queryParam("uuid", envelopeUuid.toString())
+                .build().toUri();
 
         JsonNode envelopeJson = this.restTemplate.getForEntity(submissionByUuid, JsonNode.class)
-                                                 .getBody();
+                .getBody();
 
         URI envelopeUri = URI.create(envelopeJson.at(JsonPointer.valueOf("/_links/self/href")).asText());
 
+        String state = envelopeJson.get("submissionState").asText();
+
         return new SubmissionEnvelopeReference(extractIdFromSubmissionEnvelopeURI(envelopeUri),
-                                               envelopeUuid.toString(),
-                                               extractCallbackUriFromSubmissionEnvelopeUri(envelopeUri));
+                envelopeUuid.toString(), SubmissionState.fromString(state),
+                extractCallbackUriFromSubmissionEnvelopeUri(envelopeUri));
     }
 
     public MetadataDocumentReference referenceForMetadataDocument(MetadataDocumentMessage message) {
         return new MetadataDocumentReference(message.getDocumentId(),
-                                             message.getDocumentUuid(),
-                                             URI.create(message.getCallbackLink()));
+                message.getDocumentUuid(),
+                URI.create(message.getCallbackLink()));
     }
 
     private Traverson halTraverserOn(URI baseUri) {
@@ -152,7 +155,9 @@ public class IngestApiClient implements InitializingBean {
      */
     private SubmissionEnvelopeReference envelopeReferenceFromEnvelopeId(String envelopeId) {
         Optional<SubmissionEnvelopeReference> envelopeReferenceOptional = Optional.ofNullable(envelopeReferenceCache.get(envelopeId));
-        if(envelopeReferenceOptional.isPresent()) {
+
+
+        if (envelopeReferenceOptional.isPresent()) {
             return envelopeReferenceOptional.get();
         } else {
             SubmissionEnvelopeReference envelopeReference = envelopeReferenceFromEnvelopeUri(URI.create(config.getIngestApiUri().toString() + submissionEnvelopesPath + "/" + envelopeId));
@@ -163,12 +168,12 @@ public class IngestApiClient implements InitializingBean {
 
     private SubmissionEnvelopeReference envelopeReferenceFromEnvelopeUri(URI envelopeUri) {
         JsonNode envelopeJson = halTraverserOn(envelopeUri).follow("self")
-                                                           .toObject(JsonNode.class);
+                .toObject(JsonNode.class);
         String envelopeUuid = envelopeJson.at(JsonPointer.valueOf("/uuid/uuid")).asText();
         String envelopeId = extractIdFromSubmissionEnvelopeURI(envelopeUri);
         URI envelopeCallbackLocation = extractCallbackUriFromSubmissionEnvelopeUri(envelopeUri);
-
-        return new SubmissionEnvelopeReference(envelopeId, envelopeUuid, envelopeCallbackLocation);
+        String state = envelopeJson.get("submissionState").asText();
+        return new SubmissionEnvelopeReference(envelopeId, envelopeUuid, SubmissionState.fromString(state), envelopeCallbackLocation);
     }
 
     private URI uriFor(String uriString) {
