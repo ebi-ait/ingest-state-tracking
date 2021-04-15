@@ -1,6 +1,0 @@
-language: java
-jdk: openjdk11
-services:
-        - redis-server
-notifications:
-          slack: humancellatlas:BpnE92Kj26Xr0qRpNxZOkJa2

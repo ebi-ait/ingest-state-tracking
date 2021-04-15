@@ -1,0 +1,8 @@
+include:
+  remote: 'https://raw.githubusercontent.com/ebi-ait/gitlab-ci-templates/master/build-release-deploy.yml'
+
+Unit Test:
+  image: quay.io/ebi-ait/ingest-base-images:openjdk_11
+  script:
+    - INGEST_API_ROOT=http://localhost:8080
+    - ./gradlew test
