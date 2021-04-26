@@ -4,5 +4,5 @@ include:
 Unit Test:
   image: quay.io/ebi-ait/ingest-base-images:openjdk_11
   script:
-    - INGEST_API_ROOT=http://localhost:8080
+    - INGEST_API_ROOT=http://a.dummy.url.org
     - ./gradlew test
