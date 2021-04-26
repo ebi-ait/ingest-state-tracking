@@ -9,6 +9,7 @@ import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
 import org.humancellatlas.ingest.state.persistence.Persister;
 import org.humancellatlas.ingest.testutil.MetadataDocumentEventBarrage;
 import org.humancellatlas.ingest.testutil.MetadataDocumentTransitionLifecycle;
+import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +33,7 @@ import java.util.*;
 @SpringBootTest
 @TestPropertySource(properties = {"app.auto-persist.enable=false", "app.auto-load.enable=false"})
 @ActiveProfiles("redis-persistence")
+@Ignore("Redis needs mocking")
 public class RedisPersisterTest {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
