@@ -20,7 +20,8 @@ repositories {
 }
 
 test {
-	useJUnitPlatform()
+    environment "INGEST_API_ROOT", "http://a.dummy.url.org"
+    useJUnitPlatform()
 }
 
 dependencies {
