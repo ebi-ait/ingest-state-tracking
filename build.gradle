@@ -22,6 +22,9 @@ repositories {
 test {
     environment "INGEST_API_ROOT", "http://a.dummy.url.org"
     useJUnitPlatform()
+    // Skip redis tests as there is no redis server available
+    // TODO: Use embedded redis for tests https://www.baeldung.com/spring-embedded-redis
+    exclude 'org.humancellatlas.ingest.RedisPersisterTest'
 }
 
 dependencies {
