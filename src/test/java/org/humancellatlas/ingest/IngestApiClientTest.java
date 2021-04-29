@@ -85,6 +85,7 @@ public class IngestApiClientTest {
         class EnvelopeJson {
             @JsonProperty("uuid") Map<String, Object> uuid;
             @JsonProperty("_links")  Map<String, Object> _links;
+            @JsonProperty("submissionState")  String submissionState;
 
             EnvelopeJson() {
                 uuid = new HashMap<String, Object>() {{
@@ -95,6 +96,7 @@ public class IngestApiClientTest {
                         put("href", INGEST_API_ROOT_STRING + "/submissionEnvelopes/mock-envelope-id");
                     }});
                 }};
+                submissionState = "Valid";
             }
         }
 
