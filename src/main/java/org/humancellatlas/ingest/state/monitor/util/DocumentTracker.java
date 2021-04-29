@@ -31,6 +31,9 @@ public class DocumentTracker {
 
     public void setProcessing(String documentId) {
         documentStateMap.put(documentId, MetadataDocumentState.PROCESSING);
+        if (allDocumentsCompleted()) {
+            completedDocumentCount.decrementAndGet();
+        }
     }
 
     public boolean allDocumentsCompleted() {
