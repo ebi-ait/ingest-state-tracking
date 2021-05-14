@@ -26,7 +26,6 @@ public class Constants {
     public class RoutingKeys {
         public static final String ENVELOPE_STATE_UPDATE = "ingest.state-tracking.envelope.state.update";
         public static final String ENVELOPE_CREATE = "ingest.state-tracking.envelope.create";
-        public static final String METADATA_UPDATE = "ingest.state-tracking.document.update";
         public static final String MANIFEST_SUBMITTED_ROUTING_KEY = "ingest.exporter.manifest.submitted";
         public static final String MANIFEST_COMPLETED_ROUTING_KEY = "ingest.exporter.manifest.completed";
 
