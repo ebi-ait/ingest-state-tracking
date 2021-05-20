@@ -312,6 +312,7 @@ public class IngestStateTrackingApplicationTests {
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.EXPORTED, state);
 
+        // SCENARIO: Add more content, this time adding an extra metadata document
         log.debug("Adding content");
 
         assertTrue(submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.DRAFT));
@@ -383,6 +384,62 @@ public class IngestStateTrackingApplicationTests {
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.EXPORTED, state);
+
+        // SCENARIO: Add content again for re-export, this time removing the second metadata document
+        log.debug("Adding content");
+
+        assertTrue(submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.DRAFT));
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.DRAFT, state);
+
+        submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALIDATING);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.VALIDATING, state);
+
+        // wait for a bit to simulate validation happening
+        try {
+            TimeUnit.SECONDS.sleep(10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALID);
+        // wait for a bit to allow propagation of cascade events
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.VALID, state);
+
+        // assert 0 documents in extended state map
+        metadataDocumentUpdatedStateMap = (Map<String, MetadataDocumentState>) submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
+        assertTrue(metadataDocumentUpdatedStateMap.entrySet().size() == 0);
+
+        log.debug("Sending SUBMISSION_REQUESTED event");
+        submissionStateMonitor
+                .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.SUBMITTED, state);
+
+        log.debug("Sending EXPORTING_STATE_UPDATE event for a submitted assay");
+        submissionStateMonitor.notifyOfDocumentState("mock-assay-id",
+                envelopeRef.getUuid(),
+                1,
+                MetadataDocumentState.PROCESSING, SubmissionEvent.EXPORTING_STATE_UPDATE);
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.EXPORTING, state);
+
+        log.debug("Sending EXPORTING_STATE_UPDATE event for a submitted assay");
+        submissionStateMonitor.notifyOfDocumentState("mock-assay-id",
+                envelopeRef.getUuid(),
+                1,
+                MetadataDocumentState.COMPLETE, SubmissionEvent.EXPORTING_STATE_UPDATE);
+
+        assertEquals(SubmissionState.EXPORTED, submissionStateMonitor.findCurrentState(envelopeRef));
     }
 
     @Test
