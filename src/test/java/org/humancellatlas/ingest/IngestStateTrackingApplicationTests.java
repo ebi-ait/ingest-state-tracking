@@ -313,6 +313,7 @@ public class IngestStateTrackingApplicationTests {
         assertEquals(SubmissionState.EXPORTED, state);
 
         log.debug("Adding content");
+
         assertTrue(submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.DRAFT));
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.DRAFT, state);
@@ -358,10 +359,26 @@ public class IngestStateTrackingApplicationTests {
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.EXPORTING, state);
 
+        log.debug("Adding a second assay the second time around");
+        submissionStateMonitor.notifyOfDocumentState("mock-assay-id-2",
+                envelopeRef.getUuid(),
+                2,
+                MetadataDocumentState.PROCESSING, SubmissionEvent.EXPORTING_STATE_UPDATE);
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.EXPORTING, state);
+
         log.debug("Sending EXPORTING_STATE_UPDATE event for a submitted assay");
         submissionStateMonitor.notifyOfDocumentState("mock-assay-id",
                 envelopeRef.getUuid(),
-                1,
+                2,
+                MetadataDocumentState.COMPLETE, SubmissionEvent.EXPORTING_STATE_UPDATE);
+
+        assertEquals(SubmissionState.EXPORTING, submissionStateMonitor.findCurrentState(envelopeRef));
+
+        submissionStateMonitor.notifyOfDocumentState("mock-assay-id-2",
+                envelopeRef.getUuid(),
+                2,
                 MetadataDocumentState.COMPLETE, SubmissionEvent.EXPORTING_STATE_UPDATE);
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
