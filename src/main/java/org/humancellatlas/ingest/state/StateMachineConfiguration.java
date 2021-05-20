@@ -310,9 +310,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
 
                 documentTracker = new DocumentTracker(documentCount);
                 context.getExtendedState().getVariables().put(tracker, documentTracker);
-            }
-
-            if(targetState.equals(MetadataDocumentState.PROCESSING)) {
+            } else if(targetState.equals(MetadataDocumentState.PROCESSING)) {
                 int documentCount = context.getMessageHeaders().get(EXPECTED_DOCUMENT_COUNT, Integer.class);
                 documentTracker.reset(documentCount);
             }
