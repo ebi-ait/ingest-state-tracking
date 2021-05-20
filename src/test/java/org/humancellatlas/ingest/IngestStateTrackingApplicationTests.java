@@ -354,7 +354,7 @@ public class IngestStateTrackingApplicationTests {
         log.debug("Sending EXPORTING_STATE_UPDATE event for a submitted assay");
         submissionStateMonitor.notifyOfDocumentState("mock-assay-id",
                 envelopeRef.getUuid(),
-                1,
+                3,
                 MetadataDocumentState.PROCESSING, SubmissionEvent.EXPORTING_STATE_UPDATE);
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
@@ -363,23 +363,44 @@ public class IngestStateTrackingApplicationTests {
         log.debug("Adding a second assay the second time around");
         submissionStateMonitor.notifyOfDocumentState("mock-assay-id-2",
                 envelopeRef.getUuid(),
-                2,
+                3,
                 MetadataDocumentState.PROCESSING, SubmissionEvent.EXPORTING_STATE_UPDATE);
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
         assertEquals(SubmissionState.EXPORTING, state);
 
+
         log.debug("Sending EXPORTING_STATE_UPDATE event for a submitted assay");
         submissionStateMonitor.notifyOfDocumentState("mock-assay-id",
                 envelopeRef.getUuid(),
-                2,
+                3,
                 MetadataDocumentState.COMPLETE, SubmissionEvent.EXPORTING_STATE_UPDATE);
 
         assertEquals(SubmissionState.EXPORTING, submissionStateMonitor.findCurrentState(envelopeRef));
 
+
+        log.debug("Sending EXPORTING_STATE_UPDATE event for a submitted assay");
+        submissionStateMonitor.notifyOfDocumentState("mock-assay-id-3",
+                envelopeRef.getUuid(),
+                3,
+                MetadataDocumentState.PROCESSING, SubmissionEvent.EXPORTING_STATE_UPDATE);
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.EXPORTING, state);
+
         submissionStateMonitor.notifyOfDocumentState("mock-assay-id-2",
                 envelopeRef.getUuid(),
-                2,
+                3,
+                MetadataDocumentState.COMPLETE, SubmissionEvent.EXPORTING_STATE_UPDATE);
+
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.EXPORTING, state);
+
+
+        log.debug("Sending EXPORTING_STATE_UPDATE event for a submitted assay");
+        submissionStateMonitor.notifyOfDocumentState("mock-assay-id-3",
+                envelopeRef.getUuid(),
+                3,
                 MetadataDocumentState.COMPLETE, SubmissionEvent.EXPORTING_STATE_UPDATE);
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
