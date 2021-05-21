@@ -29,11 +29,6 @@ public class DocumentTracker {
         completedDocumentCount.incrementAndGet();
     }
 
-    public void reset(int documentCount) {
-        completedDocumentCount.set(0);
-        this.documentCount = documentCount;
-    }
-
     public void setProcessing(String documentId) {
         documentStateMap.put(documentId, MetadataDocumentState.PROCESSING);
     }
