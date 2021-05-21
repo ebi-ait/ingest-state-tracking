@@ -190,10 +190,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
 
     private Action<SubmissionState, SubmissionEvent> resetTracker(String tracker) {
         return context -> {
-            DocumentTracker documentTracker = (DocumentTracker) context.getExtendedState().getVariables().get(tracker);
-            if (documentTracker != null) {
-                context.getExtendedState().getVariables().remove(tracker);
-            }
+            context.getExtendedState().getVariables().remove(tracker);
         };
     }
 
