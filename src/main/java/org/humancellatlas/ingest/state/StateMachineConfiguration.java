@@ -100,6 +100,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .withExternal()
                 .source(VALID).target(SUBMITTED)
                 .event(SUBMISSION_REQUESTED)
+                .action(resetTracker(Constants.EXPERIMENT_TRACKER))
                 .and()
 
                 /* submitted -> draft */
@@ -160,11 +161,13 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .event(EXPORTING_STATE_UPDATE)
                 .action(trackDocument(Constants.EXPERIMENT_TRACKER))
                 .and()
+
                 .withJunction()
                 .source(EXPORTING_STATE_EVAL_JUNCTION)
                 .first(EXPORTING, stillProcessingGuard(Constants.EXPERIMENT_TRACKER))
                 .last(EXPORTED)
                 .and()
+
 
                 /* exported -> draft */
                 .withExternal()
@@ -183,6 +186,12 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .withExternal()
                 .source(CLEANUP).target(COMPLETE)
                 .event(ALL_TASKS_COMPLETE);
+    }
+
+    private Action<SubmissionState, SubmissionEvent> resetTracker(String tracker) {
+        return context -> {
+            context.getExtendedState().getVariables().remove(tracker);
+        };
     }
 
     private Guard<SubmissionState, SubmissionEvent> documentsInvalidGuard() {
@@ -315,6 +324,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
             if (targetState.equals(MetadataDocumentState.COMPLETE)
                     && documentTracker.getDocumentStateMap().get(processId).equals(MetadataDocumentState.PROCESSING)) {
                 documentTracker.setComplete(processId);
+
             } else {
                 documentTracker.setProcessing(processId);
             }
