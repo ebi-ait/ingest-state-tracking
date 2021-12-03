@@ -3,7 +3,6 @@ package org.humancellatlas.ingest;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import org.humancellatlas.ingest.client.IngestApiClient;
 import org.humancellatlas.ingest.config.ConfigurationService;
@@ -85,10 +84,10 @@ public class SubmissionStateUpdaterTest {
                 new URI(mockEnvelopeCallbackLocation));
 
         submissionStateUpdater.requestStateUpdateForEnvelope(submissionEnvelopeReference, SubmissionState.SUBMITTED);
-        submissionStateUpdater.requestStateUpdateForEnvelope(submissionEnvelopeReference, SubmissionState.VALID);
+        submissionStateUpdater.requestStateUpdateForEnvelope(submissionEnvelopeReference, SubmissionState.METADATA_VALID);
 
         assertTrue(submissionStateUpdater.getPendingUpdates().size() == 1);
-        assertTrue(submissionStateUpdater.getPendingUpdates().iterator().next().getToState().equals(SubmissionState.VALID));
+        assertTrue(submissionStateUpdater.getPendingUpdates().iterator().next().getToState().equals(SubmissionState.METADATA_VALID));
 
     }
 
@@ -108,7 +107,7 @@ public class SubmissionStateUpdaterTest {
             @JsonProperty("_links") Map<String, Object> _links;
 
             EnvelopeInitialJson() {
-                this.submissionState = SubmissionState.VALID.toString();
+                this.submissionState = SubmissionState.METADATA_VALID.toString();
                 _links = new HashMap<String, Object>() {{
                     put("self", new HashMap<String, Object>() {{
                         put("href", INGEST_API_ROOT_STRING + mockEnvelopeCallbackLocation);
@@ -175,7 +174,7 @@ public class SubmissionStateUpdaterTest {
 
         assertEquals(
                 ingestApiClient.retrieveSubmissionEnvelope(submissionEnvelopeReference).getSubmissionState().toUpperCase(),
-                SubmissionState.VALID.toString().toUpperCase());
+                SubmissionState.METADATA_VALID.toString().toUpperCase());
 
         submissionStateUpdater.requestStateUpdateForEnvelope(submissionEnvelopeReference, SubmissionState.SUBMITTED);
         assertTrue(submissionStateUpdater.getPendingUpdates().size() == 1);

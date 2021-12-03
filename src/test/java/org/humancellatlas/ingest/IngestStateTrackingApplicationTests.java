@@ -94,7 +94,7 @@ public class IngestStateTrackingApplicationTests {
 
         submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALIDATING);
         state = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertEquals(SubmissionState.VALIDATING, state);
+        assertEquals(SubmissionState.METADATA_VALIDATING, state);
 
         // wait for a bit to simulate validation happening
         try {
@@ -112,7 +112,7 @@ public class IngestStateTrackingApplicationTests {
         }
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertEquals(SubmissionState.VALID, state);
+        assertEquals(SubmissionState.METADATA_VALID, state);
 
         // assert 0 documents in extended state map
         Map<String, MetadataDocumentState> metadataDocumentStateMap = (Map<String, MetadataDocumentState>) submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
@@ -190,7 +190,7 @@ public class IngestStateTrackingApplicationTests {
 
         submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALIDATING);
         state = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertEquals(SubmissionState.VALIDATING, state);
+        assertEquals(SubmissionState.METADATA_VALIDATING, state);
 
         // wait for a bit to simulate validation happening
         try {
@@ -208,7 +208,7 @@ public class IngestStateTrackingApplicationTests {
         }
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertEquals(SubmissionState.VALID, state);
+        assertEquals(SubmissionState.METADATA_VALID, state);
 
         // assert 0 documents in extended state map
         Map<String, MetadataDocumentState> metadataDocumentStateMap = (Map<String, MetadataDocumentState>) submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
@@ -264,7 +264,7 @@ public class IngestStateTrackingApplicationTests {
 
         submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALIDATING);
         state = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertEquals(SubmissionState.VALIDATING, state);
+        assertEquals(SubmissionState.METADATA_VALIDATING, state);
 
         // wait for a bit to simulate validation happening
         try {
@@ -282,7 +282,7 @@ public class IngestStateTrackingApplicationTests {
         }
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertEquals(SubmissionState.VALID, state);
+        assertEquals(SubmissionState.METADATA_VALID, state);
 
         // assert 0 documents in extended state map
         Map<String, MetadataDocumentState> metadataDocumentStateMap = (Map<String, MetadataDocumentState>) submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
@@ -321,7 +321,7 @@ public class IngestStateTrackingApplicationTests {
 
         submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALIDATING);
         state = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertEquals(SubmissionState.VALIDATING, state);
+        assertEquals(SubmissionState.METADATA_VALIDATING, state);
 
         // wait for a bit to simulate validation happening
         try {
@@ -339,7 +339,7 @@ public class IngestStateTrackingApplicationTests {
         }
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertEquals(SubmissionState.VALID, state);
+        assertEquals(SubmissionState.METADATA_VALID, state);
 
         // assert 0 documents in extended state map
         Map<String, MetadataDocumentState> metadataDocumentUpdatedStateMap = (Map<String, MetadataDocumentState>) submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
@@ -415,7 +415,7 @@ public class IngestStateTrackingApplicationTests {
 
         submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALIDATING);
         state = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertEquals(SubmissionState.VALIDATING, state);
+        assertEquals(SubmissionState.METADATA_VALIDATING, state);
 
         // wait for a bit to simulate validation happening
         try {
@@ -433,7 +433,7 @@ public class IngestStateTrackingApplicationTests {
         }
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertEquals(SubmissionState.VALID, state);
+        assertEquals(SubmissionState.METADATA_VALID, state);
 
         // assert 0 documents in extended state map
         metadataDocumentUpdatedStateMap = (Map<String, MetadataDocumentState>) submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
@@ -617,7 +617,7 @@ public class IngestStateTrackingApplicationTests {
 
         barrage.commence(submissionStateMonitor);
 
-        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.INVALID));
+        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.METADATA_INVALID));
     }
 
     @Test
@@ -655,7 +655,7 @@ public class IngestStateTrackingApplicationTests {
 
         barrage.commence(submissionStateMonitor);
 
-        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.VALID));
+        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.METADATA_VALID));
     }
 
     @Test
@@ -677,7 +677,7 @@ public class IngestStateTrackingApplicationTests {
 
         barrage.commence(submissionStateMonitor);
 
-        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.VALID));
+        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.METADATA_VALID));
 
         // add a draft document
         barrage = new MetadataDocumentEventBarrage();
@@ -713,7 +713,7 @@ public class IngestStateTrackingApplicationTests {
 
         barrage.commence(submissionStateMonitor);
 
-        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.VALID));
+        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.METADATA_VALID));
 
         SubmissionState state;
 
@@ -741,7 +741,7 @@ public class IngestStateTrackingApplicationTests {
         barrage.commence(submissionStateMonitor);
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertEquals(SubmissionState.VALID, state);
+        assertEquals(SubmissionState.METADATA_VALID, state);
     }
 
     @Test
@@ -763,7 +763,7 @@ public class IngestStateTrackingApplicationTests {
 
         barrage.commence(submissionStateMonitor);
 
-        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.VALID));
+        assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.METADATA_VALID));
 
         SubmissionState state;
 
@@ -809,16 +809,16 @@ public class IngestStateTrackingApplicationTests {
         barrage.commence(submissionStateMonitor);
 
         state = submissionStateMonitor.findCurrentState(envelopeRef);
-        assertEquals(SubmissionState.VALID, state);
+        assertEquals(SubmissionState.METADATA_VALID, state);
     }
 
     @Test
     public void testSubmissionStateOrdering() {
         assertTrue(SubmissionState.DRAFT.after(SubmissionState.valueOf("pEnDing".toUpperCase())));
-        assertTrue(SubmissionState.SUBMITTED.after(SubmissionState.VALID));
-        assertTrue(SubmissionState.PROCESSING.after(SubmissionState.VALID));
-        assertTrue(SubmissionState.CLEANUP.after(SubmissionState.VALID));
-        assertTrue(SubmissionState.COMPLETE.after(SubmissionState.VALID));
+        assertTrue(SubmissionState.SUBMITTED.after(SubmissionState.METADATA_VALID));
+        assertTrue(SubmissionState.PROCESSING.after(SubmissionState.METADATA_VALID));
+        assertTrue(SubmissionState.CLEANUP.after(SubmissionState.METADATA_VALID));
+        assertTrue(SubmissionState.COMPLETE.after(SubmissionState.METADATA_VALID));
     }
 
     private MetadataDocumentReference generateMetadataDocumentReference() {
