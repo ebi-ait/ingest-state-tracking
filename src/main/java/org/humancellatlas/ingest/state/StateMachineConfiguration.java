@@ -106,7 +106,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .event(GRAPH_VALIDATION_STARTED)
                 .and()
                 .withExternal()
-                .source(INVALID).target(GRAPH_VALIDATION_REQUESTED)
+                .source(GRAPH_INVALID).target(GRAPH_VALIDATION_REQUESTED)
                 .event(GRAPH_VALIDATION_STARTED)
                 .and()
                 .withExternal()
