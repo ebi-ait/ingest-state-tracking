@@ -243,7 +243,6 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
     private Guard<SubmissionState, SubmissionEvent> documentsInvalidGuard() {
         return context -> {
             Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
-            System.out.println(docMap.toString());
             for (Object key : docMap.keySet()) {
                 if (key.getClass() != String.class) {
                     // extra content somehow?
@@ -310,7 +309,6 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
     private Guard<SubmissionState, SubmissionEvent> allValidGuard() {
         return context -> {
             Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
-            System.out.println(docMap.toString());
             return docMap.entrySet().size() == 0;
         };
     }
