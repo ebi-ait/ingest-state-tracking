@@ -10,6 +10,9 @@ public enum SubmissionEvent {
     CONTENT_ADDED,
     VALIDATION_STARTED,
     DOCUMENT_PROCESSED,
+    GRAPH_VALIDATION_STARTED,
+    GRAPH_VALIDATION_PROCESSING,
+    GRAPH_VALIDATION_COMPLETE,
     SUBMISSION_REQUESTED,
     PROCESSING_STARTED,
     PROCESSING_FAILED,
@@ -22,6 +25,12 @@ public enum SubmissionEvent {
 
     public static SubmissionEvent fromRequestedSubmissionState(SubmissionState state) {
         switch (state) {
+            case GRAPH_VALIDATION_REQUESTED:
+                return GRAPH_VALIDATION_STARTED;
+            case GRAPH_VALIDATING:
+                return GRAPH_VALIDATION_PROCESSING;
+            case GRAPH_VALIDATED:
+                return GRAPH_VALIDATION_COMPLETE;
             case SUBMITTED:
                 return SUBMISSION_REQUESTED;
             case PROCESSING:

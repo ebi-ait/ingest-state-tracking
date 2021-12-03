@@ -19,6 +19,9 @@ public enum SubmissionState {
     VALIDATING,
     VALID,
     INVALID,
+    GRAPH_VALIDATION_REQUESTED,
+    GRAPH_VALIDATING,
+    GRAPH_VALIDATED,
     SUBMITTED,
     PROCESSING,
     ARCHIVING,
@@ -34,6 +37,7 @@ public enum SubmissionState {
     DOCUMENTS_VALID,
     DOCUMENTS_INVALID,
     VALIDATION_STATE_EVAL_JUNCTION,
+    GRAPH_VALIDATION_STATE_EVAL_JUNCTION,
     PROCESSING_STATE_EVAL_JUNCTION,
     EXPORTING_STATE_EVAL_JUNCTION;
 
@@ -41,6 +45,7 @@ public enum SubmissionState {
             new HashSet<>(Arrays.asList(PENDING)),
             new HashSet<>(Arrays.asList(DRAFT)),
             new HashSet<>(Arrays.asList(VALIDATING, VALID, INVALID, VALIDATION_STATE_EVAL_JUNCTION)),
+            new HashSet<>(Arrays.asList(GRAPH_VALIDATION_REQUESTED, GRAPH_VALIDATING, GRAPH_VALIDATED, INVALID, GRAPH_VALIDATION_STATE_EVAL_JUNCTION)),
             new HashSet<>(Arrays.asList(SUBMITTED)),
             new HashSet<>(Arrays.asList(PROCESSING, PROCESSING_STATE_EVAL_JUNCTION)),
             new HashSet<>(Arrays.asList(ARCHIVING)),

@@ -62,6 +62,9 @@ public class ConfigurationService implements InitializingBean {
         stateUpdateRelMap.put(SubmissionState.VALIDATING, "commitValidating");
         stateUpdateRelMap.put(SubmissionState.INVALID, "commitInvalid");
         stateUpdateRelMap.put(SubmissionState.VALID, "commitValid");
+        stateUpdateRelMap.put(SubmissionState.GRAPH_VALIDATION_REQUESTED, "commitGraphValidationRequested");
+        stateUpdateRelMap.put(SubmissionState.GRAPH_VALIDATING, "commitGraphValidating");
+        stateUpdateRelMap.put(SubmissionState.GRAPH_VALIDATED, "commitGraphValidated");
         stateUpdateRelMap.put(SubmissionState.SUBMITTED, "commitSubmit");
         stateUpdateRelMap.put(SubmissionState.PROCESSING, "commitProcessing");
         stateUpdateRelMap.put(SubmissionState.ARCHIVING, "commitArchiving");

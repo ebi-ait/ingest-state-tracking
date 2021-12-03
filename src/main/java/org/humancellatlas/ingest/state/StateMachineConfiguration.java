@@ -44,6 +44,9 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .state(VALID)
                 .state(INVALID)
                 .junction(VALIDATION_STATE_EVAL_JUNCTION)
+                .state(GRAPH_VALIDATION_REQUESTED)
+                .state(GRAPH_VALIDATING)
+                .state(GRAPH_VALIDATED)
                 .state(SUBMITTED)
                 .junction(PROCESSING_STATE_EVAL_JUNCTION)
                 .state(PROCESSING)
@@ -96,11 +99,54 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .last(DRAFT)
                 .and()
 
-                /* valid -> submitted */
+                /* graph validating happy path (results in valid or invalid) */
                 .withExternal()
-                .source(VALID).target(SUBMITTED)
+                .source(VALID).target(GRAPH_VALIDATION_REQUESTED)
+                .event(GRAPH_VALIDATION_STARTED)
+                .and()
+                .withExternal()
+                .source(INVALID).target(GRAPH_VALIDATION_REQUESTED)
+                .event(GRAPH_VALIDATION_STARTED)
+                .and()
+                .withExternal()
+                .source(GRAPH_VALIDATION_REQUESTED).target(GRAPH_VALIDATING)
+                .event(GRAPH_VALIDATION_PROCESSING)
+                .and()
+                .withExternal()
+                .source(GRAPH_VALIDATING).target(GRAPH_VALIDATION_STATE_EVAL_JUNCTION)
+                .event(GRAPH_VALIDATION_COMPLETE)
+                .and()
+                .withJunction()
+                .source(GRAPH_VALIDATION_STATE_EVAL_JUNCTION)
+                .first(INVALID, documentsInvalidGuard())
+                .last(GRAPH_VALIDATED)
+                .and()
+                /* graph validated -> submitted */
+                .withExternal()
+                .source(GRAPH_VALIDATED).target(SUBMITTED)
+                // Should add a documentsValidGuard here?
                 .event(SUBMISSION_REQUESTED)
                 .action(resetTracker(Constants.EXPERIMENT_TRACKER))
+                .and()
+
+                /* graph validation requested -> draft */
+                .withExternal()
+                .source(GRAPH_VALIDATION_REQUESTED).target(DRAFT)
+                .event(DOCUMENT_PROCESSED)
+                .action(addOrUpdateContent())
+                .and()
+                /* graph validated -> draft */
+                .withExternal()
+                .source(GRAPH_VALIDATED).target(DRAFT)
+                .event(DOCUMENT_PROCESSED)
+                .action(addOrUpdateContent())
+                .and()
+                /* graph validating -> draft */
+                // Should this be allowed? I think we should wait for GRAPH_VALIDATION_COMPLETE
+                .withExternal()
+                .source(GRAPH_VALIDATING).target(DRAFT)
+                .event(DOCUMENT_PROCESSED)
+                .action(addOrUpdateContent())
                 .and()
 
                 /* submitted -> draft */
