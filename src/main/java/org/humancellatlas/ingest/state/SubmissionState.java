@@ -82,7 +82,7 @@ public enum SubmissionState {
 
     public static SubmissionState fromString(String submissionState) throws UnrecognisedSubmissionStateException {
         try {
-            return SubmissionState.valueOf(submissionState.toUpperCase());
+            return SubmissionState.valueOf(submissionState.replaceAll(" ", "_").toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new UnrecognisedSubmissionStateException(String.format("The submission state %s is not recognised.", submissionState), e);
         }
