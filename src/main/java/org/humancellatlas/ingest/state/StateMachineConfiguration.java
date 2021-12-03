@@ -46,7 +46,8 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .junction(VALIDATION_STATE_EVAL_JUNCTION)
                 .state(GRAPH_VALIDATION_REQUESTED)
                 .state(GRAPH_VALIDATING)
-                .state(GRAPH_VALIDATED)
+                .state(GRAPH_VALID)
+                .state(GRAPH_INVALID)
                 .state(SUBMITTED)
                 .junction(PROCESSING_STATE_EVAL_JUNCTION)
                 .state(PROCESSING)
@@ -113,17 +114,16 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .event(GRAPH_VALIDATION_PROCESSING)
                 .and()
                 .withExternal()
-                .source(GRAPH_VALIDATING).target(GRAPH_VALIDATION_STATE_EVAL_JUNCTION)
+                .source(GRAPH_VALIDATING).target(GRAPH_VALID)
                 .event(GRAPH_VALIDATION_COMPLETE)
                 .and()
-                .withJunction()
-                .source(GRAPH_VALIDATION_STATE_EVAL_JUNCTION)
-                .first(INVALID, documentsInvalidGuard())
-                .last(GRAPH_VALIDATED)
+                .withExternal()
+                .source(GRAPH_VALIDATING).target(GRAPH_INVALID)
+                .event(GRAPH_VALIDATION_INVALID)
                 .and()
                 /* graph validated -> submitted */
                 .withExternal()
-                .source(GRAPH_VALIDATED).target(SUBMITTED)
+                .source(GRAPH_VALID).target(SUBMITTED)
                 // Should add a documentsValidGuard here?
                 .event(SUBMISSION_REQUESTED)
                 .action(resetTracker(Constants.EXPERIMENT_TRACKER))
@@ -137,7 +137,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .and()
                 /* graph validated -> draft */
                 .withExternal()
-                .source(GRAPH_VALIDATED).target(DRAFT)
+                .source(GRAPH_VALID).target(DRAFT)
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
@@ -243,7 +243,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
     private Guard<SubmissionState, SubmissionEvent> documentsInvalidGuard() {
         return context -> {
             Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
-
+            System.out.println(docMap.toString());
             for (Object key : docMap.keySet()) {
                 if (key.getClass() != String.class) {
                     // extra content somehow?
@@ -310,7 +310,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
     private Guard<SubmissionState, SubmissionEvent> allValidGuard() {
         return context -> {
             Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
-
+            System.out.println(docMap.toString());
             return docMap.entrySet().size() == 0;
         };
     }

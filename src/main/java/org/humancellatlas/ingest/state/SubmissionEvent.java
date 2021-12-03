@@ -13,6 +13,7 @@ public enum SubmissionEvent {
     GRAPH_VALIDATION_STARTED,
     GRAPH_VALIDATION_PROCESSING,
     GRAPH_VALIDATION_COMPLETE,
+    GRAPH_VALIDATION_INVALID,
     SUBMISSION_REQUESTED,
     PROCESSING_STARTED,
     PROCESSING_FAILED,
@@ -29,8 +30,10 @@ public enum SubmissionEvent {
                 return GRAPH_VALIDATION_STARTED;
             case GRAPH_VALIDATING:
                 return GRAPH_VALIDATION_PROCESSING;
-            case GRAPH_VALIDATED:
+            case GRAPH_VALID:
                 return GRAPH_VALIDATION_COMPLETE;
+            case GRAPH_INVALID:
+                return GRAPH_VALIDATION_INVALID;
             case SUBMITTED:
                 return SUBMISSION_REQUESTED;
             case PROCESSING:
