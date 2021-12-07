@@ -80,7 +80,6 @@ public class IngestApiClient implements InitializingBean {
             String stateUpdateUri = halTraverserOn(envelopeURI).follow(config.getStateUpdateRels().get(submissionState))
                     .asLink()
                     .getHref();
-            System.out.println(stateUpdateUri);
             return this.restTemplate.exchange(stateUpdateUri,
                     HttpMethod.PUT,
                     halRequestEntityFor(Collections.emptyMap()),
