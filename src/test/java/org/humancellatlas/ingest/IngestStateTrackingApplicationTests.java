@@ -726,8 +726,7 @@ public class IngestStateTrackingApplicationTests {
         });
     }
 
-    @Test
-    public void testGraphValidBackToDraft() {
+    private void testGraphStateToDraft(SubmissionEvent event, SubmissionState state) {
         assertTrue(submissionStateMonitor.isMonitoring(envelopeRef));
 
         submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.DRAFT);
@@ -751,57 +750,24 @@ public class IngestStateTrackingApplicationTests {
 
         assertEquals(SubmissionState.METADATA_VALID, submissionStateMonitor.findCurrentState(envelopeRef));
 
-        List.of(
-                List.of(SubmissionEvent.GRAPH_VALIDATION_STARTED, SubmissionState.GRAPH_VALIDATION_REQUESTED),
-                List.of(SubmissionEvent.GRAPH_VALIDATION_PROCESSING, SubmissionState.GRAPH_VALIDATING),
-                List.of(SubmissionEvent.GRAPH_VALIDATION_COMPLETE, SubmissionState.GRAPH_VALID)
-        ).forEach(eventAndState -> {
-            boolean response = submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, (SubmissionEvent) eventAndState.get(0));
-            assertTrue(response);
-            assertEquals(eventAndState.get(1), submissionStateMonitor.findCurrentState(envelopeRef));
-        });
+        boolean response = submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, event);
+        assertTrue(response);
+        assertEquals(state, submissionStateMonitor.findCurrentState(envelopeRef));
 
         submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.DRAFT);
         assertEquals(SubmissionState.DRAFT, submissionStateMonitor.findCurrentState(envelopeRef));
     }
 
     @Test
-    public void testGraphInvalidBackToDraft() {
-        assertTrue(submissionStateMonitor.isMonitoring(envelopeRef));
-
-        submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.DRAFT);
-        submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALIDATING);
-
-        // wait for a bit to simulate validation happening
-        try {
-            TimeUnit.SECONDS.sleep(10);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALID);
-
-        // wait for a bit to allow propagation of cascade events
-        try {
-            TimeUnit.SECONDS.sleep(1);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        assertEquals(SubmissionState.METADATA_VALID, submissionStateMonitor.findCurrentState(envelopeRef));
-
+    public void testGraphStatesToDraft() {
         List.of(
                 List.of(SubmissionEvent.GRAPH_VALIDATION_STARTED, SubmissionState.GRAPH_VALIDATION_REQUESTED),
                 List.of(SubmissionEvent.GRAPH_VALIDATION_PROCESSING, SubmissionState.GRAPH_VALIDATING),
+                List.of(SubmissionEvent.GRAPH_VALIDATION_COMPLETE, SubmissionState.GRAPH_VALID),
                 List.of(SubmissionEvent.GRAPH_VALIDATION_INVALID, SubmissionState.GRAPH_INVALID)
         ).forEach(eventAndState -> {
-            boolean response = submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, (SubmissionEvent) eventAndState.get(0));
-            assertTrue(response);
-            assertEquals(eventAndState.get(1), submissionStateMonitor.findCurrentState(envelopeRef));
+            testGraphStateToDraft((SubmissionEvent) eventAndState.get(0), (SubmissionState) eventAndState.get(1));
         });
-
-        submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.DRAFT);
-        assertEquals(SubmissionState.DRAFT, submissionStateMonitor.findCurrentState(envelopeRef));
     }
 
     @Test
