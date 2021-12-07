@@ -141,6 +141,12 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
+                /* graph invalid -> draft */
+                .withExternal()
+                .source(GRAPH_INVALID).target(DRAFT)
+                .event(DOCUMENT_PROCESSED)
+                .action(addOrUpdateContent())
+                .and()
                 /* graph validating -> draft */
                 // Should this be allowed? I think we should wait for GRAPH_VALIDATION_COMPLETE
                 .withExternal()
