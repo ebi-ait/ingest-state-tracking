@@ -21,9 +21,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.math.BigInteger;
 import java.net.URI;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static junit.framework.TestCase.assertTrue;
@@ -717,11 +715,20 @@ public class IngestStateTrackingApplicationTests {
         // try to submit an invalid submission
         submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.DRAFT);
 
-        // now send an event that is wrong
-        boolean eventResponse = submissionStateMonitor
-                .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
-        assertFalse(eventResponse);
+        // Send events that are wrong
+        List.of(
+            SubmissionEvent.SUBMISSION_REQUESTED,
+            SubmissionEvent.GRAPH_VALIDATION_STARTED,
+            SubmissionEvent.GRAPH_VALIDATION_PROCESSING,
+            SubmissionEvent.GRAPH_VALIDATION_COMPLETE,
+            SubmissionEvent.GRAPH_VALIDATION_INVALID).forEach(event -> {
+                boolean response = submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, event);
+                assertFalse(response);
+        });
     }
+
+    @Test
+    
 
     @Test
     public void testHandlingOfRedundantStateInfoMessages() {
