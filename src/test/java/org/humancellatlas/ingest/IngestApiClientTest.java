@@ -96,7 +96,7 @@ public class IngestApiClientTest {
                         put("href", INGEST_API_ROOT_STRING + "/submissionEnvelopes/mock-envelope-id");
                     }});
                 }};
-                submissionState = "Valid";
+                submissionState = "Metadata Valid";
             }
         }
 
