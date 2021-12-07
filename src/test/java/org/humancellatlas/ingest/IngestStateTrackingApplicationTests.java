@@ -118,6 +118,21 @@ public class IngestStateTrackingApplicationTests {
         Map<String, MetadataDocumentState> metadataDocumentStateMap = (Map<String, MetadataDocumentState>) submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
         assertTrue(metadataDocumentStateMap.entrySet().size() == 0);
 
+        log.debug("Sending GRAPH_VALIDATION_STARTED event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_STARTED);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALIDATION_REQUESTED, state);
+
+        log.debug("Sending GRAPH_VALIDATION_PROCESSING event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_PROCESSING);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALIDATING, state);
+
+        log.debug("Sending GRAPH_VALIDATION_COMPLETE event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_COMPLETE);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALID, state);
+
         log.debug("Sending SUBMISSION_REQUESTED event");
         submissionStateMonitor
                 .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
@@ -214,6 +229,21 @@ public class IngestStateTrackingApplicationTests {
         Map<String, MetadataDocumentState> metadataDocumentStateMap = (Map<String, MetadataDocumentState>) submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
         assertTrue(metadataDocumentStateMap.entrySet().size() == 0);
 
+        log.debug("Sending GRAPH_VALIDATION_STARTED event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_STARTED);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALIDATION_REQUESTED, state);
+
+        log.debug("Sending GRAPH_VALIDATION_PROCESSING event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_PROCESSING);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALIDATING, state);
+
+        log.debug("Sending GRAPH_VALIDATION_COMPLETE event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_COMPLETE);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALID, state);
+
         log.debug("Sending SUBMISSION_REQUESTED event");
         submissionStateMonitor
                 .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
@@ -288,6 +318,21 @@ public class IngestStateTrackingApplicationTests {
         Map<String, MetadataDocumentState> metadataDocumentStateMap = (Map<String, MetadataDocumentState>) submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
         assertTrue(metadataDocumentStateMap.entrySet().size() == 0);
 
+        log.debug("Sending GRAPH_VALIDATION_STARTED event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_STARTED);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALIDATION_REQUESTED, state);
+
+        log.debug("Sending GRAPH_VALIDATION_PROCESSING event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_PROCESSING);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALIDATING, state);
+
+        log.debug("Sending GRAPH_VALIDATION_COMPLETE event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_COMPLETE);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALID, state);
+
         log.debug("Sending SUBMISSION_REQUESTED event");
         submissionStateMonitor
                 .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
@@ -344,6 +389,21 @@ public class IngestStateTrackingApplicationTests {
         // assert 0 documents in extended state map
         Map<String, MetadataDocumentState> metadataDocumentUpdatedStateMap = (Map<String, MetadataDocumentState>) submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
         assertTrue(metadataDocumentUpdatedStateMap.entrySet().size() == 0);
+
+        log.debug("Sending GRAPH_VALIDATION_STARTED event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_STARTED);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALIDATION_REQUESTED, state);
+
+        log.debug("Sending GRAPH_VALIDATION_PROCESSING event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_PROCESSING);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALIDATING, state);
+
+        log.debug("Sending GRAPH_VALIDATION_COMPLETE event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_COMPLETE);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALID, state);
 
         log.debug("Sending SUBMISSION_REQUESTED event");
         submissionStateMonitor
@@ -439,6 +499,21 @@ public class IngestStateTrackingApplicationTests {
         metadataDocumentUpdatedStateMap = (Map<String, MetadataDocumentState>) submissionStateMonitor.findStateMachine(UUID.fromString(envelopeRef.getUuid())).get().getExtendedState().getVariables().get(Constants.METADATA_DOCUMENT_TRACKER);
         assertTrue(metadataDocumentUpdatedStateMap.entrySet().size() == 0);
 
+        log.debug("Sending GRAPH_VALIDATION_STARTED event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_STARTED);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALIDATION_REQUESTED, state);
+
+        log.debug("Sending GRAPH_VALIDATION_PROCESSING event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_PROCESSING);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALIDATING, state);
+
+        log.debug("Sending GRAPH_VALIDATION_COMPLETE event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_COMPLETE);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALID, state);
+
         log.debug("Sending SUBMISSION_REQUESTED event");
         submissionStateMonitor
                 .sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
@@ -516,6 +591,21 @@ public class IngestStateTrackingApplicationTests {
         barrage.commence(submissionStateMonitor);
 
         SubmissionState state;
+
+        log.debug("Sending GRAPH_VALIDATION_STARTED event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_STARTED);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALIDATION_REQUESTED, state);
+
+        log.debug("Sending GRAPH_VALIDATION_PROCESSING event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_PROCESSING);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALIDATING, state);
+
+        log.debug("Sending GRAPH_VALIDATION_COMPLETE event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_COMPLETE);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALID, state);
 
         log.debug("Sending SUBMISSION_REQUESTED event");
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
@@ -717,6 +807,21 @@ public class IngestStateTrackingApplicationTests {
 
         SubmissionState state;
 
+        log.debug("Sending GRAPH_VALIDATION_STARTED event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_STARTED);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALIDATION_REQUESTED, state);
+
+        log.debug("Sending GRAPH_VALIDATION_PROCESSING event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_PROCESSING);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALIDATING, state);
+
+        log.debug("Sending GRAPH_VALIDATION_COMPLETE event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_COMPLETE);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALID, state);
+
         log.debug("Sending SUBMISSION_REQUESTED event");
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
 
@@ -766,6 +871,21 @@ public class IngestStateTrackingApplicationTests {
         assertTrue(submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.METADATA_VALID));
 
         SubmissionState state;
+
+        log.debug("Sending GRAPH_VALIDATION_STARTED event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_STARTED);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALIDATION_REQUESTED, state);
+
+        log.debug("Sending GRAPH_VALIDATION_PROCESSING event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_PROCESSING);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALIDATING, state);
+
+        log.debug("Sending GRAPH_VALIDATION_COMPLETE event");
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.GRAPH_VALIDATION_COMPLETE);
+        state = submissionStateMonitor.findCurrentState(envelopeRef);
+        assertEquals(SubmissionState.GRAPH_VALID, state);
 
         log.debug("Sending SUBMISSION_REQUESTED event");
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
