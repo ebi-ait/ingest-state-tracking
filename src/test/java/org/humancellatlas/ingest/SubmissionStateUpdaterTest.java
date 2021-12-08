@@ -107,7 +107,7 @@ public class SubmissionStateUpdaterTest {
             @JsonProperty("_links") Map<String, Object> _links;
 
             EnvelopeInitialJson() {
-                this.submissionState = SubmissionState.METADATA_VALID.toString();
+                this.submissionState = SubmissionState.GRAPH_VALID.toString();
                 _links = new HashMap<String, Object>() {{
                     put("self", new HashMap<String, Object>() {{
                         put("href", INGEST_API_ROOT_STRING + mockEnvelopeCallbackLocation);
@@ -144,7 +144,7 @@ public class SubmissionStateUpdaterTest {
         EnvelopeInitialJson envelopeInitialJson = new EnvelopeInitialJson();
         EnvelopePatchedJson envelopePatchedJson = new EnvelopePatchedJson();
 
-        // scenario: envelope state is initially in state "valid", the updater should patch it and it should then be in state "submitted"
+        // scenario: envelope state is initially in state "graph valid", the updater should patch it and it should then be in state "submitted"
         wireMockServer.stubFor(
                 get(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString()))
                         .withHeader("Accept", equalTo("application/hal+json"))
@@ -174,7 +174,7 @@ public class SubmissionStateUpdaterTest {
 
         assertEquals(
                 ingestApiClient.retrieveSubmissionEnvelope(submissionEnvelopeReference).getSubmissionState().toUpperCase(),
-                SubmissionState.METADATA_VALID.toString().toUpperCase());
+                SubmissionState.GRAPH_VALID.toString().toUpperCase());
 
         submissionStateUpdater.requestStateUpdateForEnvelope(submissionEnvelopeReference, SubmissionState.SUBMITTED);
         assertTrue(submissionStateUpdater.getPendingUpdates().size() == 1);
