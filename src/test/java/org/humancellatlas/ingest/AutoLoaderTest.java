@@ -84,7 +84,7 @@ public class AutoLoaderTest {
 
     @Test
     public void testLoadStateMachineShouldUpdateStateWhenCorrectStateIsAStateWithoutExtendedStates(){
-        List<String> allowedStates = Arrays.asList("Metadata Valid", "Submitted", "Archived", "Exported", "Cleanup", "Complete");
+        List<String> allowedStates = Arrays.asList("Graph valid", "Metadata valid", "Submitted", "Archived", "Exported", "Cleanup", "Complete");
 
         allowedStates.forEach(state -> {
             // given
