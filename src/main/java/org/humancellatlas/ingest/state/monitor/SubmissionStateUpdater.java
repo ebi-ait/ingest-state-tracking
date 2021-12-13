@@ -52,7 +52,8 @@ public class SubmissionStateUpdater {
         log.info(String.format("Updating state of envelope with ID %s to state %s", envelopeReference.getId(), submissionState.toString()));
         try {
             SubmissionEnvelope updatedEnvelope = getIngestApiClient().updateEnvelopeState(envelopeReference, submissionState);
-            if(! updatedEnvelope.getSubmissionState().toUpperCase().equals(submissionState.toString().toUpperCase())) {
+
+            if(! SubmissionState.fromString(updatedEnvelope.getSubmissionState()).equals(submissionState)) {
                 throw new CoreStateUpdatedFailedException(String.format("Failed to updated state of envelope with ID %s to state %s", envelopeReference.getId(), submissionState.toString()));
             }
         } catch (HttpClientErrorException e) {

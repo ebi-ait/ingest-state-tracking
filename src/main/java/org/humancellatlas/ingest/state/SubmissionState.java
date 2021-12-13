@@ -16,9 +16,13 @@ import java.util.Set;
 public enum SubmissionState {
     PENDING,
     DRAFT,
-    VALIDATING,
-    VALID,
-    INVALID,
+    METADATA_VALIDATING,
+    METADATA_VALID,
+    METADATA_INVALID,
+    GRAPH_VALIDATION_REQUESTED,
+    GRAPH_VALIDATING,
+    GRAPH_VALID,
+    GRAPH_INVALID,
     SUBMITTED,
     PROCESSING,
     ARCHIVING,
@@ -40,7 +44,8 @@ public enum SubmissionState {
     private static final List<Set<SubmissionState>> ORDERED_STATES = Arrays.asList(
             new HashSet<>(Arrays.asList(PENDING)),
             new HashSet<>(Arrays.asList(DRAFT)),
-            new HashSet<>(Arrays.asList(VALIDATING, VALID, INVALID, VALIDATION_STATE_EVAL_JUNCTION)),
+            new HashSet<>(Arrays.asList(METADATA_VALIDATING, METADATA_VALID, METADATA_INVALID, VALIDATION_STATE_EVAL_JUNCTION)),
+            new HashSet<>(Arrays.asList(GRAPH_VALIDATION_REQUESTED, GRAPH_VALIDATING, GRAPH_VALID, GRAPH_INVALID)),
             new HashSet<>(Arrays.asList(SUBMITTED)),
             new HashSet<>(Arrays.asList(PROCESSING, PROCESSING_STATE_EVAL_JUNCTION)),
             new HashSet<>(Arrays.asList(ARCHIVING)),
@@ -77,7 +82,7 @@ public enum SubmissionState {
 
     public static SubmissionState fromString(String submissionState) throws UnrecognisedSubmissionStateException {
         try {
-            return SubmissionState.valueOf(submissionState.toUpperCase());
+            return SubmissionState.valueOf(submissionState.replaceAll(" ", "_").toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new UnrecognisedSubmissionStateException(String.format("The submission state %s is not recognised.", submissionState), e);
         }
@@ -86,7 +91,7 @@ public enum SubmissionState {
     // A state is considered to have an extended state if there is an extended state variable being checked before it can be transitioned into that state and the next state
     // To determine this, you need to look out for calls to context.getExtendedState().getVariables()) in the StateMachineConfiguration class
     // Without that extended state, the state may not be able to successfully go to the next state
-    public static List<SubmissionState> STATES_WITH_EXTENDED_STATE = Arrays.asList(DRAFT, VALIDATING, INVALID, PROCESSING, EXPORTING, ARCHIVING);
+    public static List<SubmissionState> STATES_WITH_EXTENDED_STATE = Arrays.asList(DRAFT, METADATA_VALIDATING, METADATA_INVALID, PROCESSING, EXPORTING, ARCHIVING);
 
     public static boolean isExtendedState(SubmissionState submissionState){
         return STATES_WITH_EXTENDED_STATE.contains(submissionState);

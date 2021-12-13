@@ -113,7 +113,7 @@ public class RedisPersisterTest {
 
         barrage.commence(submissionStateMonitor);
 
-        assert submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.INVALID);
+        assert submissionStateMonitor.findCurrentState(envelopeRef).equals(SubmissionState.METADATA_INVALID);
 
     }
 

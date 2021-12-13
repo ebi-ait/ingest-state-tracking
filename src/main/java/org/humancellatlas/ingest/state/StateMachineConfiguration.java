@@ -40,10 +40,14 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
         states.withStates()
                 .initial(PENDING)
                 .state(DRAFT)
-                .state(VALIDATING)
-                .state(VALID)
-                .state(INVALID)
+                .state(METADATA_VALIDATING)
+                .state(METADATA_VALID)
+                .state(METADATA_INVALID)
                 .junction(VALIDATION_STATE_EVAL_JUNCTION)
+                .state(GRAPH_VALIDATION_REQUESTED)
+                .state(GRAPH_VALIDATING)
+                .state(GRAPH_VALID)
+                .state(GRAPH_INVALID)
                 .state(SUBMITTED)
                 .junction(PROCESSING_STATE_EVAL_JUNCTION)
                 .state(PROCESSING)
@@ -71,36 +75,84 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .and()
 
                 .withExternal()
-                .source(VALIDATING).target(VALIDATION_STATE_EVAL_JUNCTION)
+                .source(METADATA_VALIDATING).target(VALIDATION_STATE_EVAL_JUNCTION)
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
 
                 .withExternal()
-                .source(VALID).target(VALIDATION_STATE_EVAL_JUNCTION)
+                .source(METADATA_VALID).target(VALIDATION_STATE_EVAL_JUNCTION)
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
 
                 .withExternal()
-                .source(INVALID).target(VALIDATION_STATE_EVAL_JUNCTION)
+                .source(METADATA_INVALID).target(VALIDATION_STATE_EVAL_JUNCTION)
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
 
                 .withJunction()
                 .source(VALIDATION_STATE_EVAL_JUNCTION)
-                .first(INVALID, documentsInvalidGuard())
-                .then(VALIDATING, documentsValidatingGuard())
-                .then(VALID, allValidGuard())
+                .first(METADATA_INVALID, documentsInvalidGuard())
+                .then(METADATA_VALIDATING, documentsValidatingGuard())
+                .then(METADATA_VALID, allValidGuard())
                 .last(DRAFT)
                 .and()
 
-                /* valid -> submitted */
+                /* graph validating happy path (results in valid or invalid) */
                 .withExternal()
-                .source(VALID).target(SUBMITTED)
+                .source(METADATA_VALID).target(GRAPH_VALIDATION_REQUESTED)
+                .event(GRAPH_VALIDATION_STARTED)
+                .and()
+                .withExternal()
+                .source(GRAPH_INVALID).target(GRAPH_VALIDATION_REQUESTED)
+                .event(GRAPH_VALIDATION_STARTED)
+                .and()
+                .withExternal()
+                .source(GRAPH_VALIDATION_REQUESTED).target(GRAPH_VALIDATING)
+                .event(GRAPH_VALIDATION_PROCESSING)
+                .and()
+                .withExternal()
+                .source(GRAPH_VALIDATING).target(GRAPH_VALID)
+                .event(GRAPH_VALIDATION_COMPLETE)
+                .and()
+                .withExternal()
+                .source(GRAPH_VALIDATING).target(GRAPH_INVALID)
+                .event(GRAPH_VALIDATION_INVALID)
+                .and()
+                /* graph validated -> submitted */
+                .withExternal()
+                .source(GRAPH_VALID).target(SUBMITTED)
+                // Should add a documentsValidGuard here?
                 .event(SUBMISSION_REQUESTED)
                 .action(resetTracker(Constants.EXPERIMENT_TRACKER))
+                .and()
+
+                /* graph validation requested -> draft */
+                .withExternal()
+                .source(GRAPH_VALIDATION_REQUESTED).target(DRAFT)
+                .event(DOCUMENT_PROCESSED)
+                .action(addOrUpdateContent())
+                .and()
+                /* graph validated -> draft */
+                .withExternal()
+                .source(GRAPH_VALID).target(DRAFT)
+                .event(DOCUMENT_PROCESSED)
+                .action(addOrUpdateContent())
+                .and()
+                /* graph invalid -> draft */
+                .withExternal()
+                .source(GRAPH_INVALID).target(DRAFT)
+                .event(DOCUMENT_PROCESSED)
+                .action(addOrUpdateContent())
+                .and()
+                /* graph validating -> draft */
+                // Should this be allowed? I think we should wait for GRAPH_VALIDATION_COMPLETE
+                .withExternal()
+                .source(GRAPH_VALIDATING).target(DRAFT)
+                .event(DOCUMENT_PROCESSED)
+                .action(addOrUpdateContent())
                 .and()
 
                 /* submitted -> draft */
@@ -197,7 +249,6 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
     private Guard<SubmissionState, SubmissionEvent> documentsInvalidGuard() {
         return context -> {
             Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
-
             for (Object key : docMap.keySet()) {
                 if (key.getClass() != String.class) {
                     // extra content somehow?
@@ -264,7 +315,6 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
     private Guard<SubmissionState, SubmissionEvent> allValidGuard() {
         return context -> {
             Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
-
             return docMap.entrySet().size() == 0;
         };
     }
