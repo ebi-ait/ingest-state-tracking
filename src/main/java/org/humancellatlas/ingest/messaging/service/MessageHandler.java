@@ -100,7 +100,7 @@ public class MessageHandler {
 
         SubmissionState envelopeState = SubmissionState.valueOf(ingestApiClient.retrieveSubmissionEnvelope(envelopeReference)
                                                                                .getSubmissionState()
-                                                                               .toUpperCase());
+                                                                               .toUpperCase().replace(" ", "_"));
         if(!envelopeState.after(SubmissionState.EXPORTED)){
             if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
                 submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
