@@ -1015,7 +1015,7 @@ public class IngestStateTrackingApplicationTests {
 
     @Test
     public void testSubmissionStateOrdering() {
-        assertTrue(SubmissionState.DRAFT.after(SubmissionState.valueOf("pEnDing".toUpperCase())));
+        assertTrue(SubmissionState.DRAFT.after(SubmissionState.fromString("pEnDing")));
         assertTrue(SubmissionState.SUBMITTED.after(SubmissionState.METADATA_VALID));
         assertTrue(SubmissionState.PROCESSING.after(SubmissionState.METADATA_VALID));
         assertTrue(SubmissionState.CLEANUP.after(SubmissionState.METADATA_VALID));

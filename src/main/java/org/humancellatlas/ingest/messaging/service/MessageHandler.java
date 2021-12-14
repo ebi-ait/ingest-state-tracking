@@ -98,9 +98,9 @@ public class MessageHandler {
         MetadataDocumentState documentState = MetadataDocumentState.valueOf(metadataDocument.getValidationState().toUpperCase());
         SubmissionEnvelopeReference envelopeReference = metadataDocument.getReferencedEnvelope();
 
-        SubmissionState envelopeState = SubmissionState.valueOf(ingestApiClient.retrieveSubmissionEnvelope(envelopeReference)
-                                                                               .getSubmissionState()
-                                                                               .toUpperCase().replace(" ", "_"));
+        SubmissionState envelopeState = SubmissionState.fromString(ingestApiClient.retrieveSubmissionEnvelope(envelopeReference)
+                                                                               .getSubmissionState());
+
         if(!envelopeState.after(SubmissionState.EXPORTED)){
             if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
                 submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
@@ -121,7 +121,7 @@ public class MessageHandler {
             submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
         }
 
-        SubmissionEvent submissionEvent = SubmissionEvent.fromRequestedSubmissionState(SubmissionState.valueOf(submissionEnvelopeMessage.getRequestedState().toUpperCase()));
+        SubmissionEvent submissionEvent = SubmissionEvent.fromRequestedSubmissionState(SubmissionState.fromString(submissionEnvelopeMessage.getRequestedState()));
         submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeReference, submissionEvent);
     }
 
