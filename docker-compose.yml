@@ -17,7 +17,7 @@ services:
       - redis
       - rabbitmq
   core:
-    image: quay.io/ebi-ait/ingest-core:f415db86
+    image: quay.io/ebi-ait/ingest-core:60c7f667
     ports:
       - "8080:8080"
     environment:
@@ -50,9 +50,9 @@ services:
       - "5672:5672"
       - "15672:15672"
   broker:
-    image: quay.io/ebi-ait/ingest-broker:f0fe879
+    image: quay.io/ebi-ait/ingest-broker:dev-e32ac90d-30-11-2021.1638273607
     ports:
-      - "5000:5000"
+      - "5001:5000"
     environment:
       - INGEST_API=http://core:8080
       - SPREADSHEET_STORAGE_DIR=/data/spreadsheets
@@ -63,7 +63,7 @@ services:
     depends_on:
       - core
   validator:
-    image: quay.io/ebi-ait/ingest-validator:0f03549
+    image: quay.io/ebi-ait/ingest-validator:dev-e8372d2f-29-06-2021.1624960555
     environment:
       - INGEST_SCHEME=http
       - INGEST_HOST=core
@@ -79,14 +79,14 @@ services:
     depends_on:
       - core
   ui:
-    image: quay.io/ebi-ait/ingest-ui:9d6b208
+    image: quay.io/ebi-ait/ingest-ui:dev-0ca46eba-13-12-2021.1639392499
     ports:
       - "4200:4200"
     environment:
       - INGEST_API_URL=http://localhost:8080
-      - BROKER_API_URL=http://localhost:5000
+      - BROKER_API_URL=http://localhost:5001
       - SCHEMA_API_URL=http://schema.humancellatlas.org/
-      - DOMAIN_WHITELIST=localhost:8080,localhost:5000
+      - DOMAIN_WHITELIST=localhost:8080,localhost:5001
       - AAI_CLIENT_ID=e2041c2d-9449-4468-856e-e84711cebd21
       - AAI_AUTHORITY=https://login.elixir-czech.org/oidc/
       - OLS_URL=https://ontology.dev.archive.data.humancellatlas.org
