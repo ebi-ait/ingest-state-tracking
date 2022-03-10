@@ -60,11 +60,15 @@ sequenceDiagram
   participant Core
   participant State as State Tracker
   participant Validator
+  participant Staging Manager
+  participant Upload
+  participant Upload Area
+
   participant Exporter
   participant Archiver
   participant DSP
   participant GCPTS as GCP Transfer Service
-  
+
   User->>UI: uploads test spreadsheet
   UI-->>Broker: request import
   Broker-->>Broker: parse spreadsheet <br/>and converts rows to json's 
@@ -105,7 +109,7 @@ sequenceDiagram
   Validator-->>Upload: for file metadata, once metadata is set to VALID and has cloudUrl,<br/> it requests for data file validation
   Upload-->>Upload: does file validation
   Upload-->>Core: sends core the file validation job result
-  Core-->> Core: sets file metadata validation state to VALID/INVALID
+  Core-->>Core: sets file metadata validation state to VALID/INVALID
   Core-->>State: sends a message that a file metadata is set to VALID/INVALID
 
   State-->>State: checks if submission should be set to DRAFT/VALIDATING/VALID/INVALID
@@ -113,8 +117,8 @@ sequenceDiagram
 
   User->>UI: chooses to submit to the EBI archives and clicks Submit
   UI-->>Core: request to submit to the archives
-  Core-->> Core: gets assay process
-  Core->>Exporter: sends messages per assay
+  Core-->>Core: gets assay process
+  Core-->>Exporter: sends messages per assay
   
   Exporter-->>Exporter: receives message for an assay
   Exporter-->>State: sends messages when a message is processing <br/> and when it's finished.
@@ -126,12 +130,12 @@ sequenceDiagram
   State-->>Core: when all assay messages finished, it sets submissionState to ARCHIVING<br/> this signals that user can start the manual process
   
   User-->>Archiver: manually triggers archiving
-  Archiver->>Archiver: converts metadata
+  Archiver-->>Archiver: converts metadata
   Archiver-->>DSP: creates DSP submission and creates metadata
   User-->>DSP: does manual process to upload files for sequencing runs
   User->>DSP: wait for the DSP submission to be valid and submittable
   User->>Archiver: requests to submit submission
-  Archiver->>DSP: submits submission
+  Archiver-->>DSP: submits submission
   Archiver-->>DSP: retrieves accessions
   Archiver-->>Core: updates metadata with retrieved accessions
   Archiver-->>Core: sets status to ARCHIVED
@@ -142,10 +146,10 @@ sequenceDiagram
   UI-->>Core: requests for export, triggers exporting
   Core-->>Exporter: sends messages per assay
   Exporter-->>State: sends a message when a message is being processed <br/> and when it's finished.
-  State-->> Core: sets submission state to EXPORTING when not all messages have finished yet
+  State-->>Core: sets submission state to EXPORTING when not all messages have finished yet
  
-  Exporter->>GCPTS: if needed to export data, triggers data file transfer
-  GCPTS-->Terra: transfers data files to Terra staging area
+  Exporter-->>GCPTS: if needed to export data, triggers data file transfer
+  GCPTS-->Terra: transfers data files to Terra staging area from upload area
   Exporter->Exporter: waits til data transfer is complete
   Exporter->Core: crawls graph from assay process to donor
   Exporter->>Terra: creates all metadata files included in the graph in the Terra staging area
@@ -153,7 +157,7 @@ sequenceDiagram
   State-->> State: keeps track that all messages are processed
   State-->> Core: sets submission state to EXPORTED
   
-  User ->> Core: waits until submission is EXPORTED
+  User->> Core: waits until submission is EXPORTED
   UI-->>UI: displays Delete upload area button
   User->>UI: clicks Delete upload area button
   UI-->>Core: requests for cleanup
