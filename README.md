@@ -64,56 +64,103 @@ sequenceDiagram
   participant Archiver
   participant DSP
   participant GCPTS as GCP Transfer Service
+  
+  User->>UI: uploads test spreadsheet
+  UI-->>Broker: request import
+  Broker-->>Broker: parse spreadsheet <br/>and converts rows to json's 
+  Broker-->>Core: creates submission entity
 
-  User->>Broker: uploads test spreadsheet
-  Broker-->>Core: creates  metadata entities
-  Core-->> Staging Manager: requests for upload area
-  Staging Manager-->> Core: returns upload area
-  Core-->> Validator: requests for metadata validation
-  User->> Upload Area: using hca-util cli, <br/> syncs test files from hca-util to Upload Service's upload area
-  Core-->> Validator: requests for file metadata file validation
-  Validator-->>Upload: requests for data file validation
-  Upload -->> Upload: does file validation
-  Upload -->> Core: sets file validation job result
-  State -->> Core: sets submission state to VALID
-  User->>UI: chose to submit to EBI Archives and clicks Submit
-  UI-->>Core: request to submit
-  Core -->> Core: gets assay process
+  Core-->>Core: creates submission entity
+  Core-->>State: sends message new submission is created <br/> and it inits submissionState to PENDING
+  State-->State: creates a state machine object for submission<br/> and it inits its state to PENDING
+  
+  Core-->>Staging Manager: sends message to request for an upload area from Upload Service
+  Staging Manager-->>Upload: requests to create and upload area directory
+  Upload-->>Staging Manager: responds with upload area location
+  Staging Manager-->>Core: sends message which contains upload area location
+  Core-->>Core: stores upload area location to submission envelope entity
+
+  Broker-->>Core: creates metadata entities <br/> and links them to submission and project
+  Core-->>Core: creates metadata entities with initial validationState DRAFT
+  Core-->>State: sends message that there new metadata in DRAFT
+
+  Core-->>Validator: sends messages for each metadata added
+  Validator-->Core: sets metadata validationState to VALIDATING
+  Core-->>State: sends a message that a metadata is set to VALIDATING
+
+  Validator-->>Validator: validates metadata json against json schema and ontology api
+  Validator-->Core: sets metadata validationState as VALID or INVALID + validation error
+  Validator-->Core: for file metadata, sets metadata validationState as INVALID if data is not uploaded yet
+  Core-->>State: sends a message that a metadata is set to VALID/INVALID
+
+  State-->>State: checks if submission should be set to DRAFT/VALIDATING/VALID/INVALID
+  State-->>Core: sets submission state to DRAFT/VALIDATING/VALID/INVALID <br/> PUT /commitValidating or <br/> PUT /commitValid ...
+  
+  User->>Upload Area: using hca-util cli, <br/> syncs test files from hca-util to Upload Service's upload area
+  Upload Area-->Upload: notifies that a data file is uploaded
+  Upload-->>Upload: checksums the data file
+  Upload-->>Core: sends message that the data file is uploaded and checksummed
+  Core-->Core: stores cloudUrl and checksum from Upload Service in file metadata 
+  Core-->>Validator: sends message for file metadata that that was updated with cloudUrl
+  Validator-->>Upload: for file metadata, once metadata is set to VALID and has cloudUrl,<br/> it requests for data file validation
+  Upload-->>Upload: does file validation
+  Upload-->>Core: sends core the file validation job result
+  Core-->> Core: sets file metadata validation state to VALID/INVALID
+  Core-->>State: sends a message that a file metadata is set to VALID/INVALID
+
+  State-->>State: checks if submission should be set to DRAFT/VALIDATING/VALID/INVALID
+  State-->>Core: if all metadata are VALID, sets submission state to VALID <br/> PUT /commitValid
+
+  User->>UI: chooses to submit to the EBI archives and clicks Submit
+  UI-->>Core: request to submit to the archives
+  Core-->> Core: gets assay process
   Core->>Exporter: sends messages per assay
-  Exporter->>Exporter: generates bundle manifests
-  Exporter->>State: sends messages when a message is processing <br/> and when it's finished.
-  State ->> Core: sets submission state to PROCESSING
-  State ->> State: keeps track that all messages are processed
-  State ->> Core: sets submission state to ARCHIVING
-  User-->>Archiver: triggers archiving
+  
+  Exporter-->>Exporter: receives message for an assay
+  Exporter-->>State: sends messages when a message is processing <br/> and when it's finished.
+  State-->>Core: sets submission state to PROCESSING
+  Exporter-->>Exporter: generates bundle manifests for an assay
+  Exporter-->>State: sends a message when it finished processing an assay
+
+  State-->>State: keeps track of all assay messages and checks if all are finished
+  State-->>Core: when all assay messages finished, it sets submissionState to ARCHIVING<br/> this signals that user can start the manual process
+  
+  User-->>Archiver: manually triggers archiving
   Archiver->>Archiver: converts metadata
-  Archiver-->>DSP: creates submission and <br/> creates metadata (no data because data upload is manual)
-  User-->>DSP: manual process to upload files for sequencing runs
+  Archiver-->>DSP: creates DSP submission and creates metadata
+  User-->>DSP: does manual process to upload files for sequencing runs
   User->>DSP: wait for the DSP submission to be valid and submittable
   User->>Archiver: requests to submit submission
   Archiver->>DSP: submits submission
   Archiver-->>DSP: retrieves accessions
   Archiver-->>Core: updates metadata with retrieved accessions
   Archiver-->>Core: sets status to ARCHIVED
+
   Core-->Core: generates the Export link
-  UI-->>UI: display Export button
-  User->>UI: clicks Export button
-  UI->>Core: request for export, triggers exporting
-  Core->>Exporter: sends messages per assay
-  Exporter->>State: sends messages when a message is being processed <br/> and when it's finished.
-  State ->> Core: sets submission state to EXPORTING
-  State ->> State: keeps track that all messages are processed
-  State ->> Core: sets submission state to EXPORTED
-  Exporter->>GCPTS: triggers data file transfer
-  GCPTS->Terra: transfers data files to Terra staging area
-  Exporter->>Terra: creates metadata files to the Terra staging area
+  UI-->>UI: displays Export button when Export links is present
+  User->>UI: clicks Export button to submit to HCA
+  UI-->>Core: requests for export, triggers exporting
+  Core-->>Exporter: sends messages per assay
+  Exporter-->>State: sends a message when a message is being processed <br/> and when it's finished.
+  State-->> Core: sets submission state to EXPORTING when not all messages have finished yet
+ 
+  Exporter->>GCPTS: if needed to export data, triggers data file transfer
+  GCPTS-->Terra: transfers data files to Terra staging area
+  Exporter->Exporter: waits til data transfer is complete
+  Exporter->Core: crawls graph from assay process to donor
+  Exporter->>Terra: creates all metadata files included in the graph in the Terra staging area
+  Exporter->Terra:  creates links.json file in the Terra staging area
+  State-->> State: keeps track that all messages are processed
+  State-->> Core: sets submission state to EXPORTED
+  
   User ->> Core: waits until submission is EXPORTED
-  UI-->>UI: display Delete upload area button
+  UI-->>UI: displays Delete upload area button
   User->>UI: clicks Delete upload area button
   UI-->>Core: requests for cleanup
-  Core->>Core: sets submission state to CLEANUP
+  Core->>State: sends message for cleanup
+  State->>Core: sets submission to cleanu <br/> PUT /commitCleanup
   Core-->>Staging Manager: sends message to delete upload area
-  Staging Manager --> Upload: deletes upload area 
-  Staging Manager --> Core: COMPLETE
+  Staging Manager --> Upload: requests to delete the upload area 
+  Staging Manager --> Core: sets the submission to COMPLETE
   Core-->State: sends message for COMPLETE
 ```
