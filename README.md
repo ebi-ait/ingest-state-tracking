@@ -129,10 +129,10 @@ sequenceDiagram
   State-->>State: keeps track of all assay messages and checks if all are finished
   State-->>Core: when all assay messages finished, it sets submissionState to ARCHIVING<br/> this signals that user can start the manual process
   
-  User-->>Archiver: manually triggers archiving
+  User->>Archiver: manually triggers archiving
   Archiver-->>Archiver: converts metadata
   Archiver-->>DSP: creates DSP submission and creates metadata
-  User-->>DSP: does manual process to upload files for sequencing runs
+  User->>DSP: does manual process to upload files for sequencing runs
   User->>DSP: wait for the DSP submission to be valid and submittable
   User->>Archiver: requests to submit submission
   Archiver-->>DSP: submits submission
