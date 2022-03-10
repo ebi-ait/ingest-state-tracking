@@ -76,7 +76,7 @@ sequenceDiagram
 
   Core-->>Core: creates submission entity
   Core-->>State: sends message new submission is created <br/> and it inits submissionState to PENDING
-  State-->State: creates a state machine object for submission<br/> and it inits its state to PENDING
+  State-->>State: creates a state machine object for submission<br/> and it inits its state to PENDING
   
   Core-->>Staging Manager: sends message to request for an upload area from Upload Service
   Staging Manager-->>Upload: requests to create and upload area directory
@@ -89,22 +89,22 @@ sequenceDiagram
   Core-->>State: sends message that there new metadata in DRAFT
 
   Core-->>Validator: sends messages for each metadata added
-  Validator-->Core: sets metadata validationState to VALIDATING
+  Validator-->>Core: sets metadata validationState to VALIDATING
   Core-->>State: sends a message that a metadata is set to VALIDATING
 
   Validator-->>Validator: validates metadata json against json schema and ontology api
-  Validator-->Core: sets metadata validationState as VALID or INVALID + validation error
-  Validator-->Core: for file metadata, sets metadata validationState as INVALID if data is not uploaded yet
+  Validator-->>Core: sets metadata validationState as VALID or INVALID + validation error
+  Validator-->>Core: for file metadata, sets metadata validationState as INVALID if data is not uploaded yet
   Core-->>State: sends a message that a metadata is set to VALID/INVALID
 
   State-->>State: checks if submission should be set to DRAFT/VALIDATING/VALID/INVALID
   State-->>Core: sets submission state to DRAFT/VALIDATING/VALID/INVALID <br/> PUT /commitValidating or <br/> PUT /commitValid ...
   
   User->>Upload Area: using hca-util cli, <br/> syncs test files from hca-util to Upload Service's upload area
-  Upload Area-->Upload: notifies that a data file is uploaded
+  Upload Area-->>Upload: notifies that a data file is uploaded
   Upload-->>Upload: checksums the data file
   Upload-->>Core: sends message that the data file is uploaded and checksummed
-  Core-->Core: stores cloudUrl and checksum from Upload Service in file metadata 
+  Core-->>Core: stores cloudUrl and checksum from Upload Service in file metadata 
   Core-->>Validator: sends message for file metadata that that was updated with cloudUrl
   Validator-->>Upload: for file metadata, once metadata is set to VALID and has cloudUrl,<br/> it requests for data file validation
   Upload-->>Upload: does file validation
@@ -140,7 +140,7 @@ sequenceDiagram
   Archiver-->>Core: updates metadata with retrieved accessions
   Archiver-->>Core: sets status to ARCHIVED
 
-  Core-->Core: generates the Export link
+  Core-->>Core: generates the Export link
   UI-->>UI: displays Export button when Export links is present
   User->>UI: clicks Export button to submit to HCA
   UI-->>Core: requests for export, triggers exporting
@@ -149,13 +149,13 @@ sequenceDiagram
   State-->>Core: sets submission state to EXPORTING when not all messages have finished yet
  
   Exporter-->>GCPTS: if needed to export data, triggers data file transfer
-  GCPTS-->Terra: transfers data files to Terra staging area from upload area
-  Exporter->Exporter: waits til data transfer is complete
-  Exporter->Core: crawls graph from assay process to donor
-  Exporter->>Terra: creates all metadata files included in the graph in the Terra staging area
-  Exporter->Terra:  creates links.json file in the Terra staging area
-  State-->> State: keeps track that all messages are processed
-  State-->> Core: sets submission state to EXPORTED
+  GCPTS-->>Terra: transfers data files to Terra staging area from upload area
+  Exporter-->>Exporter: waits til data transfer is complete
+  Exporter-->>Core: crawls graph from assay process to donor
+  Exporter-->>Terra: creates all metadata files included in the graph in the Terra staging area
+  Exporter-->>Terra:  creates links.json file in the Terra staging area
+  State-->>State: keeps track that all messages are processed
+  State-->>Core: sets submission state to EXPORTED
   
   User->> Core: waits until submission is EXPORTED
   UI-->>UI: displays Delete upload area button
@@ -164,7 +164,7 @@ sequenceDiagram
   Core->>State: sends message for cleanup
   State->>Core: sets submission to cleanu <br/> PUT /commitCleanup
   Core-->>Staging Manager: sends message to delete upload area
-  Staging Manager --> Upload: requests to delete the upload area 
-  Staging Manager --> Core: sets the submission to COMPLETE
-  Core-->State: sends message for COMPLETE
+  Staging Manager-->> Upload: requests to delete the upload area 
+  Staging Manager-->> Core: sets the submission to COMPLETE
+  Core-->>State: sends message for COMPLETE
 ```
