@@ -101,32 +101,39 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .and()
 
                 /* Removal of a metadata document */
-                /* draft, validating, valid or invalid? */
+                // No transition for these three, just do the action
                 .withExternal()
-                .source(DRAFT).target(VALIDATION_STATE_EVAL_JUNCTION)
+                .source(DRAFT).target(DRAFT)
                 .action(removeDocument())
                 .event(DOCUMENT_DELETED)
                 .and()
-
                 .withExternal()
-                .source(METADATA_VALID).target(VALIDATION_STATE_EVAL_JUNCTION)
+                .source(METADATA_VALID).target(METADATA_INVALID)
+                .event(DOCUMENT_DELETED)
+                .action(removeDocument())
+                .and()
+                .withExternal()
+                .source(METADATA_INVALID).target(METADATA_INVALID)
+                .event(DOCUMENT_DELETED)
+                .action(removeDocument())
+                .and()
+                // These three transition back to metadata valid as will need to graph validate again
+                .withExternal()
+                .source(GRAPH_VALID).target(METADATA_VALID)
+                .event(DOCUMENT_DELETED)
+                .action(removeDocument())
+                .and()
+                .withExternal()
+                .source(GRAPH_INVALID).target(METADATA_VALID)
+                .event(DOCUMENT_DELETED)
+                .action(removeDocument())
+                .and()
+                .withExternal()
+                .source(EXPORTED).target(METADATA_VALID)
                 .event(DOCUMENT_DELETED)
                 .action(removeDocument())
                 .and()
 
-                .withExternal()
-                .source(METADATA_INVALID).target(VALIDATION_STATE_EVAL_JUNCTION)
-                .event(DOCUMENT_DELETED)
-                .action(removeDocument())
-                .and()
-
-                .withJunction()
-                .source(VALIDATION_STATE_EVAL_JUNCTION)
-                .first(METADATA_INVALID, documentsInvalidGuard())
-                .then(METADATA_VALIDATING, documentsValidatingGuard())
-                .then(METADATA_VALID, allValidGuard())
-                .last(DRAFT)
-                .and()
 
                 /* graph validating happy path (results in valid or invalid) */
                 .withExternal()
