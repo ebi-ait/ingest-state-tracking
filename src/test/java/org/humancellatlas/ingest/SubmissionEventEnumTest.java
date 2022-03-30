@@ -40,7 +40,5 @@ public class SubmissionEventEnumTest {
         assertEquals(SubmissionState.fromString("Archived"), SubmissionState.ARCHIVED);
         assertEquals(SubmissionState.fromString("Cleanup"), SubmissionState.CLEANUP);
         assertEquals(SubmissionState.fromString("Complete"), SubmissionState.COMPLETE);
-
-        assertEquals(MetadataDocumentState.fromString("Draft"));
     }
 }
