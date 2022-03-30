@@ -10,6 +10,7 @@ import org.humancellatlas.ingest.state.monitor.SubmissionStateMonitor;
 import org.humancellatlas.ingest.testutil.MetadataDocumentEventBarrage;
 import org.humancellatlas.ingest.testutil.MetadataDocumentTransitionLifecycle;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -1014,6 +1015,52 @@ public class IngestStateTrackingApplicationTests {
     }
 
     @Test
+    public void testDocumentDeletedInPostGraphValidationStates() {
+        createGraphValidSubmission();
+        submissionStateMonitor.notifyOfMetadataDocumentDelete(documentRef.getId(), envelopeRef);
+        Assertions.assertEquals(SubmissionState.METADATA_VALID, submissionStateMonitor.findCurrentState(envelopeRef));
+
+        createGraphInvalidSubmission();
+        submissionStateMonitor.notifyOfMetadataDocumentDelete(documentRef.getId(), envelopeRef);
+        Assertions.assertEquals(SubmissionState.METADATA_VALID, submissionStateMonitor.findCurrentState(envelopeRef));
+
+        createExportedSubmission();
+        submissionStateMonitor.notifyOfMetadataDocumentDelete(documentRef.getId(), envelopeRef);
+        Assertions.assertEquals(SubmissionState.METADATA_VALID, submissionStateMonitor.findCurrentState(envelopeRef));
+    }
+
+    @Test
+    public void testDocumentDeletedInPreGraphValidationStates() {
+        createMetadataValidSubmission();
+
+        // Delete a document
+        submissionStateMonitor.notifyOfMetadataDocumentDelete(documentRef.getId(), envelopeRef);
+        Assertions.assertEquals(SubmissionState.METADATA_VALID, submissionStateMonitor.findCurrentState(envelopeRef));
+
+        // Make draft
+        submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.DRAFT);
+
+        // Delete a document
+        submissionStateMonitor.notifyOfMetadataDocumentDelete(documentRef.getId(), envelopeRef);
+        Assertions.assertEquals(SubmissionState.DRAFT, submissionStateMonitor.findCurrentState(envelopeRef));
+
+        submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALIDATING);
+        // wait for a bit to allow propagation of cascade events
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Make invalid
+        submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.INVALID);
+
+        // Delete a document
+        submissionStateMonitor.notifyOfMetadataDocumentDelete(documentRef.getId(), envelopeRef);
+        Assertions.assertEquals(SubmissionState.METADATA_INVALID, submissionStateMonitor.findCurrentState(envelopeRef));
+    }
+
+    @Test
     public void testSubmissionStateOrdering() {
         assertTrue(SubmissionState.DRAFT.after(SubmissionState.fromString("pEnDing")));
         assertTrue(SubmissionState.SUBMITTED.after(SubmissionState.METADATA_VALID));
@@ -1053,5 +1100,66 @@ public class IngestStateTrackingApplicationTests {
             int index = resourceValue.mod(BigInteger.valueOf(numWorkers)).intValue();
             int h = 2222;
         }
+    }
+
+    private void createMetadataValidSubmission() {
+        Assertions.assertTrue(submissionStateMonitor.isMonitoring(envelopeRef));
+        submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.DRAFT);
+
+        submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALIDATING);
+
+        // wait for a bit to simulate validation happening
+        try {
+            TimeUnit.SECONDS.sleep(10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALID);
+        Assertions.assertEquals(SubmissionState.METADATA_VALID, submissionStateMonitor.findCurrentState(envelopeRef));
+    }
+
+    private void createGraphInvalidSubmission() {
+        createMetadataValidSubmission();
+        List.of(
+                SubmissionEvent.GRAPH_VALIDATION_STARTED,
+                SubmissionEvent.GRAPH_VALIDATION_PROCESSING,
+                SubmissionEvent.GRAPH_VALIDATION_INVALID
+        ).forEach(event -> {
+            submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, event);
+        });
+
+        Assertions.assertEquals(SubmissionState.GRAPH_INVALID, submissionStateMonitor.findCurrentState(envelopeRef));
+    }
+
+    private void createGraphValidSubmission() {
+        createMetadataValidSubmission();
+        List.of(
+                SubmissionEvent.GRAPH_VALIDATION_STARTED,
+                SubmissionEvent.GRAPH_VALIDATION_PROCESSING,
+                SubmissionEvent.GRAPH_VALIDATION_COMPLETE
+        ).forEach(event -> {
+            submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, event);
+        });
+
+        Assertions.assertEquals(SubmissionState.GRAPH_VALID, submissionStateMonitor.findCurrentState(envelopeRef));
+    }
+
+    private void createExportedSubmission() {
+        createGraphValidSubmission();
+
+        submissionStateMonitor.sendEventForSubmissionEnvelope(envelopeRef, SubmissionEvent.SUBMISSION_REQUESTED);
+
+        submissionStateMonitor.notifyOfDocumentState("mock-assay-id",
+                envelopeRef.getUuid(),
+                1,
+                MetadataDocumentState.PROCESSING, SubmissionEvent.EXPORTING_STATE_UPDATE);
+
+        submissionStateMonitor.notifyOfDocumentState("mock-assay-id",
+                envelopeRef.getUuid(),
+                1,
+                MetadataDocumentState.COMPLETE, SubmissionEvent.EXPORTING_STATE_UPDATE);
+
+        Assertions.assertEquals(SubmissionState.EXPORTED, submissionStateMonitor.findCurrentState(envelopeRef));
     }
 }
