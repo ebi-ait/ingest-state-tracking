@@ -108,7 +108,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .event(DOCUMENT_DELETED)
                 .and()
                 .withExternal()
-                .source(METADATA_VALID).target(METADATA_INVALID)
+                .source(METADATA_VALID).target(METADATA_VALID)
                 .event(DOCUMENT_DELETED)
                 .action(removeDocument())
                 .and()
