@@ -10,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequiredArgsConstructor
@@ -19,6 +20,12 @@ public class DocumentUpdateController {
     @RequestMapping(path = "state-updates/metadata-documents", method = RequestMethod.POST)
     public ResponseEntity metadataDocumentStateUpdate(@RequestBody MetadataDocumentMessage message){
         messageHandler.handleMetadataDocumentUpdate(message);
+        return ResponseEntity.ok(ResponseEntity.EMPTY);
+    }
+
+    @RequestMapping(path = "state-updates/metadata-documents", method = RequestMethod.DELETE)
+    public ResponseEntity metadataDocumentDelete(@RequestParam String metadataDocumentId){
+        messageHandler.handleMetadataDocumentDelete(metadataDocumentId);
         return ResponseEntity.ok(ResponseEntity.EMPTY);
     }
 }

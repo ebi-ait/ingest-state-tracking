@@ -62,6 +62,10 @@ public class MessageHandler {
         workers.submit(() -> doHandleMetadataDocumentUpdate(metadataDocumentMessage), metadataDocumentMessage.getDocumentId());
     }
 
+    public void handleMetadataDocumentDelete(String metadataDocumentId) {
+        workers.submit(() -> doHandleMetadataDocumentDelete(metadataDocumentId), metadataDocumentId);
+    }
+
     public void handleSubmissionEnvelopeCreated(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
         workers.submit(() -> doHandleSubmissionEnvelopeCreated(submissionEnvelopeMessage), submissionEnvelopeMessage.getDocumentId());
     }
@@ -107,6 +111,27 @@ public class MessageHandler {
             }
             submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
         }
+    }
+
+    private void doHandleMetadataDocumentDelete(String metadataDocumentId) {
+        // TODO remove duplication
+        MetadataDocumentReference documentReference = getIngestApiClient().referenceForMetadataDocument(metadataDocumentMessage);
+        MetadataDocument metadataDocument = new MetadataDocument();
+        try{
+            metadataDocument.setReferencedEnvelope(this.getIngestApiClient().envelopeReferencesFromEnvelopeId(metadataDocumentMessage.getEnvelopeId()));
+            metadataDocument.setValidationState(metadataDocumentMessage.getValidationState());
+        } catch (HttpClientErrorException e) {
+            log.info(String.format("Failed to fetch metadata document. Response was: %s Message was: ", e.getResponseBodyAsString()));
+            try {
+                log.info(new ObjectMapper().writeValueAsString(metadataDocumentMessage));
+            } catch (IOException ioe) {
+                throw new AmqpRejectAndDontRequeueException(e);
+            }
+            throw new AmqpRejectAndDontRequeueException(e);
+        }
+
+        SubmissionEnvelopeReference envelopeReference = metadataDocument.getReferencedEnvelope();
+        submissionStateMonitor.notifyOfMetadataDocumentDelete(metadataDocumentId, envelopeReference);
     }
 
     private void doHandleSubmissionEnvelopeCreated(SubmissionEnvelopeMessage submissionEnvelopeMessage) {

@@ -100,6 +100,34 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .last(DRAFT)
                 .and()
 
+                /* Removal of a metadata document */
+                /* draft, validating, valid or invalid? */
+                .withExternal()
+                .source(DRAFT).target(VALIDATION_STATE_EVAL_JUNCTION)
+                .action(removeDocument())
+                .event(DOCUMENT_DELETED)
+                .and()
+
+                .withExternal()
+                .source(METADATA_VALID).target(VALIDATION_STATE_EVAL_JUNCTION)
+                .event(DOCUMENT_DELETED)
+                .action(removeDocument())
+                .and()
+
+                .withExternal()
+                .source(METADATA_INVALID).target(VALIDATION_STATE_EVAL_JUNCTION)
+                .event(DOCUMENT_DELETED)
+                .action(removeDocument())
+                .and()
+
+                .withJunction()
+                .source(VALIDATION_STATE_EVAL_JUNCTION)
+                .first(METADATA_INVALID, documentsInvalidGuard())
+                .then(METADATA_VALIDATING, documentsValidatingGuard())
+                .then(METADATA_VALID, allValidGuard())
+                .last(DRAFT)
+                .and()
+
                 /* graph validating happy path (results in valid or invalid) */
                 .withExternal()
                 .source(METADATA_VALID).target(GRAPH_VALIDATION_REQUESTED)
@@ -346,6 +374,21 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 if (metadataDocumentTracker.containsKey(documentId)) {
                     metadataDocumentTracker.remove(documentId);
                 }
+            }
+        };
+    }
+
+    private Action<SubmissionState, SubmissionEvent> removeDocument() {
+        return context -> {
+            String documentId = context.getMessageHeaders().get(DOCUMENT_ID, String.class);
+            Map<String, MetadataDocumentState> metadataDocumentTracker = getMetadataDocumentTrackerFromContext(context);
+
+            if (metadataDocumentTracker == null) {
+                throw new RuntimeException("No document tracker exists");
+            }
+
+            if (metadataDocumentTracker.containsKey(documentId)) {
+                metadataDocumentTracker.remove(documentId);
             }
         };
     }

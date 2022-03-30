@@ -1,5 +1,6 @@
 package org.humancellatlas.ingest;
 
+import org.humancellatlas.ingest.state.MetadataDocumentState;
 import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
 import org.junit.Test;
@@ -39,5 +40,7 @@ public class SubmissionEventEnumTest {
         assertEquals(SubmissionState.fromString("Archived"), SubmissionState.ARCHIVED);
         assertEquals(SubmissionState.fromString("Cleanup"), SubmissionState.CLEANUP);
         assertEquals(SubmissionState.fromString("Complete"), SubmissionState.COMPLETE);
+
+        assertEquals(MetadataDocumentState.fromString("Draft"));
     }
 }
