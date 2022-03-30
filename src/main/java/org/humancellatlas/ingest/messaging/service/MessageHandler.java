@@ -114,16 +114,13 @@ public class MessageHandler {
     }
 
     private void doHandleMetadataDocumentDelete(String metadataDocumentId) {
-        // TODO remove duplication
-        MetadataDocumentReference documentReference = getIngestApiClient().referenceForMetadataDocument(metadataDocumentMessage);
         MetadataDocument metadataDocument = new MetadataDocument();
-        try{
-            metadataDocument.setReferencedEnvelope(this.getIngestApiClient().envelopeReferencesFromEnvelopeId(metadataDocumentMessage.getEnvelopeId()));
-            metadataDocument.setValidationState(metadataDocumentMessage.getValidationState());
+        try {
+            metadataDocument.setReferencedEnvelope(this.getIngestApiClient().envelopeReferencesFromEnvelopeId(metadataDocumentId));
         } catch (HttpClientErrorException e) {
             log.info(String.format("Failed to fetch metadata document. Response was: %s Message was: ", e.getResponseBodyAsString()));
             try {
-                log.info(new ObjectMapper().writeValueAsString(metadataDocumentMessage));
+                log.info(new ObjectMapper().writeValueAsString(metadataDocumentId));
             } catch (IOException ioe) {
                 throw new AmqpRejectAndDontRequeueException(e);
             }
