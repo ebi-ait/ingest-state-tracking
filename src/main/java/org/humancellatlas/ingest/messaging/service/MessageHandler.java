@@ -104,14 +104,7 @@ public class MessageHandler {
         SubmissionState envelopeState = SubmissionState.fromString(ingestApiClient.retrieveSubmissionEnvelope(envelopeReference)
                 .getSubmissionState());
 
-        if(!envelopeState.after(SubmissionState.EXPORTED)){
-            if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
-                submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
-            }
-            return true;
-        }
-
-        return false;
+        return !envelopeState.after(SubmissionState.EXPORTED);
     }
 
     private void doHandleMetadataDocumentUpdate(MetadataDocumentMessage metadataDocumentMessage) {
@@ -123,6 +116,10 @@ public class MessageHandler {
         SubmissionEnvelopeReference envelopeReference = metadataDocument.getReferencedEnvelope();
 
         if(canNotify(envelopeReference)){
+            if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
+                submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
+            }
+
             submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
         }
     }
@@ -132,6 +129,9 @@ public class MessageHandler {
                 .getReferencedEnvelope();
 
         if(canNotify(envelopeReference)){
+            if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
+                throw new RuntimeException(String.format("Cannot delete from envelope %s since it is not being monitored", envelopeId));
+            }
             submissionStateMonitor.notifyOfMetadataDocumentDelete(metadataDocumentId, envelopeReference);
         }
     }
