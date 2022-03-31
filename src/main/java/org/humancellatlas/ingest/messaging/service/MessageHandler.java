@@ -63,7 +63,6 @@ public class MessageHandler {
     }
 
     public void handleMetadataDocumentDelete(String metadataDocumentId, String envelopeId) {
-        workers.submit(() -> doHandleMetadataDocumentDelete(metadataDocumentId), metadataDocumentId);
         workers.submit(() -> doHandleMetadataDocumentDelete(metadataDocumentId, envelopeId), metadataDocumentId);
     }
 
