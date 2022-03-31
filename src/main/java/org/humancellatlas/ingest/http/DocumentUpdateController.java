@@ -20,13 +20,13 @@ public class DocumentUpdateController {
     @RequestMapping(path = "state-updates/metadata-documents", method = RequestMethod.POST)
     public ResponseEntity metadataDocumentStateUpdate(@RequestBody MetadataDocumentMessage message){
         messageHandler.handleMetadataDocumentUpdate(message);
-        return ResponseEntity.ok(ResponseEntity.EMPTY);
+        return ResponseEntity.noContent().build();
     }
 
     @RequestMapping(path = "state-updates/metadata-documents", method = RequestMethod.DELETE)
     public ResponseEntity metadataDocumentDelete(@RequestParam String metadataDocumentId,
                                                  @RequestParam String envelopeId){
         messageHandler.handleMetadataDocumentDelete(metadataDocumentId, envelopeId);
-        return ResponseEntity.ok(ResponseEntity.EMPTY);
+        return ResponseEntity.noContent().build();
     }
 }
