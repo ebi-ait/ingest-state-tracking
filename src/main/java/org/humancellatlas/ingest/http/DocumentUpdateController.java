@@ -24,8 +24,9 @@ public class DocumentUpdateController {
     }
 
     @RequestMapping(path = "state-updates/metadata-documents", method = RequestMethod.DELETE)
-    public ResponseEntity metadataDocumentDelete(@RequestParam String metadataDocumentId){
-        messageHandler.handleMetadataDocumentDelete(metadataDocumentId);
+    public ResponseEntity metadataDocumentDelete(@RequestParam String metadataDocumentId,
+                                                 @RequestParam String envelopeId){
+        messageHandler.handleMetadataDocumentDelete(metadataDocumentId, envelopeId);
         return ResponseEntity.ok(ResponseEntity.EMPTY);
     }
 }

@@ -390,11 +390,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
             String documentId = context.getMessageHeaders().get(DOCUMENT_ID, String.class);
             Map<String, MetadataDocumentState> metadataDocumentTracker = getMetadataDocumentTrackerFromContext(context);
 
-            if (metadataDocumentTracker == null) {
-                throw new RuntimeException("No document tracker exists");
-            }
-
-            if (metadataDocumentTracker.containsKey(documentId)) {
+            if (metadataDocumentTracker != null && metadataDocumentTracker.containsKey(documentId)) {
                 metadataDocumentTracker.remove(documentId);
             }
         };

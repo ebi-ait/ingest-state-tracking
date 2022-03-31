@@ -62,8 +62,9 @@ public class MessageHandler {
         workers.submit(() -> doHandleMetadataDocumentUpdate(metadataDocumentMessage), metadataDocumentMessage.getDocumentId());
     }
 
-    public void handleMetadataDocumentDelete(String metadataDocumentId) {
+    public void handleMetadataDocumentDelete(String metadataDocumentId, String envelopeId) {
         workers.submit(() -> doHandleMetadataDocumentDelete(metadataDocumentId), metadataDocumentId);
+        workers.submit(() -> doHandleMetadataDocumentDelete(metadataDocumentId, envelopeId), metadataDocumentId);
     }
 
     public void handleSubmissionEnvelopeCreated(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
@@ -83,40 +84,10 @@ public class MessageHandler {
         workers.submit(() -> doHandleDocumentCompletedMessage(documentCompletedMessage, submissionEvent), documentCompletedMessage.getDocumentId());
     }
 
-    private void doHandleMetadataDocumentUpdate(MetadataDocumentMessage metadataDocumentMessage) {
-        MetadataDocumentReference documentReference = getIngestApiClient().referenceForMetadataDocument(metadataDocumentMessage);
-        MetadataDocument metadataDocument = new MetadataDocument();
-        try{
-            metadataDocument.setReferencedEnvelope(this.getIngestApiClient().envelopeReferencesFromEnvelopeId(metadataDocumentMessage.getEnvelopeId()));
-            metadataDocument.setValidationState(metadataDocumentMessage.getValidationState());
-        } catch (HttpClientErrorException e) {
-            log.info(String.format("Failed to fetch metadata document. Response was: %s Message was: ", e.getResponseBodyAsString()));
-            try {
-                log.info(new ObjectMapper().writeValueAsString(metadataDocumentMessage));
-            } catch (IOException ioe) {
-                throw new AmqpRejectAndDontRequeueException(e);
-            }
-            throw new AmqpRejectAndDontRequeueException(e);
-        }
-
-        MetadataDocumentState documentState = MetadataDocumentState.valueOf(metadataDocument.getValidationState().toUpperCase());
-        SubmissionEnvelopeReference envelopeReference = metadataDocument.getReferencedEnvelope();
-
-        SubmissionState envelopeState = SubmissionState.fromString(ingestApiClient.retrieveSubmissionEnvelope(envelopeReference)
-                                                                               .getSubmissionState());
-
-        if(!envelopeState.after(SubmissionState.EXPORTED)){
-            if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
-                submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
-            }
-            submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
-        }
-    }
-
-    private void doHandleMetadataDocumentDelete(String metadataDocumentId) {
+    private MetadataDocument getMetadataDocument(String metadataDocumentId, String envelopeId) {
         MetadataDocument metadataDocument = new MetadataDocument();
         try {
-            metadataDocument.setReferencedEnvelope(this.getIngestApiClient().envelopeReferencesFromEnvelopeId(metadataDocumentId));
+            metadataDocument.setReferencedEnvelope(this.getIngestApiClient().envelopeReferencesFromEnvelopeId(envelopeId));
         } catch (HttpClientErrorException e) {
             log.info(String.format("Failed to fetch metadata document. Response was: %s Message was: ", e.getResponseBodyAsString()));
             try {
@@ -127,8 +98,43 @@ public class MessageHandler {
             throw new AmqpRejectAndDontRequeueException(e);
         }
 
+        return metadataDocument;
+    }
+
+    private Boolean canNotify(SubmissionEnvelopeReference envelopeReference) {
+        SubmissionState envelopeState = SubmissionState.fromString(ingestApiClient.retrieveSubmissionEnvelope(envelopeReference)
+                .getSubmissionState());
+
+        if(!envelopeState.after(SubmissionState.EXPORTED)){
+            if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
+                submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    private void doHandleMetadataDocumentUpdate(MetadataDocumentMessage metadataDocumentMessage) {
+        MetadataDocumentReference documentReference = getIngestApiClient().referenceForMetadataDocument(metadataDocumentMessage);
+        MetadataDocument metadataDocument = getMetadataDocument(metadataDocumentMessage.getDocumentId(),
+                metadataDocumentMessage.getEnvelopeId());
+
+        MetadataDocumentState documentState = MetadataDocumentState.valueOf(metadataDocument.getValidationState().toUpperCase());
         SubmissionEnvelopeReference envelopeReference = metadataDocument.getReferencedEnvelope();
-        submissionStateMonitor.notifyOfMetadataDocumentDelete(metadataDocumentId, envelopeReference);
+
+        if(canNotify(envelopeReference)){
+            submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
+        }
+    }
+
+    private void doHandleMetadataDocumentDelete(String metadataDocumentId, String envelopeId) {
+        SubmissionEnvelopeReference envelopeReference = getMetadataDocument(metadataDocumentId, envelopeId)
+                .getReferencedEnvelope();
+
+        if(canNotify(envelopeReference)){
+            submissionStateMonitor.notifyOfMetadataDocumentDelete(metadataDocumentId, envelopeReference);
+        }
     }
 
     private void doHandleSubmissionEnvelopeCreated(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
