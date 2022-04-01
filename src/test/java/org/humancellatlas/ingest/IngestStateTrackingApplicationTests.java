@@ -1040,10 +1040,16 @@ public class IngestStateTrackingApplicationTests {
         // Make draft
         submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.DRAFT);
 
-        // Delete a document
+        // Add a second document so when the first is deleted, it stays in draft
+        MetadataDocumentReference secondDocRef = new MetadataDocumentReference(
+                "12345", UUID.randomUUID().toString(), URI.create("http://localhost:8080/api/metadataDocuments/12345"));
+        submissionStateMonitor.notifyOfMetadataDocumentState(secondDocRef, envelopeRef, MetadataDocumentState.DRAFT);
+
+        // Delete first document
         submissionStateMonitor.notifyOfMetadataDocumentDelete(documentRef.getId(), envelopeRef);
         Assertions.assertEquals(SubmissionState.DRAFT, submissionStateMonitor.findCurrentState(envelopeRef));
 
+        // Transition second doc to invalid
         submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.VALIDATING);
         // wait for a bit to allow propagation of cascade events
         try {
@@ -1051,12 +1057,26 @@ public class IngestStateTrackingApplicationTests {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
         // Make invalid
         submissionStateMonitor.notifyOfMetadataDocumentState(documentRef, envelopeRef, MetadataDocumentState.INVALID);
 
-        // Delete a document
-        submissionStateMonitor.notifyOfMetadataDocumentDelete(documentRef.getId(), envelopeRef);
+        // Add third doc and transition to valid
+        MetadataDocumentReference thirdDocRef = new MetadataDocumentReference(
+                "123456", UUID.randomUUID().toString(), URI.create("http://localhost:8080/api/metadataDocuments/123456"));
+        submissionStateMonitor.notifyOfMetadataDocumentState(thirdDocRef, envelopeRef, MetadataDocumentState.DRAFT);
+
+        // Transition second doc to invalid
+        submissionStateMonitor.notifyOfMetadataDocumentState(thirdDocRef, envelopeRef, MetadataDocumentState.VALIDATING);
+        // wait for a bit to allow propagation of cascade events
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        submissionStateMonitor.notifyOfMetadataDocumentState(thirdDocRef, envelopeRef, MetadataDocumentState.VALID);
+
+        // Delete third document
+        submissionStateMonitor.notifyOfMetadataDocumentDelete(thirdDocRef.getId(), envelopeRef);
         Assertions.assertEquals(SubmissionState.METADATA_INVALID, submissionStateMonitor.findCurrentState(envelopeRef));
     }
 
