@@ -101,7 +101,7 @@ public class MessageHandler {
     }
 
     private Boolean canNotify(SubmissionEnvelopeReference envelopeReference) {
-        SubmissionState envelopeState = SubmissionState.fromString(ingestApiClient.retrieveSubmissionEnvelope(envelopeReference)
+        SubmissionState envelopeState = SubmissionState.fromString(this.getIngestApiClient().retrieveSubmissionEnvelope(envelopeReference)
                 .getSubmissionState());
 
         return !envelopeState.after(SubmissionState.EXPORTED);
@@ -111,6 +111,7 @@ public class MessageHandler {
         MetadataDocumentReference documentReference = getIngestApiClient().referenceForMetadataDocument(metadataDocumentMessage);
         MetadataDocument metadataDocument = getMetadataDocument(metadataDocumentMessage.getDocumentId(),
                 metadataDocumentMessage.getEnvelopeId());
+        metadataDocument.setValidationState(metadataDocumentMessage.getValidationState());
 
         MetadataDocumentState documentState = MetadataDocumentState.valueOf(metadataDocument.getValidationState().toUpperCase());
         SubmissionEnvelopeReference envelopeReference = metadataDocument.getReferencedEnvelope();
