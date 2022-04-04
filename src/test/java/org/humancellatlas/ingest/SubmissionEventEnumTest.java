@@ -1,5 +1,6 @@
 package org.humancellatlas.ingest;
 
+import org.humancellatlas.ingest.state.MetadataDocumentState;
 import org.humancellatlas.ingest.state.SubmissionEvent;
 import org.humancellatlas.ingest.state.SubmissionState;
 import org.junit.Test;
@@ -28,8 +29,7 @@ public class SubmissionEventEnumTest {
         assertEquals(SubmissionState.fromString("Draft"), SubmissionState.DRAFT);
         assertEquals(SubmissionState.fromString("Metadata valid"), SubmissionState.METADATA_VALID);
         assertEquals(SubmissionState.fromString("Metadata invalid"), SubmissionState.METADATA_INVALID);
-        assertEquals(SubmissionState.fromString("Metadata validating"), SubmissionState.METADATA_INVALID);
-        assertEquals(SubmissionState.fromString("Metadata valid"), SubmissionState.METADATA_INVALID);
+        assertEquals(SubmissionState.fromString("Metadata validating"), SubmissionState.METADATA_VALIDATING);
         assertEquals(SubmissionState.fromString("Graph valid"), SubmissionState.GRAPH_VALID);
         assertEquals(SubmissionState.fromString("Graph validation requested"), SubmissionState.GRAPH_VALIDATION_REQUESTED);
         assertEquals(SubmissionState.fromString("Submitted"), SubmissionState.SUBMITTED);

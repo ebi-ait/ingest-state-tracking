@@ -62,6 +62,10 @@ public class MessageHandler {
         workers.submit(() -> doHandleMetadataDocumentUpdate(metadataDocumentMessage), metadataDocumentMessage.getDocumentId());
     }
 
+    public void handleMetadataDocumentDelete(String metadataDocumentId, String envelopeId) {
+        workers.submit(() -> doHandleMetadataDocumentDelete(metadataDocumentId, envelopeId), metadataDocumentId);
+    }
+
     public void handleSubmissionEnvelopeCreated(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
         workers.submit(() -> doHandleSubmissionEnvelopeCreated(submissionEnvelopeMessage), submissionEnvelopeMessage.getDocumentId());
     }
@@ -79,33 +83,57 @@ public class MessageHandler {
         workers.submit(() -> doHandleDocumentCompletedMessage(documentCompletedMessage, submissionEvent), documentCompletedMessage.getDocumentId());
     }
 
-    private void doHandleMetadataDocumentUpdate(MetadataDocumentMessage metadataDocumentMessage) {
-        MetadataDocumentReference documentReference = getIngestApiClient().referenceForMetadataDocument(metadataDocumentMessage);
+    private MetadataDocument getMetadataDocument(String metadataDocumentId, String envelopeId) {
         MetadataDocument metadataDocument = new MetadataDocument();
-        try{
-            metadataDocument.setReferencedEnvelope(this.getIngestApiClient().envelopeReferencesFromEnvelopeId(metadataDocumentMessage.getEnvelopeId()));
-            metadataDocument.setValidationState(metadataDocumentMessage.getValidationState());
+        try {
+            metadataDocument.setReferencedEnvelope(this.getIngestApiClient().envelopeReferencesFromEnvelopeId(envelopeId));
         } catch (HttpClientErrorException e) {
             log.info(String.format("Failed to fetch metadata document. Response was: %s Message was: ", e.getResponseBodyAsString()));
             try {
-                log.info(new ObjectMapper().writeValueAsString(metadataDocumentMessage));
+                log.info(new ObjectMapper().writeValueAsString(metadataDocumentId));
             } catch (IOException ioe) {
                 throw new AmqpRejectAndDontRequeueException(e);
             }
             throw new AmqpRejectAndDontRequeueException(e);
         }
 
+        return metadataDocument;
+    }
+
+    private Boolean canNotify(SubmissionEnvelopeReference envelopeReference) {
+        SubmissionState envelopeState = SubmissionState.fromString(this.getIngestApiClient().retrieveSubmissionEnvelope(envelopeReference)
+                .getSubmissionState());
+
+        return !envelopeState.after(SubmissionState.EXPORTED);
+    }
+
+    private void doHandleMetadataDocumentUpdate(MetadataDocumentMessage metadataDocumentMessage) {
+        MetadataDocumentReference documentReference = getIngestApiClient().referenceForMetadataDocument(metadataDocumentMessage);
+        MetadataDocument metadataDocument = getMetadataDocument(metadataDocumentMessage.getDocumentId(),
+                metadataDocumentMessage.getEnvelopeId());
+        metadataDocument.setValidationState(metadataDocumentMessage.getValidationState());
+
         MetadataDocumentState documentState = MetadataDocumentState.valueOf(metadataDocument.getValidationState().toUpperCase());
         SubmissionEnvelopeReference envelopeReference = metadataDocument.getReferencedEnvelope();
 
-        SubmissionState envelopeState = SubmissionState.fromString(ingestApiClient.retrieveSubmissionEnvelope(envelopeReference)
-                                                                               .getSubmissionState());
-
-        if(!envelopeState.after(SubmissionState.EXPORTED)){
+        if(canNotify(envelopeReference)){
             if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
                 submissionStateMonitor.monitorSubmissionEnvelope(envelopeReference);
             }
+
             submissionStateMonitor.notifyOfMetadataDocumentState(documentReference, envelopeReference, documentState);
+        }
+    }
+
+    private void doHandleMetadataDocumentDelete(String metadataDocumentId, String envelopeId) {
+        SubmissionEnvelopeReference envelopeReference = getMetadataDocument(metadataDocumentId, envelopeId)
+                .getReferencedEnvelope();
+
+        if(canNotify(envelopeReference)){
+            if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
+                throw new RuntimeException(String.format("Cannot delete from envelope %s since it is not being monitored", envelopeId));
+            }
+            submissionStateMonitor.notifyOfMetadataDocumentDelete(metadataDocumentId, envelopeReference);
         }
     }
 
