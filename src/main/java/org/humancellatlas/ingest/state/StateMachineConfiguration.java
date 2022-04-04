@@ -73,32 +73,22 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .action(addOrUpdateContent())
                 .event(DOCUMENT_PROCESSED)
                 .and()
-
                 .withExternal()
                 .source(METADATA_VALIDATING).target(VALIDATION_STATE_EVAL_JUNCTION)
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
-
                 .withExternal()
                 .source(METADATA_VALID).target(VALIDATION_STATE_EVAL_JUNCTION)
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
-
                 .withExternal()
                 .source(METADATA_INVALID).target(VALIDATION_STATE_EVAL_JUNCTION)
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
 
-                .withJunction()
-                .source(VALIDATION_STATE_EVAL_JUNCTION)
-                .first(METADATA_INVALID, documentsInvalidGuard())
-                .then(METADATA_VALIDATING, documentsValidatingGuard())
-                .then(METADATA_VALID, allValidGuard())
-                .last(DRAFT)
-                .and()
 
                 /* Removal of a metadata document */
                 // If in pre-graph validation states, check metadata validity
