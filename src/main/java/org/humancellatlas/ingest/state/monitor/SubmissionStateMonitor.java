@@ -138,6 +138,25 @@ public class SubmissionStateMonitor {
         }
     }
 
+    public boolean notifyOfMetadataDocumentDelete(String metadataDocumentId, SubmissionEnvelopeReference submissionEnvelopeReference) {
+        Optional<StateMachine<SubmissionState, SubmissionEvent>> stateMachine =
+                findStateMachine(UUID.fromString(submissionEnvelopeReference.getUuid()));
+
+        if (stateMachine.isPresent()) {
+            StateMachine<SubmissionState, SubmissionEvent> machine = stateMachine.get();
+
+            Message<SubmissionEvent> message = MessageBuilder.withPayload(SubmissionEvent.DOCUMENT_DELETED)
+                    .setHeader(MetadataDocumentInfo.DOCUMENT_ID, metadataDocumentId)
+                    .build();
+
+            return machine.sendEvent(message);
+        } else {
+            throw new IllegalArgumentException(String.format(
+                    "Submission envelope reference '%s' is not currently being monitored",
+                    submissionEnvelopeReference.getUuid()));
+        }
+    }
+
     public boolean notifyOfDocumentState(String documentId, String envelopeUuid,
                                          int totalExpectedDocuments, MetadataDocumentState state, SubmissionEvent submissionEvent) {
         Optional<StateMachine<SubmissionState, SubmissionEvent>> stateMachine = findStateMachine(UUID.fromString(envelopeUuid));

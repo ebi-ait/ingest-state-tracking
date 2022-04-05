@@ -73,25 +73,40 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .action(addOrUpdateContent())
                 .event(DOCUMENT_PROCESSED)
                 .and()
-
                 .withExternal()
                 .source(METADATA_VALIDATING).target(VALIDATION_STATE_EVAL_JUNCTION)
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
-
                 .withExternal()
                 .source(METADATA_VALID).target(VALIDATION_STATE_EVAL_JUNCTION)
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
-
                 .withExternal()
                 .source(METADATA_INVALID).target(VALIDATION_STATE_EVAL_JUNCTION)
                 .event(DOCUMENT_PROCESSED)
                 .action(addOrUpdateContent())
                 .and()
 
+
+                /* Removal of a metadata document */
+                // If in pre-graph validation states, check metadata validity
+                .withExternal()
+                .source(DRAFT).target(VALIDATION_STATE_EVAL_JUNCTION)
+                .event(DOCUMENT_DELETED)
+                .action(removeDocument())
+                .and()
+                .withExternal()
+                .source(METADATA_VALID).target(VALIDATION_STATE_EVAL_JUNCTION)
+                .action(removeDocument())
+                .event(DOCUMENT_DELETED)
+                .and()
+                .withExternal()
+                .source(METADATA_INVALID).target(VALIDATION_STATE_EVAL_JUNCTION)
+                .event(DOCUMENT_DELETED)
+                .action(removeDocument())
+                .and()
                 .withJunction()
                 .source(VALIDATION_STATE_EVAL_JUNCTION)
                 .first(METADATA_INVALID, documentsInvalidGuard())
@@ -99,6 +114,23 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .then(METADATA_VALID, allValidGuard())
                 .last(DRAFT)
                 .and()
+                // If in post graph validation states, transition to metadata valid
+                .withExternal()
+                .source(GRAPH_VALID).target(METADATA_VALID)
+                .event(DOCUMENT_DELETED)
+                .action(removeDocument())
+                .and()
+                .withExternal()
+                .source(GRAPH_INVALID).target(METADATA_VALID)
+                .event(DOCUMENT_DELETED)
+                .action(removeDocument())
+                .and()
+                .withExternal()
+                .source(EXPORTED).target(METADATA_VALID)
+                .event(DOCUMENT_DELETED)
+                .action(removeDocument())
+                .and()
+
 
                 /* graph validating happy path (results in valid or invalid) */
                 .withExternal()
@@ -346,6 +378,17 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 if (metadataDocumentTracker.containsKey(documentId)) {
                     metadataDocumentTracker.remove(documentId);
                 }
+            }
+        };
+    }
+
+    private Action<SubmissionState, SubmissionEvent> removeDocument() {
+        return context -> {
+            String documentId = context.getMessageHeaders().get(DOCUMENT_ID, String.class);
+            Map<String, MetadataDocumentState> metadataDocumentTracker = getMetadataDocumentTrackerFromContext(context);
+
+            if (metadataDocumentTracker != null && metadataDocumentTracker.containsKey(documentId)) {
+                metadataDocumentTracker.remove(documentId);
             }
         };
     }
