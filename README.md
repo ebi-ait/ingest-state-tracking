@@ -145,7 +145,7 @@ sequenceDiagram
   Core-->>Core: sets submission to GRAPH VALID
 ```
 
-## GRAPH VALID to ARCHIVED
+## GRAPH VALID -> ARCHIVED
 ```mermaid
 sequenceDiagram
   participant User
@@ -186,7 +186,7 @@ sequenceDiagram
 
 ```
 
-## ARCHIVED to EXPORTED
+## ARCHIVED -> EXPORTED
 
 ```mermaid
 sequenceDiagram
