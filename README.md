@@ -195,6 +195,7 @@ sequenceDiagram
   participant Core
   participant State as State Tracker
   participant Exporter
+  participant Staging Manager
   participant GCPTS as GCP Transfer Service
   
   User->>UI: clicks Export button to submit to HCA
@@ -213,6 +214,19 @@ sequenceDiagram
   State-->>Core: sets submission state to EXPORTED
   
   User->> Core: waits until submission is EXPORTED
+  
+```
+
+## EXPORTED -> COMPLETED
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant UI
+  participant Core
+  participant State as State Tracker
+  participant Staging Manager
+  
   UI-->>UI: displays Delete upload area button
   User->>UI: clicks Delete upload area button
   UI-->>Core: requests for cleanup
@@ -223,4 +237,3 @@ sequenceDiagram
   Staging Manager-->> Core: sets the submission to COMPLETE
   Core-->>State: sends message for COMPLETE
 ```
-
