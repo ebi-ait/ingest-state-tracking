@@ -192,17 +192,18 @@ sequenceDiagram
 sequenceDiagram
   participant User
   participant UI
-  participant Core
   participant State as State Tracker
-  participant Exporter
+  participant Core
   participant Staging Manager
   participant GCPTS as GCP Transfer Service
+  participant Exporter
+  participant Terra
   
   User->>UI: clicks Export button to submit to HCA
   UI-->>Core: requests for export, triggers exporting
   Core-->>Exporter: sends messages per assay
   Exporter-->>State: sends a message when a message is being processed <br/> and when it's finished.
-  State-->>Core: sets submission state to EXPORTING when not all messages have finished yet
+  State-->>Core: sets submission state to EXPORTING <br/>when not all messages have finished yet
  
   Exporter-->>GCPTS: if needed to export data, triggers data file transfer
   GCPTS-->>Terra: transfers data files to Terra staging area from upload area
@@ -231,7 +232,7 @@ sequenceDiagram
   User->>UI: clicks Delete upload area button
   UI-->>Core: requests for cleanup
   Core->>State: sends message for cleanup
-  State->>Core: sets submission to cleanu <br/> PUT /commitCleanup
+  State->>Core: sets submission to cleanup <br/> PUT /commitCleanup
   Core-->>Staging Manager: sends message to delete upload area
   Staging Manager-->> Upload: requests to delete the upload area 
   Staging Manager-->> Core: sets the submission to COMPLETE
