@@ -65,11 +65,6 @@ sequenceDiagram
   participant Upload
   participant Upload Area
 
-  participant Exporter
-  participant Archiver
-  participant DSP
-  participant GCPTS as GCP Transfer Service
-
   User->>UI: uploads test spreadsheet
   UI-->>Broker: request import
   Broker-->>Broker: parse spreadsheet <br/>and converts rows to json's 
@@ -125,11 +120,7 @@ sequenceDiagram
   participant Broker
   participant Core
   participant State as State Tracker
-  participant Validator
   participant GV as Graph Validator
-  participant Staging Manager
-  participant Upload
-  participant Upload Area
 
   User->>UI: submission is Valid, requests to validate Graph
   UI-->>Core: requests for graph validation
