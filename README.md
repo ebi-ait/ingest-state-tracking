@@ -52,6 +52,7 @@ Completed --> [*]
 
 # State tracking - sequence diagram
 
+## PENDING to VALID / INVALID
 ```mermaid
 sequenceDiagram
   participant User
@@ -114,7 +115,56 @@ sequenceDiagram
 
   State-->>State: checks if submission should be set to DRAFT/VALIDATING/VALID/INVALID
   State-->>Core: if all metadata are VALID, sets submission state to VALID <br/> PUT /commitValid
+```
 
+## VALID -> GRAPH VALID
+```mermaid
+sequenceDiagram
+  participant User
+  participant UI
+  participant Broker
+  participant Core
+  participant State as State Tracker
+  participant Validator
+  participant GV as Graph Validator
+  participant Staging Manager
+  participant Upload
+  participant Upload Area
+
+  User->>UI: submission is Valid, requests to validate Graph
+  UI-->>Core: requests for graph validation
+  Core-->> GV: sends message to validate graph
+  GV-->>Core: request to set to GRAPH VALIDATING
+  Core-->>State: notifies of state transition to GRAPH VALIDATING
+  State-->>State: checks if valid transition
+  State-->>Core: requests to set submission to GRAPH VALIDATING
+  Core-->>Core: sets submission to GRAPH VALIDATING
+
+  GV-->>Core: if there are errors, sets the graph validation errors in the metadata
+  GV-->>Core: sends GRAPH INVALID event
+  Core-->>State: sends GRAPH INVALID event
+  State-->>State: checks if valid transition
+  State-->>Core: requests to set submission to GRAPH INVALID
+  Core-->>Core: sets submission to GRAPH INVALID
+  
+  GV-->>Core: if there no errors, sends GRAPH VALID event
+  Core-->>State: sends GRAPH VALID event
+  State-->>State: checks if valid transition
+  State-->>Core: requests to set submission to GRAPH VALID
+  Core-->>Core: sets submission to GRAPH VALID
+```
+
+## GRAPH VALID to ARCHIVED
+```mermaid
+sequenceDiagram
+  participant User
+  participant UI
+  participant Core
+  participant State as State Tracker
+  participant Exporter
+  participant Archiver
+  participant DSP
+  
   User->>UI: chooses to submit to the EBI archives and clicks Submit
   UI-->>Core: request to submit to the archives
   Core-->>Core: gets assay process
@@ -142,6 +192,20 @@ sequenceDiagram
 
   Core-->>Core: generates the Export link
   UI-->>UI: displays Export button when Export links is present
+
+```
+
+## ARCHIVED to EXPORTED
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant UI
+  participant Core
+  participant State as State Tracker
+  participant Exporter
+  participant GCPTS as GCP Transfer Service
+  
   User->>UI: clicks Export button to submit to HCA
   UI-->>Core: requests for export, triggers exporting
   Core-->>Exporter: sends messages per assay
@@ -168,3 +232,4 @@ sequenceDiagram
   Staging Manager-->> Core: sets the submission to COMPLETE
   Core-->>State: sends message for COMPLETE
 ```
+
