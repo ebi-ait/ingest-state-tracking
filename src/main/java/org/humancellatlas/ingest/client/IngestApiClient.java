@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
-import org.humancellatlas.ingest.client.model.MetadataDocument;
 import org.humancellatlas.ingest.client.model.SubmissionEnvelope;
 import org.humancellatlas.ingest.client.util.EnvelopeReferenceCache;
 import org.humancellatlas.ingest.config.ConfigurationService;
@@ -15,7 +14,6 @@ import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.SubmissionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.hateoas.MediaTypes;
@@ -23,18 +21,18 @@ import org.springframework.hateoas.client.Traverson;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-
+import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Javadocs go here!
@@ -44,7 +42,7 @@ import java.util.stream.Collectors;
  */
 @Component
 @DependsOn("configuration")
-public class IngestApiClient implements InitializingBean {
+public class IngestApiClient {
     private ConfigurationService config;
 
     @Getter
@@ -55,20 +53,26 @@ public class IngestApiClient implements InitializingBean {
     private EnvelopeReferenceCache envelopeReferenceCache;
 
     private final Logger log = LoggerFactory.getLogger(getClass());
+    @Autowired
+    private AddJWTTokenHeaderInterceptor addJWTTokenHeaderInterceptor;
 
-    public IngestApiClient() {
-    }
 
     @Autowired
-    public IngestApiClient(@Autowired ConfigurationService config) {
+    public IngestApiClient(@Autowired ConfigurationService config, @Autowired RestTemplate restTemplate) {
         this.config = config;
+        this.restTemplate = restTemplate;
     }
 
+    @PostConstruct
     public void init() {
-        this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
         this.submissionEnvelopesPath = "/submissionEnvelopes";
         this.metadataTypesLinkMap.put("sample", config.getIngestApiUri() + "/samples");
         this.envelopeReferenceCache = new EnvelopeReferenceCache(100);
+    }
+
+
+    public ResponseEntity<JsonNode> verifyIngestConnection() {
+        return this.restTemplate.getForEntity(config.getIngestApiUri().toString()+"/projects", JsonNode.class);
     }
 
     public SubmissionEnvelope updateEnvelopeState(SubmissionEnvelopeReference envelopeReference, SubmissionState submissionState) {
@@ -141,6 +145,9 @@ public class IngestApiClient implements InitializingBean {
                 URI.create(message.getCallbackLink()));
     }
 
+    public void clearCache() {
+        this.envelopeReferenceCache.clear();
+    }
     private Traverson halTraverserOn(URI baseUri) {
         return new Traverson(baseUri, MediaTypes.HAL_JSON);
     }
@@ -205,8 +212,4 @@ public class IngestApiClient implements InitializingBean {
         }
     }
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        init();
-    }
 }

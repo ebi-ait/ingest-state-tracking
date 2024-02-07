@@ -18,6 +18,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -38,10 +39,10 @@ import static org.junit.Assert.*;
 @SpringBootTest
 public class SubmissionStateUpdaterTest {
 
-    private IngestApiClient ingestApiClient;
-    private ConfigurationService config;
+    @Autowired ConfigurationService configurationService;
+    @Autowired IngestApiClient ingestApiClient;
     private SubmissionStateUpdater submissionStateUpdater;
-    
+
     private WireMockServer wireMockServer;
 
     public SubmissionStateUpdaterTest() {
@@ -49,10 +50,8 @@ public class SubmissionStateUpdaterTest {
 
     @BeforeEach
     public void before() {
-        ingestApiClient = new IngestApiClient(MockConfigurationService.create());
         ingestApiClient.init();
-        config = MockConfigurationService.create();
-        submissionStateUpdater = new SubmissionStateUpdater(ingestApiClient, config);
+        submissionStateUpdater = new SubmissionStateUpdater(ingestApiClient, configurationService);
     }
 
     @BeforeEach
@@ -112,8 +111,8 @@ public class SubmissionStateUpdaterTest {
                     put("self", new HashMap<String, Object>() {{
                         put("href", INGEST_API_ROOT_STRING + mockEnvelopeCallbackLocation);
                     }});
-                    put(mockStateUpdateRels().get(SubmissionState.SUBMITTED), new HashMap<String, Object>() {{
-                        put("href", INGEST_API_ROOT_STRING + mockEnvelopeCallbackLocation + "/mockCommitSubmit");
+                    put(configurationService.getStateUpdateRels().get(SubmissionState.SUBMITTED), new HashMap<String, Object>() {{
+                        put("href", INGEST_API_ROOT_STRING + mockEnvelopeCallbackLocation + "/commitSubmit");
                     }});
                 }};
             }
@@ -154,7 +153,7 @@ public class SubmissionStateUpdaterTest {
                                 .withBody(new ObjectMapper().writeValueAsString(envelopeInitialJson))));
 
         wireMockServer.stubFor(
-                put(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString() + "/mockCommitSubmit")).inScenario("update submission state")
+                put(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString() + "/commitSubmit")).inScenario("update submission state")
                         .whenScenarioStateIs(Scenario.STARTED)
                         .willReturn(aResponse()
                                 .withStatus(200)
@@ -180,7 +179,7 @@ public class SubmissionStateUpdaterTest {
         assertTrue(submissionStateUpdater.getPendingUpdates().size() == 1);
 
 
-        Thread.sleep((config.getUpdaterPeriodSeconds() * 1000) * 3); // wait for an update to happen, x 2 to be sure
+        Thread.sleep((configurationService.getUpdaterPeriodSeconds() * 1000) * 3); // wait for an update to happen, x 2 to be sure
 
         assertEquals(
                 ingestApiClient.retrieveSubmissionEnvelope(submissionEnvelopeReference).getSubmissionState().toUpperCase(),

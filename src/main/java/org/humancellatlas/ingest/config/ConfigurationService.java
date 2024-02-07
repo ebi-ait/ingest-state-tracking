@@ -20,37 +20,27 @@ import java.util.Map;
 public class ConfigurationService implements InitializingBean {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    @Value("${INGEST_API_ROOT}")
-    private String ingestApiRootString;
-    @Value("${UPDATER_PERIOD_SECONDS:2}")
-    private String updaterPeriodSecondsString;
-    @Value("${REDIS_HOST:localhost}")
-    private String redisHostString;
-    @Value("${REDIS_PORT:6379}")
-    private String redisPortString;
-    @Value("${NUM_HANDLER_THREADS:15}")
-    private String numHandlerThreadsString;
 
+    @Value("${INGEST_API_ROOT}")
     @Getter @Setter private URI ingestApiUri;
+    @Value("${UPDATER_PERIOD_SECONDS:2}")
     @Getter @Setter private int updaterPeriodSeconds;
+    @Value("${REDIS_HOST:localhost}")
     @Getter @Setter private String redisHost;
+    @Value("${REDIS_PORT:6379}")
     @Getter @Setter private int redisPort;
+    @Value("${NUM_HANDLER_THREADS:15}")
     @Getter @Setter private int numHandlerThreads;
     @Getter @Setter private Map<SubmissionState, String> stateUpdateRels;
 
     private void init() {
         try {
-            this.ingestApiUri = new URI(ingestApiRootString);
-            this.updaterPeriodSeconds = Integer.parseInt(updaterPeriodSecondsString);
-            this.redisHost = redisHostString;
-            this.redisPort = Integer.parseInt(redisPortString);
-            this.numHandlerThreads = Integer.parseInt(numHandlerThreadsString);
 
             // map of submissions states to the rels of the links for transitioning to that state
             this.stateUpdateRels = stateUpdateRelsMap();
 
         } catch (Exception e) {
-            log.error("Failed to intialize configuration vars", e);
+            log.error("Failed to initialize configuration vars", e);
         }
     }
 

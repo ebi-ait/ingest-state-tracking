@@ -7,6 +7,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.humancellatlas.ingest.client.IngestApiClient;
 import org.humancellatlas.ingest.client.model.MetadataDocument;
 import org.humancellatlas.ingest.client.model.SubmissionEnvelope;
+import org.humancellatlas.ingest.config.ConfigurationService;
 import org.humancellatlas.ingest.model.MetadataDocumentReference;
 import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.SubmissionState;
@@ -16,6 +17,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -33,17 +36,24 @@ import static org.junit.Assert.*;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 public class IngestApiClientTest {
-    private IngestApiClient ingestApiClient;
+
+    @Autowired
+    IngestApiClient ingestApiClient;
+    @Autowired
+    ConfigurationService configurationService;
+    @Value("${INGEST_API_ROOT}")
+    String ingestApiRoot;
     private WireMockServer wireMockServer;
 
     @BeforeEach
-    public void before() {
-        ingestApiClient = new IngestApiClient(MockConfigurationService.create());
+    public void before()  {
         ingestApiClient.init();
+
+
     }
-    
+
     @BeforeEach
-    public void setupWireMockServer() {
+    public void setupWireMockServer(){
         wireMockServer = new WireMockServer(8088);
         wireMockServer.start();
     }
@@ -53,9 +63,9 @@ public class IngestApiClientTest {
         wireMockServer.stop();
         wireMockServer.resetAll();
     }
-    
+
     public IngestApiClientTest(){ }
-    
+
     @Test
     public void testGetMetadataDocumentInfo() throws Exception {
         MetadataDocumentReference mockMetadataDocumentReference = new MetadataDocumentReference(
@@ -73,10 +83,10 @@ public class IngestApiClientTest {
                 validationState = "Valid";
                 _links = new HashMap<String, Object>() {{
                     put("self", new HashMap<String, Object>() {{
-                        put("href",  INGEST_API_ROOT_STRING + mockMetadataDocumentReference.getCallbackLocation());
+                        put("href",  ingestApiRoot + mockMetadataDocumentReference.getCallbackLocation());
                     }});
                     put("submissionEnvelopes", new HashMap<String, Object>(){{
-                        put("href", INGEST_API_ROOT_STRING + mockMetadataDocumentReference.getCallbackLocation() + "/submissionEnvelopes");
+                        put("href", ingestApiRoot + mockMetadataDocumentReference.getCallbackLocation() + "/submissionEnvelopes");
                     }});
                 }};
             }
@@ -165,7 +175,7 @@ public class IngestApiClientTest {
                 submissionState = "Pending";
                 _links = new HashMap<String, Object>() {{
                     put("self", new HashMap<String, Object>() {{
-                        put("href", INGEST_API_ROOT_STRING + "/submissionEnvelopes/mock-envelope-id");
+                        put("href", ingestApiRoot + "/submissionEnvelopes/mock-envelope-id");
                     }});
                 }};
             }
@@ -205,8 +215,8 @@ public class IngestApiClientTest {
             EnvelopeJson() {
                 this.submissionState = SubmissionState.SUBMITTED.toString();
                 _links = new HashMap<String, Object>() {{
-                    put(mockStateUpdateRels().get(SubmissionState.SUBMITTED), new HashMap<String, Object>() {{
-                        put("href", INGEST_API_ROOT_STRING + mockEnvelopeCallbackLocation + "/mockCommitSubmit");
+                    put(configurationService.getStateUpdateRels().get(SubmissionState.SUBMITTED), new HashMap<String, Object>() {{
+                        put("href", ingestApiRoot + mockEnvelopeCallbackLocation + "/commitSubmit");
                     }});
                 }};
             }
@@ -233,13 +243,15 @@ public class IngestApiClientTest {
 
 
         wireMockServer.stubFor(
-                put(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString() + "/mockCommitSubmit"))
+                put(urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString() + "/commitSubmit"))
                         .withHeader("Accept", equalTo("application/hal+json"))
                         .willReturn(aResponse()
                                             .withStatus(200)
                                             .withHeader("Content-Type", "application/hal+json")
                                             .withBody(new ObjectMapper().writeValueAsString(envelopeTransitioned))));
 
+        // NOTE: the test fails without this wait
+        Thread.sleep(2000);
 
         ingestApiClient.updateEnvelopeState(submissionEnvelopeReference, SubmissionState.SUBMITTED);
 
@@ -251,7 +263,7 @@ public class IngestApiClientTest {
 
         wireMockServer.verify(
                 putRequestedFor(
-                        urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString() + "/mockCommitSubmit" )));
+                        urlEqualTo(submissionEnvelopeReference.getCallbackLocation().toString() + "/commitSubmit" )));
 
     }
 

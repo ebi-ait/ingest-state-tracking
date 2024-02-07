@@ -23,7 +23,6 @@ test {
     // Skip redis tests as there is no redis server available
     // TODO: Use embedded redis for tests https://www.baeldung.com/spring-embedded-redis
     exclude '**/RedisPersisterTest.class'
-    environment "INGEST_API_ROOT", "http://a.dummy.url.org"
     useJUnitPlatform()
 }
 
@@ -39,6 +38,12 @@ dependencies {
 	implementation 'com.jayway.jsonpath:json-path:2.2.0'
 	implementation 'org.apache.httpcomponents:httpclient'
 	implementation 'org.projectlombok:lombok'
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+    implementation 'javax.xml.bind:jaxb-api:2.1'
+    implementation 'org.springframework.security:spring-security-core:5.2.0.RELEASE'
+
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
