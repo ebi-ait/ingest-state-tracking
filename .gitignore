@@ -24,6 +24,7 @@ dist/
 nbdist/
 .nb-gradle/
 out/
+.env
 
 _local
 .env

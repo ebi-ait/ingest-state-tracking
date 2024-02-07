@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
+import org.humancellatlas.ingest.client.model.MetadataDocument;
 import org.humancellatlas.ingest.client.model.SubmissionEnvelope;
 import org.humancellatlas.ingest.client.util.EnvelopeReferenceCache;
 import org.humancellatlas.ingest.config.ConfigurationService;
@@ -14,6 +15,7 @@ import org.humancellatlas.ingest.model.SubmissionEnvelopeReference;
 import org.humancellatlas.ingest.state.SubmissionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.hateoas.MediaTypes;
@@ -42,7 +44,7 @@ import java.util.*;
  */
 @Component
 @DependsOn("configuration")
-public class IngestApiClient {
+public class IngestApiClient  {
     private ConfigurationService config;
 
     @Getter
@@ -65,6 +67,8 @@ public class IngestApiClient {
 
     @PostConstruct
     public void init() {
+        this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
+        this.restTemplate.setInterceptors(Collections.singletonList(addJWTTokenHeaderInterceptor));
         this.submissionEnvelopesPath = "/submissionEnvelopes";
         this.metadataTypesLinkMap.put("sample", config.getIngestApiUri() + "/samples");
         this.envelopeReferenceCache = new EnvelopeReferenceCache(100);
