@@ -10,6 +10,7 @@ import org.springframework.core.io.support.PropertySourceFactory;
 import org.springframework.core.env.PropertiesPropertySource;
 import org.springframework.core.env.PropertySource;
 import org.springframework.core.io.support.EncodedResource;
+import org.springframework.web.context.support.ServletContextResource;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -51,6 +52,10 @@ public class JsonPropertySourceFactory implements PropertySourceFactory {
             if (resource instanceof ClassPathResource) {
                 ClassPathResource classPathResource = (ClassPathResource) resource;
                 return classPathResource.getPath();
+            }
+            if (resource instanceof ServletContextResource) {
+                ServletContextResource servletContextResource = (ServletContextResource) resource;
+                return servletContextResource.getPath();
             }
             throw new IllegalArgumentException("invalid value of json resource or string", e);
         }
