@@ -11,6 +11,7 @@ import org.springframework.core.env.PropertySource;
 import org.springframework.core.io.support.EncodedResource;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -40,9 +41,15 @@ public class JsonPropertySourceFactory implements PropertySourceFactory {
     }
 
     private static String convertResourceToString(Resource resource) throws IOException {
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
-            return bufferedReader.lines()
-                    .collect(Collectors.joining(System.lineSeparator()));
+        try {
+            try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+                return bufferedReader.lines()
+                        .collect(Collectors.joining(System.lineSeparator()));
+            }
+        } catch (FileNotFoundException e) {
+            // a possible case that the resource itself is a JSON expression
+            // for example where the env vairable contains JSON rather than a file or classpath resource
+            return resource.getFilename();
         }
     }
 }
