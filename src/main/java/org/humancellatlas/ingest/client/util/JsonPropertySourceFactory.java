@@ -55,9 +55,13 @@ public class JsonPropertySourceFactory implements PropertySourceFactory {
             }
             if (resource instanceof ServletContextResource) {
                 ServletContextResource servletContextResource = (ServletContextResource) resource;
-                return servletContextResource.getPath();
+                return removeLeadingSlash(servletContextResource).substring(1);
             }
             throw new IllegalArgumentException("invalid value of json resource or string", e);
         }
+    }
+
+    private static String removeLeadingSlash(ServletContextResource servletContextResource) {
+        return servletContextResource.getPath();
     }
 }
