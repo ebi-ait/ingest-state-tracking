@@ -67,8 +67,6 @@ public class IngestApiClient  {
 
     @PostConstruct
     public void init() {
-        this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
-        this.restTemplate.setInterceptors(Collections.singletonList(addJWTTokenHeaderInterceptor));
         this.submissionEnvelopesPath = "/submissionEnvelopes";
         this.metadataTypesLinkMap.put("sample", config.getIngestApiUri() + "/samples");
         this.envelopeReferenceCache = new EnvelopeReferenceCache(100);
