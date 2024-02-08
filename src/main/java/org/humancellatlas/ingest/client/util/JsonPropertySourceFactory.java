@@ -3,6 +3,7 @@ package org.humancellatlas.ingest.client.util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.json.JsonParser;
 import org.springframework.boot.json.JsonParserFactory;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertySourceFactory;
 
@@ -47,9 +48,11 @@ public class JsonPropertySourceFactory implements PropertySourceFactory {
                         .collect(Collectors.joining(System.lineSeparator()));
             }
         } catch (FileNotFoundException e) {
-            // a possible case that the resource itself is a JSON expression
-            // for example where the env vairable contains JSON rather than a file or classpath resource
-            return resource.getFilename();
+            if (resource instanceof ClassPathResource) {
+                ClassPathResource classPathResource = (ClassPathResource) resource;
+                return classPathResource.getPath();
+            }
+            throw new IllegalArgumentException("invalid value of json resource or string", e);
         }
     }
 }
