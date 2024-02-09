@@ -151,7 +151,9 @@ public class IngestApiClient  {
         this.envelopeReferenceCache.clear();
     }
     private Traverson halTraverserOn(URI baseUri) {
-        return new Traverson(baseUri, MediaTypes.HAL_JSON);
+        Traverson traverson = new Traverson(baseUri, MediaTypes.HAL_JSON);
+        traverson.setRestOperations(restTemplate);
+        return traverson;
     }
 
 
