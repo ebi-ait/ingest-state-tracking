@@ -88,9 +88,9 @@ public class MessageHandler {
         try {
             metadataDocument.setReferencedEnvelope(this.getIngestApiClient().envelopeReferencesFromEnvelopeId(envelopeId));
         } catch (HttpClientErrorException e) {
-            log.info(String.format("Failed to fetch metadata document. Response was: %s Message was: ", e.getResponseBodyAsString()));
+            log.error(String.format("Failed to fetch metadata document. Response was: %s Message was: ", e.getResponseBodyAsString()));
             try {
-                log.info(new ObjectMapper().writeValueAsString(metadataDocumentId));
+                log.error(new ObjectMapper().writeValueAsString(metadataDocumentId));
             } catch (IOException ioe) {
                 throw new AmqpRejectAndDontRequeueException(e);
             }
@@ -108,6 +108,12 @@ public class MessageHandler {
     }
 
     private void doHandleMetadataDocumentUpdate(MetadataDocumentMessage metadataDocumentMessage) {
+        log.info("updating {} document with id {} and uuid {} from submission {} to state {}",
+                metadataDocumentMessage.getDocumentType(),
+                metadataDocumentMessage.getDocumentId(),
+                metadataDocumentMessage.getDocumentUuid(),
+                metadataDocumentMessage.getEnvelopeId(),
+                metadataDocumentMessage.getValidationState());
         MetadataDocumentReference documentReference = getIngestApiClient().referenceForMetadataDocument(metadataDocumentMessage);
         MetadataDocument metadataDocument = getMetadataDocument(metadataDocumentMessage.getDocumentId(),
                 metadataDocumentMessage.getEnvelopeId());
@@ -126,6 +132,9 @@ public class MessageHandler {
     }
 
     private void doHandleMetadataDocumentDelete(String metadataDocumentId, String envelopeId) {
+        log.info("deleting document with id {} in submission {}",
+                metadataDocumentId,
+                envelopeId);
         SubmissionEnvelopeReference envelopeReference = getMetadataDocument(metadataDocumentId, envelopeId)
                 .getReferencedEnvelope();
 
@@ -143,6 +152,11 @@ public class MessageHandler {
     }
 
     private void doHandleSubmissionEnvelopeStateUpdateRequest(SubmissionEnvelopeMessage submissionEnvelopeMessage) {
+        log.info("updating submission with id {} and uuid {} to state {}",
+                submissionEnvelopeMessage.getDocumentId(),
+                submissionEnvelopeMessage.getDocumentUuid(),
+                submissionEnvelopeMessage.getRequestedState());
+
         SubmissionEnvelopeReference envelopeReference = getIngestApiClient().referenceForSubmissionEnvelope(submissionEnvelopeMessage);
 
         if(!submissionStateMonitor.isMonitoring(envelopeReference)) {
@@ -162,6 +176,7 @@ public class MessageHandler {
     }
 
     private void doHandleDocumentCompletedMessage(DocumentCompletedMessage completedMessage, SubmissionEvent submissionEvent) {
+
         submissionStateMonitor.notifyOfDocumentState(completedMessage.getDocumentId(),
                                                    completedMessage.getEnvelopeUuid(),
                                                    completedMessage.getTotal(),

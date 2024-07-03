@@ -86,7 +86,7 @@ public class IngestApiClient implements InitializingBean {
                     SubmissionEnvelope.class)
                     .getBody();
         } catch (HttpClientErrorException e) {
-            log.trace("Failed to patch the state of a submission envelope with ID %s and callback link %s. Status code %s", envelopeReference.getId(), envelopeReference.getCallbackLocation(), Integer.toString(e.getRawStatusCode()));
+            log.error("Failed to patch the state of a submission envelope with ID %s and callback link %s. Status code %s", envelopeReference.getId(), envelopeReference.getCallbackLocation(), Integer.toString(e.getRawStatusCode()));
             throw e;
         }
     }
@@ -180,7 +180,7 @@ public class IngestApiClient implements InitializingBean {
         try {
             return new URI(uriString);
         } catch (URISyntaxException e) {
-            log.trace(String.format("Error trying to listenerFor URI from string %s", uriString));
+            log.error(String.format("Error trying to listenerFor URI from string %s", uriString));
             throw new RuntimeException(e);
         }
     }
@@ -201,7 +201,7 @@ public class IngestApiClient implements InitializingBean {
         try {
             return new HttpEntity<>(new ObjectMapper().writeValueAsString(entity), headers);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("problem getting hal request for entity", e);
         }
     }
 
