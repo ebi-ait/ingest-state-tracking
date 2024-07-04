@@ -5,3 +5,7 @@ Unit Test:
   image: quay.io/ebi-ait/ingest-base-images:openjdk_11
   script:
     - ./gradlew test
+  artifacts:
+    reports:
+      junit:
+        - build/test-results/**/TEST-*.xml
