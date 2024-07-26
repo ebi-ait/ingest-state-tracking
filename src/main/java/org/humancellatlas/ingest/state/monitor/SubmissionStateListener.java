@@ -15,6 +15,7 @@ import org.springframework.statemachine.state.State;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Javadocs go here!
@@ -54,6 +55,20 @@ public class SubmissionStateListener extends StateMachineListenerAdapter<Submiss
 
     @Override
     public void eventNotAccepted(Message<SubmissionEvent> eventMsg) {
+        final String currentState = submissionStateMonitor.findCurrentState(submissionEnvelopeReference).toString();
+        Optional<StateMachine<SubmissionState, SubmissionEvent>> stateMachineOptional = submissionStateMonitor.findStateMachine(UUID.fromString(submissionEnvelopeReference.getUuid()));
+
+        if (stateMachineOptional.isPresent()) {
+            final StateMachine<SubmissionState, SubmissionEvent> stateMachine = stateMachineOptional.get();
+
+            stateMachine.getTransitions().stream()
+                    .filter(transition -> transition.getSource().getId().equals(currentState))
+                    .forEach(transition -> log.error(String.format("Available transition: %s -> %s on event %s",
+                            transition.getSource().getId(),
+                            transition.getTarget().getId(),
+                            transition.getTrigger().getEvent())));
+        }
+
         log.error(String.format("Submission event was not accepted(Current state: %s): [%s : %s]",
                                 submissionStateMonitor.findCurrentState(submissionEnvelopeReference).toString(),
                                 eventMsg.getHeaders().toString(),
