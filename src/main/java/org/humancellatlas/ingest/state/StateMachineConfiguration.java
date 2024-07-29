@@ -22,12 +22,6 @@ import static org.humancellatlas.ingest.state.MetadataDocumentInfo.*;
 import static org.humancellatlas.ingest.state.SubmissionEvent.*;
 import static org.humancellatlas.ingest.state.SubmissionState.*;
 
-/**
- * Javadocs go here!
- *
- * @author tburdett
- * @date 26/11/2017
- */
 @Configuration
 @EnableStateMachineFactory
 @AllArgsConstructor
@@ -89,7 +83,6 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .action(addOrUpdateContent())
                 .and()
 
-
                 /* Removal of a metadata document */
                 // If in pre-graph validation states, check metadata validity
                 .withExternal()
@@ -130,7 +123,6 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .event(DOCUMENT_DELETED)
                 .action(removeDocument())
                 .and()
-
 
                 /* graph validating happy path (results in valid or invalid) */
                 .withExternal()
@@ -252,7 +244,6 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 .last(EXPORTED)
                 .and()
 
-
                 /* exported -> draft */
                 .withExternal()
                 .source(EXPORTED).target(DRAFT)
@@ -274,6 +265,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
 
     private Action<SubmissionState, SubmissionEvent> resetTracker(String tracker) {
         return context -> {
+            log.info("Resetting tracker: {}", tracker);
             context.getExtendedState().getVariables().remove(tracker);
         };
     }
@@ -281,6 +273,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
     private Guard<SubmissionState, SubmissionEvent> documentsInvalidGuard() {
         return context -> {
             Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
+            log.info("Checking documents invalid guard with docMap: {}", docMap);
             for (Object key : docMap.keySet()) {
                 if (key.getClass() != String.class) {
                     // extra content somehow?
@@ -295,7 +288,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                         return false;
                     } else {
                         MetadataDocumentState documentState = (MetadataDocumentState) value;
-                        log.debug(String.format("Testing content from extended state. Document tracker: { %s : %s }",
+                        log.info(String.format("Testing content from extended state. Document tracker: { %s : %s }",
                                 documentId,
                                 documentState));
                         if (documentState.equals(MetadataDocumentState.INVALID)) {
@@ -313,6 +306,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
     private Guard<SubmissionState, SubmissionEvent> documentsValidatingGuard() {
         return context -> {
             Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
+            log.info("Checking documents validating guard with docMap: {}", docMap);
 
             for (Object key : docMap.keySet()) {
                 if (key.getClass() != String.class) {
@@ -328,7 +322,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                         return false;
                     } else {
                         MetadataDocumentState documentState = (MetadataDocumentState) value;
-                        log.debug(String.format("Testing content from extended state. Document tracker: { %s : %s }",
+                        log.info(String.format("Testing content from extended state. Document tracker: { %s : %s }",
                                 documentId,
                                 documentState));
                         if (documentState.equals(MetadataDocumentState.VALIDATING)) {
@@ -347,6 +341,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
     private Guard<SubmissionState, SubmissionEvent> allValidGuard() {
         return context -> {
             Map<String, MetadataDocumentState> docMap = Collections.synchronizedMap(getMetadataDocumentTrackerFromContext(context));
+            log.info("Checking all valid guard with docMap: {}", docMap);
             return docMap.entrySet().size() == 0;
         };
     }
@@ -355,13 +350,14 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
         return context -> {
             // retrieve the id of the document
             String documentId = context.getMessageHeaders().get(DOCUMENT_ID, String.class);
+            log.info("Adding or updating content for documentId: {}", documentId);
 
             // retrieve the state of the document
             MetadataDocumentState documentState =
                     context.getMessageHeaders().get(DOCUMENT_STATE, MetadataDocumentState.class);
 
-            // add the document and it's state to the extended context
-            log.debug(String.format("Adding content to extended state. Document tracker: { %s : %s }",
+            // add the document and its state to the extended context
+            log.info(String.format("Adding content to extended state. Document tracker: { %s : %s }",
                     documentId,
                     documentState));
             Map<String, MetadataDocumentState> metadataDocumentTracker = getMetadataDocumentTrackerFromContext(context);
@@ -370,13 +366,16 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
                 // add the metadata document state map
                 metadataDocumentTracker = new ConcurrentHashMap<>();
                 context.getExtendedState().getVariables().put(Constants.METADATA_DOCUMENT_TRACKER, metadataDocumentTracker);
+                log.info("Created new metadata document tracker");
             }
 
             if (!documentState.equals(MetadataDocumentState.VALID)) {
                 metadataDocumentTracker.put(documentId, documentState);
+                log.info("Updated metadata document tracker with {}", documentId);
             } else {
                 if (metadataDocumentTracker.containsKey(documentId)) {
                     metadataDocumentTracker.remove(documentId);
+                    log.info("Removed documentId {} from metadata document tracker", documentId);
                 }
             }
         };
@@ -385,10 +384,12 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
     private Action<SubmissionState, SubmissionEvent> removeDocument() {
         return context -> {
             String documentId = context.getMessageHeaders().get(DOCUMENT_ID, String.class);
+            log.info("Removing documentId: {}", documentId);
             Map<String, MetadataDocumentState> metadataDocumentTracker = getMetadataDocumentTrackerFromContext(context);
 
             if (metadataDocumentTracker != null && metadataDocumentTracker.containsKey(documentId)) {
                 metadataDocumentTracker.remove(documentId);
+                log.info("DocumentId {} removed from metadata document tracker", documentId);
             }
         };
     }
@@ -396,6 +397,7 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
     private Guard<SubmissionState, SubmissionEvent> stillProcessingGuard(String tracker) {
         return context -> {
             DocumentTracker documentTracker = getDocumentTrackerFromContext(context, tracker);
+            log.info("Checking still processing guard for tracker: {}", tracker);
             return !documentTracker.allDocumentsCompleted();
         };
     }
@@ -404,11 +406,13 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
         return context -> {
             String processId = context.getMessageHeaders().get(DOCUMENT_ID, String.class);
             MetadataDocumentState targetState = context.getMessageHeaders().get(DOCUMENT_STATE, MetadataDocumentState.class);
+            log.info("Tracking document with processId: {} and targetState: {}", processId, targetState);
 
             DocumentTracker documentTracker = (DocumentTracker) context.getExtendedState().getVariables().get(tracker);
 
             if (documentTracker == null) {
                 int documentCount = context.getMessageHeaders().get(EXPECTED_DOCUMENT_COUNT, Integer.class);
+                log.info("Creating new document tracker with document count: {}", documentCount);
 
                 documentTracker = new DocumentTracker(documentCount);
                 context.getExtendedState().getVariables().put(tracker, documentTracker);
@@ -417,9 +421,11 @@ public class StateMachineConfiguration extends EnumStateMachineConfigurerAdapter
             if (targetState.equals(MetadataDocumentState.COMPLETE)
                     && documentTracker.getDocumentStateMap().get(processId).equals(MetadataDocumentState.PROCESSING)) {
                 documentTracker.setComplete(processId);
+                log.info("Document with processId {} set to complete", processId);
 
             } else {
                 documentTracker.setProcessing(processId);
+                log.info("Document with processId {} set to processing", processId);
             }
         };
     }
